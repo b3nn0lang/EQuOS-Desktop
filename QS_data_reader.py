@@ -457,6 +457,16 @@ class QS_data_reader():
                 self.dataframe_loop_stop.set()
                 print("Finished building raw dataloop!!")
             time.sleep(self.scanning_interval)
+        try:
+            time.sleep(0.1)
+            shutil.copy(
+                os.path.join(self.temp_path, f"{self.file_name}_temp.dat"),
+                os.path.join(self.file_path, f"{self.file_name}_temp.dat")
+            )
+            time.sleep(0.1)
+            os.remove(os.path.join(self.temp_path, f"{self.file_name}_temp.dat"))
+        except:
+            pass
 
     def get_raw_dataframe_progress(self) -> float:
         with self._progress_lock:
