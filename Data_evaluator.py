@@ -432,10 +432,10 @@ def ecqs_data_displayer(qs_data_reader, potentiostat, fitting_dic: dict, cache):
     axes[0,1].set_ylabel("T1 Time")
     
     if ec_data is not None and cache.compare_last_values(ec_data) == True: 
-        cache.last_ec_data = ec_data.copy()
+        cache.update_last_values(ec_data)
         time_loop_begin=time()
         try:
-            plot_up = ec_data[ec_data["direction"] == 1].copy()
+            plot_up = ec_data[ec_data["direction"] == 1]
             points_up = []
             if not plot_up.empty:
                 axes[0,0].plot(plot_up["Potential"], plot_up["Current_mean"], color="tab:blue", label="Upwards Current")
@@ -528,7 +528,7 @@ def ecqs_data_displayer(qs_data_reader, potentiostat, fitting_dic: dict, cache):
             print(f"Something in plot_up failed {e}")
         
         try:
-            plot_down = ec_data[ec_data["direction"] == -1].copy()
+            plot_down = ec_data[ec_data["direction"] == -1]
             points_down = []
             if not plot_down.empty:
                 axes[0,0].plot(plot_down["Potential"], plot_down["Current_mean"], color="tab:red", label="Downwards Current")

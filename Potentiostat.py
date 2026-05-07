@@ -77,6 +77,13 @@ class Potentiostat():
     def get_measurement_results(self):
         with self.result_lock:
             return self.measurement_results.copy()
+    def append_measurement_frame(self, results_df: pd.DataFrame, new_rows: pd.DataFrame) -> pd.DataFrame:
+        if results_df.empty:
+            return new_rows.reset_index(drop=True)
+        start_idx = len(results_df)
+        idx = range(start_idx, start_idx + len(new_rows))
+        results_df.loc[idx, new_rows.columns] = new_rows.to_numpy()
+        return results_df
         #callback plots the data points not saved and calculates the time of the first index point
     def callback(self,data: list()):
         start_time = time()
@@ -104,13 +111,13 @@ class Potentiostat():
         if raw_df.empty:
             return None
         else:
-            raw_df["Potential"] = raw_df["Potential"].round(5)
-            eval_data = raw_df.groupby(["direction","Potential"],as_index=False).agg(list)
+            rounded_potential = raw_df["Potential"].round(5)
+            eval_data = raw_df.assign(Potential=rounded_potential).groupby(["direction","Potential"],as_index=False).agg(list)
             eval_data["Current_mean"] = eval_data["Current"].apply(np.mean)
             #eval_data["Charge_mean"] = eval_data["Charge"].apply(np.mean)
             eval_data["Current_std"] = eval_data["Current"].apply(np.std)
            # eval_data["Charge_std"] = eval_data["Charge"].apply(np.std)
-        return eval_data.copy()
+        return eval_data
 
     def measure_n_times(self, file_name, method, n_scans):  
         results_df = pd.DataFrame()
@@ -131,7 +138,8 @@ class Potentiostat():
                         print("EC measurement finished")
                         measurement_results.append(measurement)
                         new_df = pd.DataFrame(measurement.dataset.to_dict())
-                        results_df = pd.concat([results_df,self.correct_time_stamps(self.get_measurement_start_time(), new_df.copy())],ignore_index=True)
+                        corrected_df = self.correct_time_stamps(self.get_measurement_start_time(), new_df)
+                        results_df = self.append_measurement_frame(results_df, corrected_df)
                         self.set_measurement_results([measurement_results, results_df])
                         self.save_measurement_to_file(measurement_results, file_name)
                         self.save_df_to_csv(results_df, file_name)
@@ -161,7 +169,8 @@ class Potentiostat():
                 print("EC measurement finished")
                 measurement_results.append(measurement)
                 new_df = pd.DataFrame(measurement.dataset.to_dict())
-                results_df = pd.concat([results_df,self.correct_time_stamps(self.get_measurement_start_time(), new_df.copy())],ignore_index=True)
+                corrected_df = self.correct_time_stamps(self.get_measurement_start_time(), new_df)
+                results_df = self.append_measurement_frame(results_df, corrected_df)
                 self.set_measurement_results([measurement_results, results_df])
                 self.save_measurement_to_file(measurement_results, file_name)
                 self.save_df_to_csv(results_df, file_name)

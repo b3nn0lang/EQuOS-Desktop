@@ -84,20 +84,32 @@ def calculate_t1_averages(ec_points:int,avg_p_p:int, ec_time:float, qs_points:in
            
 class ECQS_cache():
     def __init__(self):
-        self.last_ec_data = None
+        self.last_ec_signature = None
         self.fig  = None
         self.axes = None
         self.measurement_done = None
         self.measurement_progress = None
         self.info_dic = None
         self.kill_qupyt = None
+    def build_ec_signature(self, ec_data) -> tuple:
+        if ec_data is None or ec_data.empty:
+            return tuple()
+        tail = ec_data.tail(4)
+        return (
+            len(ec_data),
+            tuple(tail["direction"].tolist()),
+            tuple(np.round(tail["Potential"].to_numpy(dtype=float), 8)),
+            tuple(np.round(tail["Current_mean"].to_numpy(dtype=float), 12)),
+            tuple(np.round(tail["Current_std"].to_numpy(dtype=float), 12)),
+            tuple(len(values) for values in tail["Current"]),
+        )
     def compare_last_values(self, new_ec_data) -> bool:
-        if self.last_ec_data is None:
+        new_signature = self.build_ec_signature(new_ec_data)
+        if self.last_ec_signature is None:
             return True
-        try:
-            return not new_ec_data.equals(self.last_ec_data)
-        except Exception:
-            return True
+        return new_signature != self.last_ec_signature
+    def update_last_values(self, new_ec_data):
+        self.last_ec_signature = self.build_ec_signature(new_ec_data)
     def set_values(self, fig, axes, measurement_done, measurement_progress, info_dic, kill_qupyt):
         self.fig  = fig
         self.axes = axes

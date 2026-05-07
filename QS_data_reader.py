@@ -71,7 +71,7 @@ class QS_data_reader():
         #self.raw_dataframe = pd.DataFrame()
         self._dataframe_consolidated = pd.DataFrame()
         self.data_array_dim = self.build_data_file_dimension()
-        self.raw_data = np.zeros(shape=self.data_array_dim)
+        self._processed_rows = 0
 
 #Evalutes the params.yaml file        
     def write_params_from_yaml(self, yaml_file : str) -> dict:
@@ -130,23 +130,23 @@ class QS_data_reader():
         try:
             if os.path.isfile(f"{self.file_path}/{self.file_name}_temp.dat"):
                 print("temp.dat exists in file folder - measurement finished")
-                current_data = self.read_data_file(f"{self.file_path}/{self.file_name}_temp.dat")
-                return current_data, True
+                dat_file = f"{self.file_path}/{self.file_name}_temp.dat"
+                return dat_file, self.count_filled_rows(dat_file), True
     
             elif os.path.isfile(f"{self.temp_path}/{self.file_name}_temp.dat"):
-                current_data = self.read_data_file(f"{self.temp_path}/{self.file_name}_temp.dat")
+                dat_file = f"{self.temp_path}/{self.file_name}_temp.dat"
+                current_rows = self.count_filled_rows(dat_file)
     
-                if not (current_data == self.raw_data).all():
-                    return current_data, False
+                if current_rows != self._processed_rows:
+                    return dat_file, current_rows, False
     
                 for i in range(10):
                     print(f"No new data points - waiting for qupyt [{i}/10]")
                     time.sleep(self.qupyt_is_dead_time / 10)
-                    new_data = self.read_data_file(f"{self.temp_path}/{self.file_name}_temp.dat")
-                    if not (new_data == current_data).all():
-                        return new_data, False
-                    del current_data
-                    current_data = new_data
+                    new_rows = self.count_filled_rows(dat_file)
+                    if new_rows != current_rows:
+                        return dat_file, new_rows, False
+                    current_rows = new_rows
     
                 print("Assuming measurement interruption. Moving file to measurement folder.")
                 time.sleep(0.1)
@@ -156,7 +156,7 @@ class QS_data_reader():
                 )
                 time.sleep(0.1)
                 os.remove(os.path.join(self.temp_path, f"{self.file_name}_temp.dat"))
-                return current_data, True
+                return os.path.join(self.file_path, f"{self.file_name}_temp.dat"), current_rows, True
     
             else:
                 raise FileNotFoundError(f"Error: {self.file_name}_temp.dat not found")
@@ -168,34 +168,40 @@ class QS_data_reader():
     
     
     #reads the memmap .dat file   
-    def read_data_file(self, dat_file):
-        mm = np.memmap(dat_file,dtype=float, mode="r", shape=self.data_array_dim)
-        current_data = mm.copy()
-        del mm
-        #return current_data[~np.all(current_data == 0, axis=1)]
-        return current_data
+    def count_filled_rows(self, dat_file: str) -> int:
+        mm = np.memmap(dat_file, dtype=float, mode="r", shape=self.data_array_dim)
+        try:
+            return int(np.count_nonzero(np.any(mm[:, :2] != 0, axis=1)))
+        finally:
+            del mm
+
     #This iteratively builds the dataframe with raw data, depending on the measuemrent mode: sum or spread and the x_axis type
-    def build_dataframe(self) -> None:
-        current_len = len(self.get_dataframe()) 
-        data_to_append = self.raw_data[~np.all(self.raw_data == 0, axis=1)].copy()
-        new_range = len(data_to_append) - current_len
+    def build_dataframe(self, dat_file: str, filled_rows: int) -> None:
+        current_len = self._processed_rows
+        new_range = filled_rows - current_len
         if new_range < 0:
             raise EOFError("Dataframe longer than raw Data")
         elif new_range == 0:
             pass
         else:
-            t_begin = data_to_append[-new_range:, 0]
-            t_end = data_to_append[-new_range:, 1]
-            raw_data = list(data_to_append[-new_range:, 2:])
+            mm = np.memmap(dat_file, dtype=float, mode="r", shape=self.data_array_dim)
+            try:
+                new_rows = mm[current_len:filled_rows]
+                t_begin = np.array(new_rows[:, 0], copy=True)
+                t_end = np.array(new_rows[:, 1], copy=True)
+                signal_rows = np.array(new_rows[:, 2:], copy=True)
+            finally:
+                del mm
+
             channel_dic = {
-                ch: [row[ch::self.reference_channels] for row in raw_data]
+                ch: [row[ch::self.reference_channels].copy() for row in signal_rows]
                            for ch in range(self.reference_channels)
                            }
             contrast = list(np.divide(channel_dic[1], channel_dic[0]))
             if self.averaging_mode == "spread" and self.x_values != []:
                 x_values = [self.x_values for i in range(new_range)]
             elif self.averaging_mode == "sum" and self.x_values != []:
-                x_values = self.x_values[current_len:(current_len+new_range)].copy()
+                x_values = self.x_values[current_len:(current_len+new_range)]
                 #print(new_range)
                 #print(x_values)
             else:
@@ -213,11 +219,12 @@ class QS_data_reader():
             
             with self._dataframe_lock:
                 if self._dataframe_consolidated.empty:
-                    self._dataframe_consolidated = df_to_append
+                    self._dataframe_consolidated = df_to_append.reset_index(drop=True)
                 else:
-                    self._dataframe_consolidated = pd.concat(
-                        [self._dataframe_consolidated, df_to_append], ignore_index=True
-                    )
+                    start_idx = len(self._dataframe_consolidated)
+                    idx = range(start_idx, start_idx + len(df_to_append))
+                    self._dataframe_consolidated.loc[idx, df_to_append.columns] = df_to_append.to_numpy(dtype=object)
+            self._processed_rows = filled_rows
     #use this to access the dataframe to avoid problems with multithreading
     def get_dataframe(self) -> pd.DataFrame:
         with self._dataframe_lock:
@@ -230,13 +237,11 @@ class QS_data_reader():
     def data_building_loop(self ) -> None:
         self.dataframe_loop_stop.clear()
         while not self.dataframe_loop_stop.is_set(): 
-            current_data, status = self.scan_data_files()
-            del self.raw_data
-            self.raw_data = current_data
-            self.build_dataframe()
+            dat_file, filled_rows, status = self.scan_data_files()
+            self.build_dataframe(dat_file, filled_rows)
             #print(f"[{len(self.raw_dataframe)}/{self.data_array_dim[0]}] - Data points done!")
             with self._progress_lock:
-                self.raw_dataframe_progress = len(self.get_dataframe())/self.data_array_dim[0]
+                self.raw_dataframe_progress = self._processed_rows / self.data_array_dim[0]
             if status:
                 self.dataframe_loop_stop.set()
                 print("Finished building raw dataloop!!")
@@ -274,7 +279,7 @@ class QS_data_reader():
             cutoff = np.where(measurement_time > 0, overlap / measurement_time, 0.0)
             mask |= (cutoff >= cutoff_rate)
     
-        return df[mask].reset_index(drop=True).copy()
+        return df[mask].reset_index(drop=True)
         """ old code - takes too long
         else:
             filtered_rows = []
@@ -397,9 +402,14 @@ class QS_data_reader():
    
     def evaluate_sum_mode(self, filtered_data) -> pd.DataFrame():
         x_data = {}
-        for _, row in filtered_data.iterrows():
-            key = row[self.x_type]
-            t_begin, t_end, ch0, ch1, contr = row["t_begin"],row["t_end"], row["channel_0"], row["channel_1"], row["contrast"]
+        for key, t_begin, t_end, ch0, ch1, contr in zip(
+            filtered_data[self.x_type],
+            filtered_data["t_begin"],
+            filtered_data["t_end"],
+            filtered_data["channel_0"],
+            filtered_data["channel_1"],
+            filtered_data["contrast"],
+        ):
     
             if key not in x_data:
                 x_data[key] = [[],[],[], [], []]
@@ -425,14 +435,21 @@ class QS_data_reader():
     
     def evaluate_spread_mode(self, filtered_data) -> pd.DataFrame():
         x_data = dict()
-        for _, row in filtered_data.iterrows():
+        for x_axis_values, ch0_row, ch1_row, contrast_row, t_begin, t_end in zip(
+            filtered_data[self.x_type],
+            filtered_data["channel_0"],
+            filtered_data["channel_1"],
+            filtered_data["contrast"],
+            filtered_data["t_begin"],
+            filtered_data["t_end"],
+        ):
             for x, ch0, ch1, contr,t_0,t_1 in zip(
-                row[self.x_type],
-                row["channel_0"],
-                row["channel_1"],
-                row["contrast"],
-                [row["t_begin"]] * len(row[self.x_type]),
-                [row["t_end"]] * len(row[self.x_type])
+                x_axis_values,
+                ch0_row,
+                ch1_row,
+                contrast_row,
+                [t_begin] * len(x_axis_values),
+                [t_end] * len(x_axis_values)
             ):
                 if x not in x_data:
                     x_data[x] = [[], [], [],[],[]]
@@ -453,8 +470,6 @@ class QS_data_reader():
         t_begin = y_data[:,3]
         t_end = y_data[:,4]
         return list(x_data.keys()), list(y_ref), list(y_val), list(y_contr), list(t_begin), list(t_end)
-
-
 
 
 

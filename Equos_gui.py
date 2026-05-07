@@ -1067,21 +1067,24 @@ class App(tk.Tk):
             self.eval_qs_figure()
             self.show_frame(["evaluator", "measure"])
             self.update_file_loader()
+    def _replace_final_canvas(self):
+        if self.final_canvas is not None:
+            old_fig = self.final_canvas.figure
+            self.final_canvas.get_tk_widget().destroy()
+            self.final_canvas = None
+            if old_fig is not None and old_fig is not self.fig:
+                plt.close(old_fig)
+
+        self.final_canvas = FigureCanvasTkAgg(self.fig, master=self.final_plot_container)
+        self.final_canvas.get_tk_widget().pack(fill="both", expand=True)
+        self.final_canvas.draw()
     def eval_qs_figure(self, fitting_params:dict = None):
         
         if fitting_params == None:
             self.fig,_,_,_,info = qs_data_displayer(self.qs_data_reader, {"fitting":True})
         else:
             self.fig,_,_,_,info = qs_data_displayer(self.qs_data_reader,fitting_params)
-        if self.final_canvas is not None:
-            old_fig = self.final_canvas.figure   # ← get BEFORE destroy
-            self.final_canvas.get_tk_widget().destroy()
-            self.final_canvas = None
-            plt.close(old_fig)   
-            
-        self.final_canvas = FigureCanvasTkAgg(self.fig, master=self.final_plot_container)
-        self.final_canvas.get_tk_widget().pack(fill="both", expand=True)
-        self.final_canvas.draw()
+        self._replace_final_canvas()
 
         self.fitting_parameter_update()    
         self.measurement_info_update(info)
@@ -1099,7 +1102,8 @@ class App(tk.Tk):
         else:
             old_fig = self.live_canvas.figure
             self.live_canvas.figure = None
-            plt.close(old_fig)
+            if old_fig is not None and old_fig is not self.fig:
+                plt.close(old_fig)
         # Update status
         if not measurement_done:
             self.live_status_label.config(text=f"Running measurement: {self.ec_file_name}")
@@ -1121,13 +1125,7 @@ class App(tk.Tk):
             self.fig,_,_,_,info = ec_data_displayer(self.potentiostat, {"fitting":True})
         else:
             self.fig,_,_,_,info = ec_data_displayer(self.potentiostat,fitting_params)
-        if self.final_canvas is not None:
-            self.final_canvas.get_tk_widget().destroy()
-            self.final_canvas = None
-            
-        self.final_canvas = FigureCanvasTkAgg(self.fig, master=self.final_plot_container)
-        self.final_canvas.get_tk_widget().pack(fill="both", expand=True)
-        self.final_canvas.draw()
+        self._replace_final_canvas()
 
         self.fitting_parameter_update()    
         self.measurement_info_update(info)
@@ -1147,7 +1145,8 @@ class App(tk.Tk):
         else:
             old_fig = self.live_canvas.figure
             self.live_canvas.figure = None
-            plt.close(old_fig)
+            if old_fig is not None and old_fig is not self.fig:
+                plt.close(old_fig)
         # Update status
         if kill_measurement ==True and not self.potentiostat.stop_measurement.is_set():
             self.cancel_measurement()
@@ -1171,13 +1170,7 @@ class App(tk.Tk):
             self.fig,_,_,_,info,_ = ecqs_data_displayer(self.qs_data_reader,self.potentiostat, {"fitting":True}, self.ecqs_cache)
         else:
             self.fig,_,_,_,info,_ = ecqs_data_displayer(self.qs_data_reader,self.potentiostat,fitting_params, self.ecqs_cache)
-        if self.final_canvas is not None:
-            self.final_canvas.get_tk_widget().destroy()
-            self.final_canvas = None
-           
-        self.final_canvas = FigureCanvasTkAgg(self.fig, master=self.final_plot_container)
-        self.final_canvas.get_tk_widget().pack(fill="both", expand=True)
-        self.final_canvas.draw()
+        self._replace_final_canvas()
 
         self.fitting_parameter_update()    
         self.measurement_info_update(info)
