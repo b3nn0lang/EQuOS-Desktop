@@ -18,7 +18,7 @@ import threading
 class QS_data_reader():
       
     def __init__(self, file_path: str,file_name: str) -> None:
-        self._dataframe_lock = threading.RLock()
+        self._summary_lock = threading.RLock()
         self._progress_lock = threading.RLock()
         self.dataframe_loop_stop = threading.Event()
         self.raw_dataframe_progress = 0
@@ -28,6 +28,8 @@ class QS_data_reader():
         self.temp_path = "C:/Users/ge54vec/.qupyt/temp"
         self.file_path = file_path
         self.file_name = file_name
+        self.params = None
+        self.experiment_type = None
         
         try:
             for i in range(100):
@@ -40,6 +42,11 @@ class QS_data_reader():
                     print(f"Try [{i}/100] to find params")
         except Exception as e:
             raise FileNotFoundError(f"{self.file_path}/{self.file_name}.yaml has not been found: {e}")
+        if self.params is None:
+            raise FileNotFoundError(
+                f"{self.file_path}/{self.file_name}.yaml has not been found after waiting "
+                f"{self.qupyt_param_creation_time:.1f} s"
+            )
         try:    
             self.experiment_type = str(self.params["experiment_type"])
             self.averaging_mode = self.params["data"]["averaging_mode"]
@@ -64,14 +71,16 @@ class QS_data_reader():
                 self.x_type = "pi pulse duration"
                 self.x_unit = "ns"
         except Exception as e:
-            print(f"{self.experiment_type}")
+            print(f"{self.experiment_type or 'unknown experiment'}")
             raise KeyError(f"One of the parameters in {self.file_name}.yaml has not been defined. Have fun looking: {e}")
             
 
-        #self.raw_dataframe = pd.DataFrame()
-        self._dataframe_consolidated = pd.DataFrame()
         self.data_array_dim = self.build_data_file_dimension()
+        self.points_per_row = self.number_measurements // self.reference_channels
+        self._x_values_array = np.asarray(self.x_values, dtype=float)
+        self._active_dat_file = None
         self._processed_rows = 0
+        self._live_summary = self._init_live_summary()
 
 #Evalutes the params.yaml file        
     def write_params_from_yaml(self, yaml_file : str) -> dict:
@@ -175,60 +184,262 @@ class QS_data_reader():
         finally:
             del mm
 
-    #This iteratively builds the dataframe with raw data, depending on the measuemrent mode: sum or spread and the x_axis type
     def build_dataframe(self, dat_file: str, filled_rows: int) -> None:
-        current_len = self._processed_rows
-        new_range = filled_rows - current_len
-        if new_range < 0:
+        if filled_rows < self._processed_rows:
             raise EOFError("Dataframe longer than raw Data")
-        elif new_range == 0:
-            pass
-        else:
-            mm = np.memmap(dat_file, dtype=float, mode="r", shape=self.data_array_dim)
-            try:
-                new_rows = mm[current_len:filled_rows]
-                t_begin = np.array(new_rows[:, 0], copy=True)
-                t_end = np.array(new_rows[:, 1], copy=True)
-                signal_rows = np.array(new_rows[:, 2:], copy=True)
-            finally:
-                del mm
+        if filled_rows > self._processed_rows:
+            self._update_live_summary(dat_file, self._processed_rows, filled_rows)
+        self._active_dat_file = dat_file
+        self._processed_rows = filled_rows
 
-            channel_dic = {
-                ch: [row[ch::self.reference_channels].copy() for row in signal_rows]
-                           for ch in range(self.reference_channels)
-                           }
-            contrast = list(np.divide(channel_dic[1], channel_dic[0]))
-            if self.averaging_mode == "spread" and self.x_values != []:
-                x_values = [self.x_values for i in range(new_range)]
-            elif self.averaging_mode == "sum" and self.x_values != []:
-                x_values = self.x_values[current_len:(current_len+new_range)]
-                #print(new_range)
-                #print(x_values)
+    def _empty_result(self) -> dict:
+        return {
+            "x_data" : [],
+            "reference" : [],
+            "value" : [],
+            "contrast" : [],
+            "time_measure": [],
+            "time_save": [],
+            "reference_mean" : [],
+            "value_mean" : [],
+            "contrast_mean" : [],
+            "time_measure_mean": [],
+            "time_save_mean": [],
+            "reference_std": [],
+            "value_std": [],
+            "contrast_std": [],
+            "time_measure_std": [],
+            "time_save_std": [],
+            "reference_length": [],
+            "value_length": [],
+            "contrast_length": [],
+            "time_measure_length": [],
+            "time_save_length": [],
+            "length" : 0,
+            "x_unit" : self.x_unit,
+            "x_label" : self.x_type,
+            "experiment": self.experiment_type
+            }
+
+    def _init_live_summary(self) -> dict:
+        n_x = len(self._x_values_array)
+        if self.averaging_mode == "spread":
+            return {
+                "count": 0,
+                "sum_ref": np.zeros(n_x, dtype=float),
+                "sum_val": np.zeros(n_x, dtype=float),
+                "sum_contr": np.zeros(n_x, dtype=float),
+                "sumsq_ref": np.zeros(n_x, dtype=float),
+                "sumsq_val": np.zeros(n_x, dtype=float),
+                "sumsq_contr": np.zeros(n_x, dtype=float),
+                "time_measure_sum": 0.0,
+                "time_measure_sumsq": 0.0,
+                "time_measure_count": 0,
+                "time_save_sum": 0.0,
+                "time_save_sumsq": 0.0,
+                "time_save_count": 0,
+                "last_end": None,
+            }
+        return {
+            "count": np.zeros(n_x, dtype=int),
+            "sum_ref": np.zeros(n_x, dtype=float),
+            "sum_val": np.zeros(n_x, dtype=float),
+            "sum_contr": np.zeros(n_x, dtype=float),
+            "sumsq_ref": np.zeros(n_x, dtype=float),
+            "sumsq_val": np.zeros(n_x, dtype=float),
+            "sumsq_contr": np.zeros(n_x, dtype=float),
+            "time_measure_sum": np.zeros(n_x, dtype=float),
+            "time_measure_sumsq": np.zeros(n_x, dtype=float),
+            "time_measure_count": np.zeros(n_x, dtype=int),
+            "time_save_sum": np.zeros(n_x, dtype=float),
+            "time_save_sumsq": np.zeros(n_x, dtype=float),
+            "time_save_count": np.zeros(n_x, dtype=int),
+            "last_end": np.full(n_x, np.nan, dtype=float),
+        }
+
+    def _update_live_summary(self, dat_file: str, row_start: int, row_stop: int) -> None:
+        mm = np.memmap(dat_file, dtype=float, mode="r", shape=self.data_array_dim)
+        try:
+            raw_rows = np.asarray(mm[row_start:row_stop])
+        finally:
+            del mm
+
+        if len(raw_rows) == 0:
+            return
+
+        t_begin = raw_rows[:, 0]
+        t_end = raw_rows[:, 1]
+        signal_rows = raw_rows[:, 2:].reshape(-1, self.points_per_row, self.reference_channels)
+        channel_0 = signal_rows[:, :, 0]
+        channel_1 = signal_rows[:, :, 1]
+        contrast = np.divide(channel_1, channel_0)
+
+        with self._summary_lock:
+            summary = self._live_summary
+            if self.averaging_mode == "spread":
+                summary["count"] += len(raw_rows)
+                summary["sum_ref"] += np.sum(channel_0, axis=0)
+                summary["sum_val"] += np.sum(channel_1, axis=0)
+                summary["sum_contr"] += np.sum(contrast, axis=0)
+                summary["sumsq_ref"] += np.sum(channel_0 ** 2, axis=0)
+                summary["sumsq_val"] += np.sum(channel_1 ** 2, axis=0)
+                summary["sumsq_contr"] += np.sum(contrast ** 2, axis=0)
+                durations = t_end - t_begin
+                summary["time_measure_sum"] += float(np.sum(durations))
+                summary["time_measure_sumsq"] += float(np.sum(durations ** 2))
+                summary["time_measure_count"] += len(durations)
+
+                gap_list = []
+                if summary["last_end"] is not None:
+                    gap_list.append(float(t_begin[0] - summary["last_end"]))
+                if len(t_begin) > 1:
+                    gap_list.extend((t_begin[1:] - t_end[:-1]).tolist())
+                if gap_list:
+                    gaps = np.asarray(gap_list, dtype=float)
+                    summary["time_save_sum"] += float(np.sum(gaps))
+                    summary["time_save_sumsq"] += float(np.sum(gaps ** 2))
+                    summary["time_save_count"] += len(gaps)
+                summary["last_end"] = float(t_end[-1])
             else:
-                raise Exception("Averaging mode is neither spread nor sum or x_values not known")
-                
-            df_to_append = pd.DataFrame(
-                {"t_begin": t_begin ,
-                 "t_end": t_end,
-                 #"raw_data": raw_data,
-                 **{f"channel_{key}": val for key,val in channel_dic.items()},
-                 "contrast" : contrast,
-                 f"{self.x_type}": x_values
-                  }
-                )
-            
-            with self._dataframe_lock:
-                if self._dataframe_consolidated.empty:
-                    self._dataframe_consolidated = df_to_append.reset_index(drop=True)
-                else:
-                    start_idx = len(self._dataframe_consolidated)
-                    idx = range(start_idx, start_idx + len(df_to_append))
-                    self._dataframe_consolidated.loc[idx, df_to_append.columns] = df_to_append.to_numpy(dtype=object)
-            self._processed_rows = filled_rows
-    #use this to access the dataframe to avoid problems with multithreading
+                row_x_idx = np.arange(row_start, row_stop) % len(self._x_values_array)
+                durations = t_end - t_begin
+                for local_i, x_idx in enumerate(row_x_idx):
+                    summary["count"][x_idx] += 1
+                    ch0 = channel_0[local_i]
+                    ch1 = channel_1[local_i]
+                    contr = contrast[local_i]
+                    summary["sum_ref"][x_idx] += float(np.sum(ch0))
+                    summary["sum_val"][x_idx] += float(np.sum(ch1))
+                    summary["sum_contr"][x_idx] += float(np.sum(contr))
+                    summary["sumsq_ref"][x_idx] += float(np.sum(ch0 ** 2))
+                    summary["sumsq_val"][x_idx] += float(np.sum(ch1 ** 2))
+                    summary["sumsq_contr"][x_idx] += float(np.sum(contr ** 2))
+                    summary["time_measure_sum"][x_idx] += float(durations[local_i])
+                    summary["time_measure_sumsq"][x_idx] += float(durations[local_i] ** 2)
+                    summary["time_measure_count"][x_idx] += 1
+                    if not np.isnan(summary["last_end"][x_idx]):
+                        gap = float(t_begin[local_i] - summary["last_end"][x_idx])
+                        summary["time_save_sum"][x_idx] += gap
+                        summary["time_save_sumsq"][x_idx] += gap ** 2
+                        summary["time_save_count"][x_idx] += 1
+                    summary["last_end"][x_idx] = float(t_end[local_i])
+
+    def _live_summary_snapshot(self) -> dict:
+        result = self._empty_result()
+        with self._summary_lock:
+            summary = self._live_summary
+            if self.averaging_mode == "spread":
+                n_rows = int(summary["count"])
+                if n_rows == 0:
+                    return result
+                n_points = len(self._x_values_array)
+                denom = max(n_rows, 1)
+                result["x_data"] = self._x_values_array.tolist()
+                result["reference_mean"] = (summary["sum_ref"] / denom).tolist()
+                result["value_mean"] = (summary["sum_val"] / denom).tolist()
+                result["contrast_mean"] = (summary["sum_contr"] / denom).tolist()
+                result["reference_std"] = np.sqrt(np.maximum(summary["sumsq_ref"] / denom - (summary["sum_ref"] / denom) ** 2, 0.0)).tolist()
+                result["value_std"] = np.sqrt(np.maximum(summary["sumsq_val"] / denom - (summary["sum_val"] / denom) ** 2, 0.0)).tolist()
+                result["contrast_std"] = np.sqrt(np.maximum(summary["sumsq_contr"] / denom - (summary["sum_contr"] / denom) ** 2, 0.0)).tolist()
+                result["reference_std"] = (np.asarray(result["reference_std"]) / np.sqrt(denom)).tolist()
+                result["value_std"] = (np.asarray(result["value_std"]) / np.sqrt(denom)).tolist()
+                result["contrast_std"] = (np.asarray(result["contrast_std"]) / np.sqrt(denom)).tolist()
+                tm_count = int(summary["time_measure_count"])
+                ts_count = int(summary["time_save_count"])
+                tm_mean = summary["time_measure_sum"] / tm_count if tm_count else 0.0
+                ts_mean = summary["time_save_sum"] / ts_count if ts_count else 0.0
+                tm_std = np.sqrt(max(summary["time_measure_sumsq"] / tm_count - tm_mean ** 2, 0.0)) / np.sqrt(tm_count) if tm_count else 0.0
+                ts_std = np.sqrt(max(summary["time_save_sumsq"] / ts_count - ts_mean ** 2, 0.0)) / np.sqrt(ts_count) if ts_count else 0.0
+                result["time_measure_mean"] = [float(tm_mean)] * n_points
+                result["time_save_mean"] = [float(ts_mean)] * n_points
+                result["time_measure_std"] = [float(tm_std)] * n_points
+                result["time_save_std"] = [float(ts_std)] * n_points
+                result["reference_length"] = [n_rows] * n_points
+                result["value_length"] = [n_rows] * n_points
+                result["contrast_length"] = [n_rows] * n_points
+                result["time_measure_length"] = [tm_count] * n_points
+                result["time_save_length"] = [ts_count] * n_points
+                result["length"] = n_rows
+                return result
+
+            counts = summary["count"]
+            valid = counts > 0
+            if not np.any(valid):
+                return result
+            x_idx = np.flatnonzero(valid)
+            elem_counts = counts[valid] * self.points_per_row
+            result["x_data"] = self._x_values_array[valid].tolist()
+            result["reference_mean"] = (summary["sum_ref"][valid] / elem_counts).tolist()
+            result["value_mean"] = (summary["sum_val"][valid] / elem_counts).tolist()
+            result["contrast_mean"] = (summary["sum_contr"][valid] / elem_counts).tolist()
+            ref_var = np.maximum(summary["sumsq_ref"][valid] / elem_counts - (summary["sum_ref"][valid] / elem_counts) ** 2, 0.0)
+            val_var = np.maximum(summary["sumsq_val"][valid] / elem_counts - (summary["sum_val"][valid] / elem_counts) ** 2, 0.0)
+            contr_var = np.maximum(summary["sumsq_contr"][valid] / elem_counts - (summary["sum_contr"][valid] / elem_counts) ** 2, 0.0)
+            result["reference_std"] = (np.sqrt(ref_var) / np.sqrt(counts[valid])).tolist()
+            result["value_std"] = (np.sqrt(val_var) / np.sqrt(counts[valid])).tolist()
+            result["contrast_std"] = (np.sqrt(contr_var) / np.sqrt(counts[valid])).tolist()
+            tm_count = summary["time_measure_count"][valid]
+            ts_count = summary["time_save_count"][valid]
+            tm_mean = np.divide(summary["time_measure_sum"][valid], tm_count, out=np.zeros_like(summary["time_measure_sum"][valid]), where=tm_count > 0)
+            ts_mean = np.divide(summary["time_save_sum"][valid], ts_count, out=np.zeros_like(summary["time_save_sum"][valid]), where=ts_count > 0)
+            tm_var = np.divide(summary["time_measure_sumsq"][valid], tm_count, out=np.zeros_like(summary["time_measure_sumsq"][valid]), where=tm_count > 0) - tm_mean ** 2
+            ts_var = np.divide(summary["time_save_sumsq"][valid], ts_count, out=np.zeros_like(summary["time_save_sumsq"][valid]), where=ts_count > 0) - ts_mean ** 2
+            result["time_measure_mean"] = tm_mean.tolist()
+            result["time_save_mean"] = ts_mean.tolist()
+            result["time_measure_std"] = (np.sqrt(np.maximum(tm_var, 0.0)) / np.sqrt(np.maximum(tm_count, 1))).tolist()
+            result["time_save_std"] = (np.sqrt(np.maximum(ts_var, 0.0)) / np.sqrt(np.maximum(ts_count, 1))).tolist()
+            result["reference_length"] = counts[valid].tolist()
+            result["value_length"] = counts[valid].tolist()
+            result["contrast_length"] = counts[valid].tolist()
+            result["time_measure_length"] = tm_count.tolist()
+            result["time_save_length"] = ts_count.tolist()
+            result["length"] = int(np.min(counts[valid]))
+            return result
+
+    def _load_raw_data(self, row_indices: np.ndarray | None = None) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+        if self._active_dat_file is None or self._processed_rows == 0:
+            empty_signal = np.empty((0, self.points_per_row, self.reference_channels), dtype=float)
+            return np.array([], dtype=float), np.array([], dtype=float), empty_signal
+
+        mm = np.memmap(self._active_dat_file, dtype=float, mode="r", shape=self.data_array_dim)
+        try:
+            if row_indices is None:
+                raw_rows = mm[:self._processed_rows]
+            else:
+                raw_rows = mm[row_indices]
+            t_begin = np.array(raw_rows[:, 0], copy=True)
+            t_end = np.array(raw_rows[:, 1], copy=True)
+            signal_rows = np.array(raw_rows[:, 2:], copy=True).reshape(-1, self.points_per_row, self.reference_channels)
+        finally:
+            del mm
+        return t_begin, t_end, signal_rows
+
     def get_dataframe(self) -> pd.DataFrame:
-        with self._dataframe_lock:
-            return self._dataframe_consolidated.copy()
+        t_begin, t_end, signal_rows = self._load_raw_data()
+        if len(t_begin) == 0:
+            return pd.DataFrame()
+
+        channel_dic = {
+            ch: [row[:, ch].copy() for row in signal_rows]
+            for ch in range(self.reference_channels)
+        }
+        contrast = [np.divide(row[:, 1], row[:, 0]) for row in signal_rows]
+        if self.averaging_mode == "spread":
+            x_values = [self._x_values_array.tolist() for _ in range(len(t_begin))]
+        elif len(self._x_values_array) > 0:
+            x_values = self._x_values_array[np.arange(len(t_begin)) % len(self._x_values_array)]
+        else:
+            x_values = []
+
+        return pd.DataFrame(
+            {
+                "t_begin": t_begin,
+                "t_end": t_end,
+                **{f"channel_{key}": val for key, val in channel_dic.items()},
+                "contrast": contrast,
+                f"{self.x_type}": x_values,
+            }
+        )
     # this is the main loop to be activated that will then build the DF. It works with threading, so in parallel to the main script
     def start_data_building(self):
         data_loop = threading.Thread(target= self.data_building_loop, daemon=True)
@@ -250,18 +461,26 @@ class QS_data_reader():
     def get_raw_dataframe_progress(self) -> float:
         with self._progress_lock:
             return self.raw_dataframe_progress
+
+    def release_resources(self) -> None:
+        self.dataframe_loop_stop.set()
+        self._active_dat_file = None
+        self._processed_rows = 0
+        with self._progress_lock:
+            self.raw_dataframe_progress = 0
+        with self._summary_lock:
+            self._live_summary = self._init_live_summary()
         
       
-    def filter_by_time_stamps(self, cutoff_rate: float = 1, t_lim: np.ndarray|None = None) -> pd.DataFrame:
+    def filter_by_time_stamps(self, cutoff_rate: float = 1, t_lim: np.ndarray|None = None) -> np.ndarray:
+        if self._processed_rows == 0:
+            return np.array([], dtype=int)
         if t_lim is None or len(t_lim)==0:
-            return self.get_dataframe()
-        df = self.get_dataframe()  # ONE copy, not 200
-        if df.empty:
-            return df
-        t_begin = df["t_begin"].to_numpy()
-        t_end   = df["t_end"].to_numpy()
+            return np.arange(self._processed_rows, dtype=int)
+
+        t_begin, t_end, _ = self._load_raw_data()
         # Build a boolean mask across all rows at once
-        mask = np.zeros(len(df), dtype=bool)
+        mask = np.zeros(len(t_begin), dtype=bool)
         
         for i in range(len(t_lim)):
             t_krit_min = t_lim[i, 0]
@@ -279,7 +498,7 @@ class QS_data_reader():
             cutoff = np.where(measurement_time > 0, overlap / measurement_time, 0.0)
             mask |= (cutoff >= cutoff_rate)
     
-        return df[mask].reset_index(drop=True)
+        return np.flatnonzero(mask)
         """ old code - takes too long
         else:
             filtered_rows = []
@@ -308,170 +527,183 @@ class QS_data_reader():
     
         #Transform data to be sorted after x_points and filter with time_stamps
     def evaluate_qs_data(self, cutoff_rate: float = 1, time_array: np.ndarray = []) -> dict:
-        filtered_data = self.filter_by_time_stamps(cutoff_rate=cutoff_rate, t_lim=time_array)
-        return_data = {
-            "x_data" : 0,
-            "reference" : 0,
-            "value" : 0,
-            "contrast" : 0,
-            "time_measure":0,
-            "time_save":0,
-            "reference_mean" : 0,
-            "value_mean" :0,
-            "contrast_mean" :0,
-            "time_measure_mean":0,
-            "time_save_mean":0,
-            "reference_std":0,
-            "value_std":0,
-            "contrast_std":0,
-            "time_measure_std":0,
-            "time_save_std":0,
-            "reference_length":0,
-            "value_length":0,
-            "contrast_length":0,
-            "time_measure_length":0,
-            "time_save_length":0,
-            "length" : 0,
-            "x_unit" : self.x_unit,
-            "x_label" : self.x_type,
-            "experiment": self.experiment_type
-            }
-        if filtered_data.empty:
+        filtered_indices = self.filter_by_time_stamps(cutoff_rate=cutoff_rate, t_lim=time_array)
+        return_data = self._empty_result()
+        if time_array is None or len(time_array) == 0:
+            return self._live_summary_snapshot()
+        if len(filtered_indices) == 0:
             print("filtered Data are empty")
             return return_data
+        t_begin_rows, t_end_rows, signal_rows = self._load_raw_data(filtered_indices)
         if self.averaging_mode == "sum":
-            x_data, y_ref, y_val, y_contr, t_begin, t_end = self.evaluate_sum_mode(filtered_data)
+            summary = self.evaluate_sum_mode(filtered_indices, t_begin_rows, t_end_rows, signal_rows)
         elif self.averaging_mode == "spread":
-            x_data, y_ref, y_val, y_contr,t_begin,t_end = self.evaluate_spread_mode(filtered_data)
-            
-        t_measure = [np.subtract(t_end[i], t_begin[i]) for i in range(len(t_begin))]
-        t_save = []
-        for j in range(len(t_begin)):
-            # sort indices by t_begin
-            sorted_idx = np.argsort(t_begin[j])
-            t_b = np.array(t_begin[j])[sorted_idx]
-            t_e = np.array(t_end[j])[sorted_idx]
-            # compute gaps
-            gaps = [t_b[i] - t_e[i-1] for i in range(1, len(t_b))]
-            t_save.append(gaps)
-        
-        y_contr_mean = [np.mean(datapoint) for datapoint in y_contr]
-        y_ref_mean =  [np.mean(datapoint) for datapoint in y_ref]
-        y_val_mean =  [np.mean(datapoint) for datapoint in y_val]
-        t_measure_mean = [np.mean(datapoint) for datapoint in t_measure]
-        t_save_mean = [np.mean(datapoint) for datapoint in t_save]
-       
-        
-        y_contr_std = [np.std(datapoint)/np.sqrt(len(datapoint)) for datapoint in y_contr] 
-        y_ref_std =  [np.std(datapoint)/np.sqrt(len(datapoint)) for datapoint in y_ref]
-        y_val_std =  [np.std(datapoint)/np.sqrt(len(datapoint)) for datapoint in y_val]
-        t_measure_std = [np.std(datapoint)/np.sqrt(len(datapoint)) for datapoint in t_measure]
-        t_save_std = [np.std(datapoint)/np.sqrt(len(datapoint)) for datapoint in t_save]
-        
-        y_contr_len = [len(datapoint) for datapoint in y_contr] 
-        y_ref_len =  [len(datapoint) for datapoint in y_ref]
-        y_val_len =  [len(datapoint) for datapoint in y_val]
-        t_measure_len = [len(datapoint) for datapoint in t_measure] 
-        t_save_len = [len(datapoint) for datapoint in t_save] 
-        
-        length = min([y_contr_len, y_ref_len, y_val_len])
-        
-        return_data["x_data"] = x_data
-        return_data["reference"] = y_ref
-        return_data["value"] = y_val
-        return_data["contrast"] = y_contr
-        return_data["time_measure"] = t_measure
-        return_data["time_save"] = t_save
-        return_data["reference_mean"] = y_ref_mean 
-        return_data["value_mean"] = y_val_mean
-        return_data["contrast_mean"] = y_contr_mean
-        return_data["time_measure_mean"] = t_measure_mean
-        return_data["time_save_mean"] = t_save_mean
-        return_data["reference_std"] = y_ref_std
-        return_data["value_std"] = y_val_std
-        return_data["contrast_std"] = y_contr_std
-        return_data["time_measure_std"] = t_measure_std
-        return_data["time_save_std"] = t_save_std
-        return_data["reference_length"] = y_ref_len
-        return_data["value_length"]= y_val_len
-        return_data["contrast_length"] = y_contr_len
-        return_data["time_measure_length"] =t_measure_len
-        return_data["time_save_length"] = t_save_len
-        return_data["length"] = length
+            summary = self.evaluate_spread_mode(t_begin_rows, t_end_rows, signal_rows)
+
+        return_data["x_data"] = summary["x_data"]
+        return_data["reference_mean"] = summary["reference_mean"]
+        return_data["value_mean"] = summary["value_mean"]
+        return_data["contrast_mean"] = summary["contrast_mean"]
+        return_data["time_measure_mean"] = summary["time_measure_mean"]
+        return_data["time_save_mean"] = summary["time_save_mean"]
+        return_data["reference_std"] = summary["reference_std"]
+        return_data["value_std"] = summary["value_std"]
+        return_data["contrast_std"] = summary["contrast_std"]
+        return_data["time_measure_std"] = summary["time_measure_std"]
+        return_data["time_save_std"] = summary["time_save_std"]
+        return_data["reference_length"] = summary["reference_length"]
+        return_data["value_length"]= summary["value_length"]
+        return_data["contrast_length"] = summary["contrast_length"]
+        return_data["time_measure_length"] = summary["time_measure_length"]
+        return_data["time_save_length"] = summary["time_save_length"]
+        return_data["length"] = summary["length"]
         return return_data
    
-    def evaluate_sum_mode(self, filtered_data) -> pd.DataFrame():
-        x_data = {}
-        for key, t_begin, t_end, ch0, ch1, contr in zip(
-            filtered_data[self.x_type],
-            filtered_data["t_begin"],
-            filtered_data["t_end"],
-            filtered_data["channel_0"],
-            filtered_data["channel_1"],
-            filtered_data["contrast"],
-        ):
-    
-            if key not in x_data:
-                x_data[key] = [[],[],[], [], []]
-    
-            x_data[key][0].append(ch0)
-            x_data[key][1].append(ch1)
-            x_data[key][2].append(contr)
-            # ensure iterable
-            t_begins = t_begin if isinstance(t_begin, (list, np.ndarray)) else [t_begin]
-            t_ends   = t_end   if isinstance(t_end, (list, np.ndarray)) else [t_end]
-            x_data[key][3].extend(t_begins)
-            x_data[key][4].extend(t_ends)
-            
-        keys = list(x_data.keys())
-        values = list(x_data.values())
-    
-        y_ref   = [v[0] for v in values]
-        y_val   = [v[1] for v in values]
-        y_contr = [v[2] for v in values]
-        t_begin = [v[3] for v in values]
-        t_end = [v[4] for v in values]
-        return keys, y_ref, y_val, y_contr, t_begin, t_end
-    
-    def evaluate_spread_mode(self, filtered_data) -> pd.DataFrame():
-        x_data = dict()
-        for x_axis_values, ch0_row, ch1_row, contrast_row, t_begin, t_end in zip(
-            filtered_data[self.x_type],
-            filtered_data["channel_0"],
-            filtered_data["channel_1"],
-            filtered_data["contrast"],
-            filtered_data["t_begin"],
-            filtered_data["t_end"],
-        ):
-            for x, ch0, ch1, contr,t_0,t_1 in zip(
-                x_axis_values,
-                ch0_row,
-                ch1_row,
-                contrast_row,
-                [t_begin] * len(x_axis_values),
-                [t_end] * len(x_axis_values)
-            ):
-                if x not in x_data:
-                    x_data[x] = [[], [], [],[],[]]
-    
-                x_data[x][0].append(ch0)
-                x_data[x][1].append(ch1)
-                x_data[x][2].append(contr)
-                x_data[x][3].append(t_0)
-                x_data[x][4].append(t_1)
-    
-        # convert to array
-        y_data = np.array(list(x_data.values()), dtype=object)
-        #print(y_data)
-        # extract aligned columns
-        y_ref   = y_data[:,0]
-        y_val   = y_data[:,1]
-        y_contr = y_data[:,2]
-        t_begin = y_data[:,3]
-        t_end = y_data[:,4]
-        return list(x_data.keys()), list(y_ref), list(y_val), list(y_contr), list(t_begin), list(t_end)
+    def _time_stats(self, t_begin: np.ndarray, t_end: np.ndarray) -> tuple[float, float, int, float, float, int]:
+        t_measure = np.subtract(t_end, t_begin)
+        t_measure_len = len(t_measure)
+        if t_measure_len > 0:
+            t_measure_mean = float(np.mean(t_measure))
+            t_measure_std = float(np.std(t_measure) / np.sqrt(t_measure_len))
+        else:
+            t_measure_mean = 0.0
+            t_measure_std = 0.0
 
+        if len(t_begin) > 1:
+            sorted_idx = np.argsort(t_begin)
+            t_b = t_begin[sorted_idx]
+            t_e = t_end[sorted_idx]
+            gaps = t_b[1:] - t_e[:-1]
+            t_save_len = len(gaps)
+            t_save_mean = float(np.mean(gaps)) if t_save_len > 0 else 0.0
+            t_save_std = float(np.std(gaps) / np.sqrt(t_save_len)) if t_save_len > 0 else 0.0
+        else:
+            t_save_len = 0
+            t_save_mean = 0.0
+            t_save_std = 0.0
+        return t_measure_mean, t_measure_std, t_measure_len, t_save_mean, t_save_std, t_save_len
 
+    def evaluate_sum_mode(self, filtered_indices, t_begin_rows, t_end_rows, signal_rows) -> dict:
+        x_data = []
+        reference_mean = []
+        value_mean = []
+        contrast_mean = []
+        time_measure_mean = []
+        time_save_mean = []
+        reference_std = []
+        value_std = []
+        contrast_std = []
+        time_measure_std = []
+        time_save_std = []
+        reference_length = []
+        value_length = []
+        contrast_length = []
+        time_measure_length = []
+        time_save_length = []
+        row_x_values = self._x_values_array[np.asarray(filtered_indices) % len(self._x_values_array)]
+        channel_0 = signal_rows[:, :, 0]
+        channel_1 = signal_rows[:, :, 1]
+        contrast_rows = np.divide(channel_1, channel_0)
+        unique_keys = list(dict.fromkeys(row_x_values.tolist()))
 
+        for key in unique_keys:
+            mask = row_x_values == key
+            ch0_group = channel_0[mask]
+            ch1_group = channel_1[mask]
+            contrast_group = contrast_rows[mask]
+            t_begin_group = t_begin_rows[mask]
+            t_end_group = t_end_rows[mask]
+            n_group = int(np.count_nonzero(mask))
 
+            x_data.append(float(key))
+            reference_mean.append(float(np.mean(ch0_group)))
+            value_mean.append(float(np.mean(ch1_group)))
+            contrast_mean.append(float(np.mean(contrast_group)))
+            reference_std.append(float(np.std(ch0_group) / np.sqrt(n_group)))
+            value_std.append(float(np.std(ch1_group) / np.sqrt(n_group)))
+            contrast_std.append(float(np.std(contrast_group) / np.sqrt(n_group)))
+            reference_length.append(n_group)
+            value_length.append(n_group)
+            contrast_length.append(n_group)
 
+            t_measure_mean_i, t_measure_std_i, t_measure_len_i, t_save_mean_i, t_save_std_i, t_save_len_i = self._time_stats(
+                t_begin_group,
+                t_end_group,
+            )
+            time_measure_mean.append(t_measure_mean_i)
+            time_measure_std.append(t_measure_std_i)
+            time_measure_length.append(t_measure_len_i)
+            time_save_mean.append(t_save_mean_i)
+            time_save_std.append(t_save_std_i)
+            time_save_length.append(t_save_len_i)
+
+        return {
+            "x_data": x_data,
+            "reference_mean": reference_mean,
+            "value_mean": value_mean,
+            "contrast_mean": contrast_mean,
+            "time_measure_mean": time_measure_mean,
+            "time_save_mean": time_save_mean,
+            "reference_std": reference_std,
+            "value_std": value_std,
+            "contrast_std": contrast_std,
+            "time_measure_std": time_measure_std,
+            "time_save_std": time_save_std,
+            "reference_length": reference_length,
+            "value_length": value_length,
+            "contrast_length": contrast_length,
+            "time_measure_length": time_measure_length,
+            "time_save_length": time_save_length,
+            "length": min(reference_length) if reference_length else 0,
+        }
+    
+    def evaluate_spread_mode(self, t_begin_rows, t_end_rows, signal_rows) -> dict:
+        n_points = min(len(self._x_values_array), signal_rows.shape[1])
+        if n_points == 0:
+            return {
+                "x_data": [],
+                "reference_mean": [],
+                "value_mean": [],
+                "contrast_mean": [],
+                "time_measure_mean": [],
+                "time_save_mean": [],
+                "reference_std": [],
+                "value_std": [],
+                "contrast_std": [],
+                "time_measure_std": [],
+                "time_save_std": [],
+                "reference_length": [],
+                "value_length": [],
+                "contrast_length": [],
+                "time_measure_length": [],
+                "time_save_length": [],
+                "length": 0,
+            }
+
+        channel_0 = signal_rows[:, :n_points, 0]
+        channel_1 = signal_rows[:, :n_points, 1]
+        contrast = np.divide(channel_1, channel_0)
+        n_rows = signal_rows.shape[0]
+        t_measure_mean_i, t_measure_std_i, t_measure_len_i, t_save_mean_i, t_save_std_i, t_save_len_i = self._time_stats(
+            t_begin_rows,
+            t_end_rows,
+        )
+        return {
+            "x_data": self._x_values_array[:n_points].tolist(),
+            "reference_mean": np.mean(channel_0, axis=0).tolist(),
+            "value_mean": np.mean(channel_1, axis=0).tolist(),
+            "contrast_mean": np.mean(contrast, axis=0).tolist(),
+            "time_measure_mean": [t_measure_mean_i] * n_points,
+            "time_save_mean": [t_save_mean_i] * n_points,
+            "reference_std": (np.std(channel_0, axis=0) / np.sqrt(n_rows)).tolist(),
+            "value_std": (np.std(channel_1, axis=0) / np.sqrt(n_rows)).tolist(),
+            "contrast_std": (np.std(contrast, axis=0) / np.sqrt(n_rows)).tolist(),
+            "time_measure_std": [t_measure_std_i] * n_points,
+            "time_save_std": [t_save_std_i] * n_points,
+            "reference_length": [n_rows] * n_points,
+            "value_length": [n_rows] * n_points,
+            "contrast_length": [n_rows] * n_points,
+            "time_measure_length": [t_measure_len_i] * n_points,
+            "time_save_length": [t_save_len_i] * n_points,
+            "length": n_rows,
+        }

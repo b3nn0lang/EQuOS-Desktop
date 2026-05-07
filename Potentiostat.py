@@ -77,13 +77,23 @@ class Potentiostat():
     def get_measurement_results(self):
         with self.result_lock:
             return self.measurement_results.copy()
+    def get_measurement_count(self) -> int:
+        with self.result_lock:
+            return len(self.measurement_results[0])
+    def get_measurement_integrals(self) -> list[float]:
+        with self.result_lock:
+            measurements = self.measurement_results[0]
+            integrals = []
+            for measurement in measurements:
+                if hasattr(measurement, "dataset"):
+                    integrals.append(float(np.sum(np.abs(measurement.dataset.arrays(type='Current')))))
+                elif isinstance(measurement, dict) and "current_integral" in measurement:
+                    integrals.append(float(measurement["current_integral"]))
+            return integrals
     def append_measurement_frame(self, results_df: pd.DataFrame, new_rows: pd.DataFrame) -> pd.DataFrame:
         if results_df.empty:
             return new_rows.reset_index(drop=True)
-        start_idx = len(results_df)
-        idx = range(start_idx, start_idx + len(new_rows))
-        results_df.loc[idx, new_rows.columns] = new_rows.to_numpy()
-        return results_df
+        return pd.concat([results_df, new_rows], ignore_index=True, copy=False)
         #callback plots the data points not saved and calculates the time of the first index point
     def callback(self,data: list()):
         start_time = time()
@@ -122,6 +132,7 @@ class Potentiostat():
     def measure_n_times(self, file_name, method, n_scans):  
         results_df = pd.DataFrame()
         measurement_results= []
+        session_measurements = []
         ctypes.windll.winmm.timeBeginPeriod(1)  
         self.stop_measurement.clear()
         self.potentiostat_disconnected.clear()
@@ -136,12 +147,15 @@ class Potentiostat():
                         print("Starting EC measurement")
                         measurement = manager.measure(method, callback=self.callback)
                         print("EC measurement finished")
-                        measurement_results.append(measurement)
+                        session_measurements.append(measurement)
+                        measurement_results.append({
+                            "current_integral": float(np.sum(np.abs(measurement.dataset.arrays(type='Current'))))
+                        })
                         new_df = pd.DataFrame(measurement.dataset.to_dict())
                         corrected_df = self.correct_time_stamps(self.get_measurement_start_time(), new_df)
                         results_df = self.append_measurement_frame(results_df, corrected_df)
                         self.set_measurement_results([measurement_results, results_df])
-                        self.save_measurement_to_file(measurement_results, file_name)
+                        self.save_measurement_to_file(session_measurements, file_name)
                         self.save_df_to_csv(results_df, file_name)
                 manager.disconnect()
                 self.potentiostat_disconnected.set()
@@ -155,6 +169,7 @@ class Potentiostat():
     def measure_until_done(self,file_name,method):
         results_df = pd.DataFrame()
         measurement_results= []
+        session_measurements = []
         ctypes.windll.winmm.timeBeginPeriod(1)  
         self.stop_measurement.clear()
         self.potentiostat_disconnected.clear()
@@ -167,12 +182,15 @@ class Potentiostat():
                 print("Starting EC measurement")
                 measurement = manager.measure(method, callback=self.callback)
                 print("EC measurement finished")
-                measurement_results.append(measurement)
+                session_measurements.append(measurement)
+                measurement_results.append({
+                    "current_integral": float(np.sum(np.abs(measurement.dataset.arrays(type='Current'))))
+                })
                 new_df = pd.DataFrame(measurement.dataset.to_dict())
                 corrected_df = self.correct_time_stamps(self.get_measurement_start_time(), new_df)
                 results_df = self.append_measurement_frame(results_df, corrected_df)
                 self.set_measurement_results([measurement_results, results_df])
-                self.save_measurement_to_file(measurement_results, file_name)
+                self.save_measurement_to_file(session_measurements, file_name)
                 self.save_df_to_csv(results_df, file_name)
             manager.disconnect()    
             self.potentiostat_disconnected.set()
@@ -231,6 +249,17 @@ class Potentiostat():
     def load_pssession_file(self, file_name):
         measurements = ps.load_session_file(os.path.join(self.folder_path, f"{file_name}.pssession"))
         return measurements
+    def release_resources(self):
+        self.stop_measurement.set()
+        self.potentiostat_disconnected.set()
+        self.set_callback_data({"Potential": [], "Current": []})
+        self.set_measurement_start_time([])
+        self.method = None
+        self.measurement_name = ""
+        self.n_scans = 0
+        self.max_points = 0
+        self.avg_per_point = 0
+        self.set_measurement_results([[], pd.DataFrame()])
     def start_n_measurements(self,file_name,method,n_scans):
         thread = threading.Thread(target=self.measure_n_times, args=(file_name, method, n_scans),daemon=True)
         self.n_scans = n_scans

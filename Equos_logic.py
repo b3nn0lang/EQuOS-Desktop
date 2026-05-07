@@ -119,6 +119,14 @@ class ECQS_cache():
         self.kill_qupyt = kill_qupyt
     def get_values(self):
         return self.fig, self.axes, self.measurement_done, self.measurement_progress, self.info_dic, self.kill_qupyt
+    def clear(self):
+        self.last_ec_signature = None
+        self.fig = None
+        self.axes = None
+        self.measurement_done = None
+        self.measurement_progress = None
+        self.info_dic = None
+        self.kill_qupyt = None
         
         
     

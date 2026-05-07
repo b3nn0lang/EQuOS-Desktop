@@ -5,23 +5,22 @@ Created on Thu Apr  9 15:29:10 2026
 @author: Benno Dauer
 """
 import matplotlib.pyplot as plt
+from matplotlib.figure import Figure
 from scipy.signal import find_peaks
 from scipy.optimize import curve_fit
 import numpy as np
 from time import time
 
-def qs_data_displayer(qs_data_reader: object, fitting_parameters: dict) -> tuple[object, object, bool]:
+def qs_data_displayer(qs_data_reader: object, fitting_parameters: dict, fig: Figure | None = None) -> tuple[object, object, bool]:
     data = qs_data_reader.evaluate_qs_data()
     
     figure_title = data["experiment"] if data["experiment"] else "QS data"
 
-    fig = plt.figure(figsize=(12, 4), constrained_layout=True)
+    if fig is None:
+        fig = Figure(figsize=(12, 4), constrained_layout=True)
+    else:
+        fig.clear()
     axes = fig.subplots(1, 2)
-    try:
-        axes[1,0].remove()
-        axes[1,1].remove()
-    except:
-        pass
     for ax in axes:
         ax.clear()
     fig.suptitle(figure_title)
@@ -34,6 +33,8 @@ def qs_data_displayer(qs_data_reader: object, fitting_parameters: dict) -> tuple
         x_label = f"{data['x_label']} / {data['x_unit']}" if data["x_unit"] else data["x_label"]
         contrast_mean = np.array(data["contrast_mean"])
         contrast_std =  np.array(data["contrast_std"])
+        if x_data.size == 0:
+            return fig, axes, measurement_done, measurement_progress, info_dic
         info_dic["Measurement_time"] = f"{np.mean(data['time_measure_mean'])*1000:.0f} +- {np.mean(data['time_measure_std'])*1000:.0f} ms"
         info_dic["Saving time"] = f"{np.mean(data['time_save_mean'])*1000:.0f} +- {np.mean(data['time_save_std'])*1000:.0f} ms"
         info_dic["Light Level"] = f"{np.mean(data['reference_mean']):.4f} V"
@@ -235,7 +236,7 @@ def bi_exp(x,tau1, tau2, y0, a):
         1 - (a * np.exp(-x / tau1) + (1 - a) * np.exp(-x / tau2))
     )
 
-def ec_data_displayer(potentiostat:object, fitting_dic:dict):
+def ec_data_displayer(potentiostat:object, fitting_dic:dict, fig: Figure | None = None):
     info_dic = {}
     measurement_done = False
     data = potentiostat.evaluated_data() 
@@ -260,7 +261,7 @@ def ec_data_displayer(potentiostat:object, fitting_dic:dict):
         info_dic["Scanrate"] = method["scanrate"]
     #print(method)
     #info_dic["Method"] = method["General"]
-    current_measurement = len(potentiostat.get_measurement_results()[0])
+    current_measurement = potentiostat.get_measurement_count()
     n_measurements = potentiostat.n_scans
     max_points = potentiostat.max_points
     info_dic["Final Length"] = f"{n_measurements} x {max_points}"
@@ -272,13 +273,11 @@ def ec_data_displayer(potentiostat:object, fitting_dic:dict):
         measurement_done = True
     if potentiostat.potentiostat_disconnected.is_set() == True:
         measurement_done=True
-    fig = plt.figure(figsize=(12,4), constrained_layout=True)
+    if fig is None:
+        fig = Figure(figsize=(12,4), constrained_layout=True)
+    else:
+        fig.clear()
     axes = fig.subplots(1, 2)
-    try:
-        axes[1,0].remove()
-        axes[1,1].remove()
-    except:
-        pass
     fig.suptitle(figure_title)
     try:
         axes[0].plot(callback_data['Potential'],callback_data["Current"],"gx")
@@ -360,15 +359,13 @@ def ec_data_displayer(potentiostat:object, fitting_dic:dict):
     axes[0].legend()
     
     
-    integral = []
-    for measurement in potentiostat.get_measurement_results()[0]:
-       integral.append(np.sum(np.abs(measurement.dataset.arrays(type='Current'))) )
+    integral = potentiostat.get_measurement_integrals()
     axes[1].plot(range(1, len(integral) + 1), integral,  label="Current sum")
     axes[1].set_xlabel("N Measurement")
     axes[1].set_ylabel("Abs Current Sum [A]")
     return fig, axes, measurement_done, measurement_progress, info_dic
     
-def ecqs_data_displayer(qs_data_reader, potentiostat, fitting_dic: dict, cache):
+def ecqs_data_displayer(qs_data_reader, potentiostat, fitting_dic: dict, cache, fig: Figure | None = None):
     if "cutoff_rate" in fitting_dic.keys():
         cutoff_rate = fitting_dic["cutoff_rate"]
     else:
@@ -385,7 +382,7 @@ def ecqs_data_displayer(qs_data_reader, potentiostat, fitting_dic: dict, cache):
     qs_data = qs_data_reader.evaluate_qs_data()
     callback_data = potentiostat.get_callback_data()
    
-    current_measurement = len(potentiostat.get_measurement_results()[0])
+    current_measurement = potentiostat.get_measurement_count()
     if method["id"] == "cv":
         info_dic["Begin Potential"] = method["vertex1_potential"]
         info_dic["End Potential"] = method["vertex2_potential"]
@@ -419,7 +416,10 @@ def ecqs_data_displayer(qs_data_reader, potentiostat, fitting_dic: dict, cache):
     ec_figure_title = potentiostat.measurement_name
     qs_figure_title = qs_data["experiment"] if qs_data["experiment"] else "QS data"
     
-    fig = plt.figure(figsize=(12,8), constrained_layout=True)
+    if fig is None:
+        fig = Figure(figsize=(12,8), constrained_layout=True)
+    else:
+        fig.clear()
     axes = fig.subplots(2, 2)
     fig.suptitle(f"{ec_figure_title} / {qs_figure_title}")
     try:
@@ -697,9 +697,7 @@ def ecqs_data_displayer(qs_data_reader, potentiostat, fitting_dic: dict, cache):
     axes[1,1].grid(True, alpha=0.3)
     axes[1,1].legend()
     
-    integral = []
-    for measurement in potentiostat.get_measurement_results()[0]:
-       integral.append(np.sum(np.abs(measurement.dataset.arrays(type='Current'))) )
+    integral = potentiostat.get_measurement_integrals()
     axes[1,0].plot(range(1, len(integral) + 1), integral,  label="Current sum")
     axes[1,0].set_xlabel("N Measurement")
     axes[1,0].set_ylabel("Abs Current Sum [uA]")

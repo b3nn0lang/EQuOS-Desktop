@@ -15,6 +15,7 @@ import os
 import matplotlib.pyplot as plt
 from Potentiostat import Potentiostat
 import numpy as np
+import gc
 
 class App(tk.Tk):
     def __init__(self):
@@ -31,6 +32,8 @@ class App(tk.Tk):
         
     def layout(self):
         self.title("EQuOS")
+        self.cancel_requested = False
+        self.live_update_job = None
         self.state("zoomed")
         self.iconbitmap("logo/EQuOS_icon.ico")       # .ico file
         self.photo = tk.PhotoImage(file="logo/EQuOS_logo.png")
@@ -740,9 +743,50 @@ class App(tk.Tk):
         if event.widget == self:
             #print("New size:", event.width, event.height)
             pass
+    def cancel_live_update_job(self):
+        if getattr(self, "live_update_job", None) is not None:
+            try:
+                self.after_cancel(self.live_update_job)
+            except Exception:
+                pass
+            self.live_update_job = None
+    def reset_final_canvas(self):
+        if getattr(self, "final_canvas", None) is not None:
+            old_fig = self.final_canvas.figure
+            self.final_canvas.get_tk_widget().destroy()
+            self.final_canvas = None
+            if old_fig is not None:
+                plt.close(old_fig)
+    def cleanup_measurement_state(self):
+        self.cancel_live_update_job()
+        self.cancel_requested = False
+        if getattr(self, "qs_data_reader", None) is not None:
+            try:
+                self.qs_data_reader.release_resources()
+            except Exception:
+                pass
+            self.qs_data_reader = None
+        if getattr(self, "potentiostat", None) is not None:
+            try:
+                self.potentiostat.release_resources()
+            except Exception:
+                pass
+            self.potentiostat = None
+        if getattr(self, "ecqs_cache", None) is not None:
+            try:
+                cache_fig = self.ecqs_cache.fig
+                self.ecqs_cache.clear()
+                if cache_fig is not None and cache_fig is not getattr(self, "fig", None):
+                    plt.close(cache_fig)
+            except Exception:
+                pass
+        self.reset_live_canvas()
+        self.reset_final_canvas()
+        self.fig = None
+        gc.collect()
     def on_close(self):
         try: 
-            self.potentiostat.stop_measurement.set()
+            self.cleanup_measurement_state()
             self.qupyt.exit()          
         except:
             print("Qupyt never started")
@@ -770,6 +814,7 @@ class App(tk.Tk):
         iid = item_id[0]
         values = self.loader.item(iid, "values")
         if values[0] == "QS":
+            self.cleanup_measurement_state()
             self.qs_file_name = iid
             self.current_measurement_method = values[1]
             self.qs_data_reader = QS_data_reader(self.data_folder, iid)
@@ -777,6 +822,7 @@ class App(tk.Tk):
             self.show_frame("live")
             self.update_qs_live_figure()
         if values[0] == "EC":
+            self.cleanup_measurement_state()
             self.potentiostat = Potentiostat(self.data_folder)
             self.ec_file_name = iid
             self.current_measurement_method=values[1]
@@ -784,6 +830,7 @@ class App(tk.Tk):
             self.show_frame("live")
             self.update_ec_live_figure()
         if values[0] == "ECQS":
+            self.cleanup_measurement_state()
             self.potentiostat = Potentiostat(self.data_folder)
             ecqs_files = []
             used_methods = []
@@ -808,7 +855,7 @@ class App(tk.Tk):
             self.qs_data_reader.start_data_building()
             self.potentiostat.load_measurement_from_file(self.ec_file_name)
             self.show_frame("live")
-            self.after(200,self.update_ecqs_live_figure)
+            self.live_update_job = self.after(200, self.update_ecqs_live_figure)
           
 
     def on_folder_send(self):
@@ -831,15 +878,35 @@ class App(tk.Tk):
         #self.show_frame("measure")
         self.show_boot_frame(False)
         self.update_file_loader()
+    def finalize_cancelled_measurement(self):
+        if not self.cancel_requested:
+            return
+        self.cancel_requested = False
+        if getattr(self, "qupyt", None) is not None:
+            try:
+                self.qupyt.start()
+            except Exception:
+                pass
     def cancel_measurement(self):
-        self.show_boot_frame(True)
-        self.boot_progress.start(10)
-        self.potentiostat.stop_measurement.set()
-        self.qupyt.exit()
-        self.qupyt.start()   
-        self.after(7000, self.finish_boot)                         
+        self.cancel_requested = True
+        if getattr(self, "qs_data_reader", None) is not None:
+            try:
+                self.qs_data_reader.dataframe_loop_stop.set()
+            except Exception:
+                pass
+        if getattr(self, "potentiostat", None) is not None:
+            try:
+                self.potentiostat.stop_measurement.set()
+            except Exception:
+                pass
+        if getattr(self, "qupyt", None) is not None:
+            try:
+                self.qupyt.exit()
+            except Exception:
+                pass
+        self.live_status_label.config(text="Stopping measurement...")
     def on_esr_send(self):
-        self.reset_live_canvas()
+        self.cleanup_measurement_state()
         values = [e.get() for e in self.esr_entries]
         self.esr.points = values[0]
         self.esr.averages = values[1]
@@ -856,7 +923,7 @@ class App(tk.Tk):
         self.show_frame("live")
         self.update_qs_live_figure()
     def on_rabi_send(self):
-        self.reset_live_canvas()
+        self.cleanup_measurement_state()
         values = [e.get() for e in self.rabi_entries]
         self.rabi.max_pulse_duration = values[0]
         self.rabi.averages = values[1]
@@ -872,7 +939,7 @@ class App(tk.Tk):
         self.show_frame("live")
         self.update_qs_live_figure()
     def on_t1_send(self):
-        self.reset_live_canvas()
+        self.cleanup_measurement_state()
         values = [e.get() for e in self.t1_entries]
         self.t1.points = values[0]
         self.t1.averages = values[1]
@@ -890,7 +957,7 @@ class App(tk.Tk):
         self.show_frame("live")
         self.update_qs_live_figure()
     def on_cv_send(self):
-        self.reset_live_canvas()
+        self.cleanup_measurement_state()
         self.potentiostat = Potentiostat(self.data_folder)
         self.ecqs_cache = ECQS_cache()
         # ["Start Potential [V]","End Potential [V]","Potential Step [mV]","Sweeping Rate [mV/s]","Number of Measurements","Annotation"]
@@ -902,7 +969,7 @@ class App(tk.Tk):
         self.show_frame("live")
         self.update_ec_live_figure()
     def on_swv_send(self):
-        self.reset_live_canvas()
+        self.cleanup_measurement_state()
         self.potentiostat = Potentiostat(self.data_folder)
         #["Start Potential [V]:","End Potential [V]:","Potential Step [mV]:","Frequency [Hz]:","Amplitude [mV]","Number of Measurements","Annotation:"]
         values = [e.get() for e in self.swv_entries]
@@ -914,7 +981,7 @@ class App(tk.Tk):
         self.update_ec_live_figure()
         
     def on_lsv_send(self):
-        self.reset_live_canvas()
+        self.cleanup_measurement_state()
         self.potentiostat = Potentiostat(self.data_folder)
         self.ecqs_cache = ECQS_cache()
         #["Start Potential [V]:","End Potential [V]:","Potential Step [mV]:","Scanrate [mV/s]:","Number of Measurements","Annotation:"]
@@ -927,7 +994,7 @@ class App(tk.Tk):
         self.update_ec_live_figure()
             
     def on_cv_t1_send(self):
-        self.reset_live_canvas()
+        self.cleanup_measurement_state()
         self.potentiostat = Potentiostat(self.data_folder)
         self.ecqs_cache = ECQS_cache()
         #  "Points:","Max. \u03C4 [ms]:","\u03C0-pulse Length [ns], MW Frequency [Ghz]:","MW Amplitude [dB]:",
@@ -959,7 +1026,7 @@ class App(tk.Tk):
         self.show_frame("live")
         self.update_ecqs_live_figure()
     def on_swv_t1_send(self):
-        self.reset_live_canvas()
+        self.cleanup_measurement_state()
         self.potentiostat = Potentiostat(self.data_folder)
         self.ecqs_cache = ECQS_cache()
         """
@@ -1005,7 +1072,7 @@ class App(tk.Tk):
         self.update_ecqs_live_figure()
         
     def on_lsv_t1_send(self):
-        self.reset_live_canvas()
+        self.cleanup_measurement_state()
         self.potentiostat = Potentiostat(self.data_folder)
         self.ecqs_cache = ECQS_cache()
         """
@@ -1043,30 +1110,31 @@ class App(tk.Tk):
         self.update_ecqs_live_figure()
  
     def update_qs_live_figure(self):
-        self.fig, _, measurement_done, prog, info = qs_data_displayer(self.qs_data_reader, {"fitting": False})
+        current_fig = self.live_canvas.figure if self.live_canvas is not None else None
+        self.fig, _, measurement_done, prog, info = qs_data_displayer(self.qs_data_reader, {"fitting": False}, fig=current_fig)
         self.measurement_info_update(info)
         self.live_progress['value'] = prog * 100
         self.live_progress.update_idletasks()
         
-        # destroy old canvas completely
-        if self.live_canvas is not None:
-            old_fig = self.live_canvas.figure
-            self.live_canvas.get_tk_widget().destroy()
-            self.live_canvas = None
-            plt.close(old_fig)
-        
-        self.live_canvas = FigureCanvasTkAgg(self.fig, master=self.live_plot_container)
-        self.live_canvas.get_tk_widget().pack(fill="both", expand=True)
+        if self.live_canvas is None:
+            self.live_canvas = FigureCanvasTkAgg(self.fig, master=self.live_plot_container)
+            self.live_canvas.get_tk_widget().pack(fill="both", expand=True)
         self.live_canvas.draw()
         
         if not measurement_done:
             self.live_status_label.config(text=f"Running: {self.qs_file_name}")
-            self.after(200, self.update_qs_live_figure)
+            self.live_update_job = self.after(200, self.update_qs_live_figure)
         else:
-            self.live_status_label.config(text=f"Finished: {self.qs_file_name}")
+            was_cancelled = self.cancel_requested
+            self.live_update_job = None
+            if was_cancelled:
+                self.live_status_label.config(text=f"Stopped: {self.qs_file_name}")
+            else:
+                self.live_status_label.config(text=f"Finished: {self.qs_file_name}")
             self.eval_qs_figure()
             self.show_frame(["evaluator", "measure"])
             self.update_file_loader()
+            self.finalize_cancelled_measurement()
     def _replace_final_canvas(self):
         if self.final_canvas is not None:
             old_fig = self.final_canvas.figure
@@ -1090,36 +1158,34 @@ class App(tk.Tk):
         self.measurement_info_update(info)
         self.update_file_loader()
     def update_ec_live_figure(self):    
-        self.fig, _, measurement_done, prog, info = ec_data_displayer(self.potentiostat,{"fitting": False})
+        current_fig = self.live_canvas.figure if self.live_canvas is not None else None
+        self.fig, _, measurement_done, prog, info = ec_data_displayer(self.potentiostat,{"fitting": False}, fig=current_fig)
         self.measurement_info_update(info)
         self.live_progress['value'] = prog*100
         self.live_progress.update_idletasks()  # force GUI to refresh
         
         if self.live_canvas is None:
-        # first time → create canvas
             self.live_canvas = FigureCanvasTkAgg(self.fig, master=self.live_plot_container)
             self.live_canvas.get_tk_widget().pack(fill="both", expand=True)
-        else:
-            old_fig = self.live_canvas.figure
-            self.live_canvas.figure = None
-            if old_fig is not None and old_fig is not self.fig:
-                plt.close(old_fig)
         # Update status
         if not measurement_done:
             self.live_status_label.config(text=f"Running measurement: {self.ec_file_name}")
         else:
-            self.live_status_label.config(text=f"Finished measurement: {self.ec_file_name}")
+            if self.cancel_requested:
+                self.live_status_label.config(text=f"Stopped measurement: {self.ec_file_name}")
+            else:
+                self.live_status_label.config(text=f"Finished measurement: {self.ec_file_name}")
             #self.live_progress.pack_forget()
-        # Replace the canvas figure
-        self.live_canvas.figure = self.fig
         self.live_canvas.draw()
     
         if not measurement_done:
-            self.after(200, self.update_ec_live_figure)
+            self.live_update_job = self.after(200, self.update_ec_live_figure)
         else:
+            self.live_update_job = None
             self.eval_ec_figure()
             self.show_frame(["evaluator","measure"])
             self.update_file_loader()
+            self.finalize_cancelled_measurement()
     def eval_ec_figure(self,fitting_params:dict = None):
         if fitting_params == None:
             self.fig,_,_,_,info = ec_data_displayer(self.potentiostat, {"fitting":True})
@@ -1132,39 +1198,37 @@ class App(tk.Tk):
         self.update_file_loader()
         
     def update_ecqs_live_figure(self):    
-        self.fig, _, measurement_done, prog, info, kill_measurement = ecqs_data_displayer(self.qs_data_reader,self.potentiostat,{"fitting": False}, self.ecqs_cache)
+        current_fig = self.live_canvas.figure if self.live_canvas is not None else None
+        self.fig, _, measurement_done, prog, info, kill_measurement = ecqs_data_displayer(self.qs_data_reader,self.potentiostat,{"fitting": False}, self.ecqs_cache, fig=current_fig)
         if not np.isfinite(prog):
             prog = 0
         self.measurement_info_update(info)
         self.live_progress['value'] = prog*100
         self.live_progress.update_idletasks()  # force GUI to refresh
         if self.live_canvas is None:
-        # first time → create canvas
             self.live_canvas = FigureCanvasTkAgg(self.fig, master=self.live_plot_container)
             self.live_canvas.get_tk_widget().pack(fill="both", expand=True)
-        else:
-            old_fig = self.live_canvas.figure
-            self.live_canvas.figure = None
-            if old_fig is not None and old_fig is not self.fig:
-                plt.close(old_fig)
         # Update status
         if kill_measurement ==True and not self.potentiostat.stop_measurement.is_set():
             self.cancel_measurement()
         if not measurement_done:
             self.live_status_label.config(text=f"Running measurement: {self.ec_file_name}")
         else:
-            self.live_status_label.config(text=f"Finished measurement: {self.ec_file_name}")
+            if self.cancel_requested:
+                self.live_status_label.config(text=f"Stopped measurement: {self.ec_file_name}")
+            else:
+                self.live_status_label.config(text=f"Finished measurement: {self.ec_file_name}")
             #self.live_progress.pack_forget()
-        # Replace the canvas figure
-        self.live_canvas.figure = self.fig
         self.live_canvas.draw()
     
         if not measurement_done:
-            self.after(200, self.update_ecqs_live_figure)
+            self.live_update_job = self.after(200, self.update_ecqs_live_figure)
         else:
+            self.live_update_job = None
             self.eval_ecqs_figure()
             self.show_frame(["evaluator","measure"])
             self.update_file_loader()
+            self.finalize_cancelled_measurement()
     def eval_ecqs_figure(self,fitting_params:dict = None):
         if fitting_params == None:
             self.fig,_,_,_,info,_ = ecqs_data_displayer(self.qs_data_reader,self.potentiostat, {"fitting":True}, self.ecqs_cache)
@@ -1287,6 +1351,7 @@ class App(tk.Tk):
         print(values)
         self.eval_ecqs_figure(fit_dict)
     def reset_live_canvas(self):
+        self.cancel_live_update_job()
         if self.live_canvas is not None:
             old_fig = self.live_canvas.figure
             self.live_canvas.get_tk_widget().destroy()
