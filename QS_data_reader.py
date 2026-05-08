@@ -21,6 +21,7 @@ class QS_data_reader():
         self._summary_lock = threading.RLock()
         self._progress_lock = threading.RLock()
         self.dataframe_loop_stop = threading.Event()
+        self.dataframe_loop_stop.set()
         self.raw_dataframe_progress = 0
         self.scanning_interval = 0.5
         self.qupyt_is_dead_time = 3
@@ -97,44 +98,7 @@ class QS_data_reader():
         print(f"data_array_dim = {data_array_dim}")
         return data_array_dim
      #checks for the file in the qupyt temp folder and the measurement folder and returns the status   
-    """
-    def scan_data_files(self):
-        try:
-            if os.path.isfile(f"{self.file_path}/{self.file_name}_temp.dat"):
-                print("temp.dat exists in file folder - measurement finished")
-                current_data = self.read_data_file(f"{self.file_path}/{self.file_name}_temp.dat")
-                measurement_finished = True             
-                
-            elif os.path.isfile(f"{self.temp_path}/{self.file_name}_temp.dat"):
-                #print("temp.dat exists in temp folder")
-                current_data = self.read_data_file(f"{self.temp_path}/{self.file_name}_temp.dat")
-                #print(f"current_data_dimensions are {current_data.shape}, raw_data dimensions are {self.raw_data.shape}")
-                if (current_data == self.raw_data).all():
-                    for i in range(10):
-                        print(f"No new data points - waiting for qupyt [{i}/10]")
-                        time.sleep(self.qupyt_is_dead_time/10)
-                        current_data = self.read_data_file(f"{self.temp_path}/{self.file_name}_temp.dat")
-                        if (current_data == self.raw_data).all():
-                            print("Assuming measuerement interruption. make sure qupyt is not running")
-                            measurement_finished = True
-                            if i == 9:
-                                print("moving measurement from temp to file folder")
-                                time.sleep(0.1)
-                                shutil.copy(os.path.join(self.temp_path,f"{self.file_name}_temp.dat"), os.path.join(self.file_path,f"{self.file_name}_temp.dat"))
-                                time.sleep(0.1)
-                                os.remove(os.path.join(self.temp_path,f"{self.file_name}_temp.dat"))
-                        else:
-                            current_data = self.read_data_file(f"{self.temp_path}/{self.file_name}_temp.dat")
-                            measurement_finished = False
-                            break
-                else: 
-                    measurement_finished = False
-            else:
-                raise FileNotFoundError(f"Error: {self.file_name}_temp.dat not found")
-            return current_data, measurement_finished
-        except Exception as e:
-            raise Exception(e)
-       """
+   
     def scan_data_files(self):
         try:
             if os.path.isfile(f"{self.file_path}/{self.file_name}_temp.dat"):
@@ -465,6 +429,8 @@ class QS_data_reader():
             )
             time.sleep(0.1)
             os.remove(os.path.join(self.temp_path, f"{self.file_name}_temp.dat"))
+            final_path = os.path.join(self.file_path, f"{self.file_name}_temp.dat")
+            self._active_dat_file = final_path
         except:
             pass
 
@@ -535,7 +501,7 @@ class QS_data_reader():
                 cutoff = time_in_range/measurement_time
             return cutoff
     
-        #Transform data to be sorted after x_points and filter with time_stamps
+        #Transform data to be sorted after x_points and filter with time_stamps - OLD FUNCTION
     def evaluate_qs_data(self, cutoff_rate: float = 1, time_array: np.ndarray = []) -> dict:
         filtered_indices = self.filter_by_time_stamps(cutoff_rate=cutoff_rate, t_lim=time_array)
         return_data = self._empty_result()

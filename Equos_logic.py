@@ -51,21 +51,24 @@ def parse_file_folder(folder_name: str) -> list:
                file_name_list.add(file)
        file_name_list = sorted(file_name_list)
        for file in file_name_list:
-           params = file.split("_")
-           exp_type = params[0] if len(params) > 0 else ""
-           method_type = params[1] if len(params) > 1 else ""
-           date = params[2] if len(params) > 2 else ""
-           annotation = "_".join(params[3:]) if len(params) > 3 else ""
-           dt = datetime.strptime(date, "%Y%m%d%H%M%S")
-           measurements.append({
-                "file_name": file,
-                "type": exp_type,
-                "method": method_type,
-                "date_raw": date,
-                "date": dt.strftime("%Y-%m-%d"),
-                "time": dt.strftime("%H:%M:%S"),
-                "annotation": annotation
-            })
+           try:
+                params = file.split("_")
+                exp_type = params[0] if len(params) > 0 else ""
+                method_type = params[1] if len(params) > 1 else ""
+                date = params[2] if len(params) > 2 else ""
+                annotation = "_".join(params[3:]) if len(params) > 3 else ""
+                dt = datetime.strptime(date, "%Y%m%d%H%M%S")
+                measurements.append({
+                     "file_name": file,
+                     "type": exp_type,
+                     "method": method_type,
+                     "date_raw": date,
+                     "date": dt.strftime("%Y-%m-%d"),
+                     "time": dt.strftime("%H:%M:%S"),
+                     "annotation": annotation
+                 })
+           except Exception as e:
+                print(e)
        return measurements
            
 #calculeates the t1 averages for the ecqs measuerements form measurements per point           
@@ -84,50 +87,19 @@ def calculate_t1_averages(ec_points:int,avg_p_p:int, ec_time:float, qs_points:in
            
 class ECQS_cache():
     def __init__(self):
-        self.last_ec_signature = None
-        self.fig  = None
+        self.last_measurement = 0
         self.axes = None
-        self.measurement_done = None
-        self.measurement_progress = None
-        self.info_dic = None
-        self.kill_qupyt = None
-    def build_ec_signature(self, ec_data) -> tuple:
-        if ec_data is None or ec_data.empty:
-            return tuple()
-        tail = ec_data.tail(4)
-        return (
-            len(ec_data),
-            tuple(tail["direction"].tolist()),
-            tuple(np.round(tail["Potential"].to_numpy(dtype=float), 8)),
-            tuple(np.round(tail["Current_mean"].to_numpy(dtype=float), 12)),
-            tuple(np.round(tail["Current_std"].to_numpy(dtype=float), 12)),
-            tuple(len(values) for values in tail["Current"]),
-        )
-    def compare_last_values(self, new_ec_data) -> bool:
-        new_signature = self.build_ec_signature(new_ec_data)
-        if self.last_ec_signature is None:
-            return True
-        return new_signature != self.last_ec_signature
-    def update_last_values(self, new_ec_data):
-        self.last_ec_signature = self.build_ec_signature(new_ec_data)
-    def set_values(self, fig, axes, measurement_done, measurement_progress, info_dic, kill_qupyt):
-        self.fig  = fig
-        self.axes = axes
-        self.measurement_done = measurement_done
-        self.measurement_progress = measurement_progress
-        self.info_dic = info_dic
-        self.kill_qupyt = kill_qupyt
-    def get_values(self):
-        return self.fig, self.axes, self.measurement_done, self.measurement_progress, self.info_dic, self.kill_qupyt
-    def clear(self):
-        self.last_ec_signature = None
+        self.measurement_progress = 0
+        self.kill_qupyt = False
         self.fig = None
+    def clear(self):
+        self.last_measurement = 0
         self.axes = None
-        self.measurement_done = None
-        self.measurement_progress = None
-        self.info_dic = None
-        self.kill_qupyt = None
+        self.measurement_progress = 0
+        self.kill_qupyt = False
+        self.fig = None
         
+
         
     
 

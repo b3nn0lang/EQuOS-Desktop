@@ -1147,7 +1147,7 @@ class App(tk.Tk):
         self.final_canvas.get_tk_widget().pack(fill="both", expand=True)
         self.final_canvas.draw()
     def eval_qs_figure(self, fitting_params:dict = None):
-        
+       
         if fitting_params == None:
             self.fig,_,_,_,info = qs_data_displayer(self.qs_data_reader, {"fitting":True})
         else:
@@ -1225,11 +1225,12 @@ class App(tk.Tk):
             self.live_update_job = self.after(200, self.update_ecqs_live_figure)
         else:
             self.live_update_job = None
-            self.eval_ecqs_figure()
             self.show_frame(["evaluator","measure"])
             self.update_file_loader()
             self.finalize_cancelled_measurement()
+            self.eval_ecqs_figure()
     def eval_ecqs_figure(self,fitting_params:dict = None):
+        self.ecqs_cache = ECQS_cache()
         if fitting_params == None:
             self.fig,_,_,_,info,_ = ecqs_data_displayer(self.qs_data_reader,self.potentiostat, {"fitting":True}, self.ecqs_cache)
         else:

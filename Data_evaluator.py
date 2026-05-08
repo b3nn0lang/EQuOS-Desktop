@@ -279,10 +279,12 @@ def ec_data_displayer(potentiostat:object, fitting_dic:dict, fig: Figure | None 
         fig.clear()
     axes = fig.subplots(1, 2)
     fig.suptitle(figure_title)
+    #Plot Callback
     try:
         axes[0].plot(callback_data['Potential'],callback_data["Current"],"gx")
     except:
         pass
+    
     axes[0].set_xlabel("Potential [V]")
     axes[0].set_ylabel("Current [uA]")
     if data is not None:
@@ -418,21 +420,16 @@ def ecqs_data_displayer(qs_data_reader, potentiostat, fitting_dic: dict, cache, 
     
     if fig is None:
         fig = Figure(figsize=(12,8), constrained_layout=True)
-    else:
-        fig.clear()
-    axes = fig.subplots(2, 2)
+        #axes = fig.subplots(2, 2)
+
     fig.suptitle(f"{ec_figure_title} / {qs_figure_title}")
-    try:
-        axes[0,0].plot(callback_data['Potential'],callback_data["Current"],"gx")
-    except:
-        pass
-    axes[0,0].set_xlabel("Potential [V]")
-    axes[0,0].set_ylabel("Current [uA]")
-    axes[0,1].set_xlabel("Potential [V]")
-    axes[0,1].set_ylabel("T1 Time")
     
-    if ec_data is not None and cache.compare_last_values(ec_data) == True: 
-        cache.update_last_values(ec_data)
+   
+    
+    if ec_data is not None and current_measurement > cache.last_measurement: 
+        fig.clear()
+        cache.last_measurement = current_measurement
+        axes = fig.subplots(2, 2)
         time_loop_begin=time()
         try:
             plot_up = ec_data[ec_data["direction"] == 1]
@@ -454,6 +451,7 @@ def ecqs_data_displayer(qs_data_reader, potentiostat, fitting_dic: dict, cache, 
                 tau_values_up = []
                 r_square_up = []
                 x_values_up = plot_up["Potential"]
+                qs_light_up = []
                 print(f"v_values_up length: {len(x_values_up)}")
                 for i,row in plot_up.iterrows():
                     time_begin = np.atleast_1d(row["Time_begin"])
@@ -464,6 +462,7 @@ def ecqs_data_displayer(qs_data_reader, potentiostat, fitting_dic: dict, cache, 
                     qs_data_up = qs_data_reader.evaluate_qs_data(cutoff_rate=cutoff_rate,time_array=time_frames_up)
                     qs_tau = qs_data_up["x_data"]
                     qs_contrast = qs_data_up["contrast_mean"]
+                    qs_lightlevel = np.mean(qs_data_up["reference_mean"])*10
                     
                     try:
                         qs_tau = np.atleast_1d(np.asarray(qs_tau, dtype=float))
@@ -491,8 +490,8 @@ def ecqs_data_displayer(qs_data_reader, potentiostat, fitting_dic: dict, cache, 
                           1.0]              # beta
                     if "use_bounds" in fitting_dic.keys() and fitting_dic["use_bounds"]==True:
                         bounds = (
-                            [qs_tau[1],        0.85, 0.1],          # lower
-                            [qs_tau[-1] * 10,  1.0,  3.0]           # upper
+                            [qs_tau[1],        0.5, 0.1],          # lower
+                            [qs_tau[-1] * 10,  1.5,  3.0]           # upper
                         )
                     else:
                         bounds = (-np.inf, np.inf)
@@ -513,17 +512,20 @@ def ecqs_data_displayer(qs_data_reader, potentiostat, fitting_dic: dict, cache, 
                         r_square_up.append(0)
                     finally:
                         points_up.append(qs_points)
+                        qs_light_up.append(qs_lightlevel)
                   #  print(f"Up-fittingtime:{(time()-time_0)*1000} ms")
                 try:
                     axes[0,1].plot(x_values_up,tau_values_up,color="blue",label="T1 Time Upwards current")
                 except Exception as e:
                     print(e)
                 try:
-                    axes[1,1].plot(x_values_up,r_square_up,color="blue",label="R^2 T1 Upwards Current")
+                    axes[1,1].plot(x_values_up,r_square_up,color="blue",linestyle="--",label="R^2 T1")
                 except Exception as e:
                     print(e)
-               
-               
+                try:
+                    axes[1,1].plot(x_values_up, qs_light_up, color="blue", label = "Lightlevel")
+                except Exception as e:
+                    print(e)
         except Exception as e:
             print(f"Something in plot_up failed {e}")
         
@@ -546,6 +548,7 @@ def ecqs_data_displayer(qs_data_reader, potentiostat, fitting_dic: dict, cache, 
                 tau_values_down = []
                 r_square_down = []
                 x_values_down = plot_down["Potential"]
+                qs_light_down = []
                 print(f"v_values_down length: {len(x_values_down)}")
                 for i,row in plot_down.iterrows():
                     time_begin = np.atleast_1d(row["Time_begin"])
@@ -555,6 +558,7 @@ def ecqs_data_displayer(qs_data_reader, potentiostat, fitting_dic: dict, cache, 
                     qs_data_down = qs_data_reader.evaluate_qs_data(cutoff_rate=cutoff_rate,time_array=time_frames_down)
                     qs_tau = qs_data_down["x_data"]
                     qs_contrast = qs_data_down["contrast_mean"]
+                    qs_lightlevel = np.mean(qs_data_down["reference_mean"])*10
                     try:
                         qs_tau = np.atleast_1d(np.asarray(qs_tau, dtype=float))
                         qs_contrast = np.atleast_1d(np.asarray(qs_contrast, dtype=float))
@@ -582,8 +586,8 @@ def ecqs_data_displayer(qs_data_reader, potentiostat, fitting_dic: dict, cache, 
                           1.0]              # beta
                     if "use_bounds" in fitting_dic.keys() and fitting_dic["use_bounds"]==True:
                         bounds = (
-                            [qs_tau[1],        0.85, 0.1],          # lower
-                            [qs_tau[-1] * 10,  1.0,  3.0]           # upper
+                            [qs_tau[1],        0.5, 0.1],          # lower
+                            [qs_tau[-1] * 10,  1.5,  3.0]           # upper
                         )
                     else:
                         bounds = (-np.inf, np.inf)
@@ -604,19 +608,24 @@ def ecqs_data_displayer(qs_data_reader, potentiostat, fitting_dic: dict, cache, 
                         r_square_down.append(0)
                     finally:
                         points_down.append(qs_points)
+                        qs_light_down.append(qs_lightlevel)
                 #print(f"fitting_time: {(time()-t0)*1000} ms")
                 try:
                     axes[0,1].plot(x_values_down,tau_values_down,color="red",label="T1 Time Downwards current")
                 except Exception as e:
                     print(e)
                 try:
-                    axes[1,1].plot(x_values_down,r_square_down,color="red",label="R^2 T1 Downwards current")
+                    axes[1,1].plot(x_values_down,r_square_down,color="red",linestyle="--",label="R^2 T1")
+                except Exception as e:
+                    print(e)
+                try:
+                    axes[1,1].plot(x_values_down, qs_light_down, color="red", label = "Lightlevel")
                 except Exception as e:
                     print(e)
         except Exception as e:
             print(f"Something in plot_down failed {e}")
         axes[1,1].set_ylim(0, 1.1)  # R² is always 0-1
-        axes[1,1].set_ylabel("R²")
+        axes[1,1].set_ylabel("R² / [V:100]")
         axes[1,1].set_xlabel("Potential [V]")
         
         # For the twin axis, set its own scale separately:
@@ -662,19 +671,22 @@ def ecqs_data_displayer(qs_data_reader, potentiostat, fitting_dic: dict, cache, 
                 )
                 
                 # Access results
-                axes[0].plot(
+                axes[0,0].plot(
                 x[pos_peaks], y[pos_peaks],
                 f"{color}^",  # red upward triangle
                 markersize=8,
                 label=f"Anodic: {np.round(x[pos_peaks], 3)} V"
                 )
                  
-                axes[0].plot(
+                axes[0,0].plot(
                 x[neg_peaks], y[neg_peaks],
                 f"{color}v",  # downward triangle
                 markersize=8,
                 label=f"Cathodic: {np.round(x[neg_peaks], 3)} V")
                 
+        integral = potentiostat.get_measurement_integrals()
+        axes[1,0].plot(range(1, len(integral) + 1), integral,  label="Current sum")    
+        
         if not points_up and not points_down:
             measurement_progress=0
         elif points_up and not points_down:
@@ -686,19 +698,34 @@ def ecqs_data_displayer(qs_data_reader, potentiostat, fitting_dic: dict, cache, 
         if measurement_progress >=1:
             #potentiostat.stop_measurement.set()
             kill_qupyt=True
-    elif ec_data is not None and cache.compare_last_values(ec_data) == False:
-        return cache.get_values()
+        cache.axes = axes
+        cache.measurement_progress = measurement_progress
+        cache.kill_qupyt = kill_qupyt
+        cache.fig = fig
+    elif ec_data is not None:
+        axes = cache.axes
+        fig = cache.fig
+        measurement_progress = cache.measurement_progress
+        kill_qupyt = cache.kill_qupyt
     else:
+        fig.clear()
         measurement_progress=0
+        axes = fig.subplots(2, 2)
+    #Plot Callback
+    try:
+        axes[0,0].plot(callback_data['Potential'],callback_data["Current"],"gx")
+    except:
+        pass
+    axes[0,0].set_xlabel("Potential [V]")
+    axes[0,0].set_ylabel("Current [uA]")
+    axes[0,1].set_xlabel("Potential [V]")
+    axes[0,1].set_ylabel("T1 Time")
     axes[0,0].grid(True, alpha=0.3)
     axes[0,0].legend()
     axes[0,1].grid(True, alpha=0.3)
     axes[0,1].legend()
     axes[1,1].grid(True, alpha=0.3)
     axes[1,1].legend()
-    
-    integral = potentiostat.get_measurement_integrals()
-    axes[1,0].plot(range(1, len(integral) + 1), integral,  label="Current sum")
     axes[1,0].set_xlabel("N Measurement")
     axes[1,0].set_ylabel("Abs Current Sum [uA]")
     axes[1,0].grid(True, alpha=0.3)
@@ -709,7 +736,6 @@ def ecqs_data_displayer(qs_data_reader, potentiostat, fitting_dic: dict, cache, 
     elif qs_data_reader.dataframe_loop_stop.is_set() and not potentiostat.stop_measurement.is_set():
         potentiostat.stop_measurement.set()
 
-    cache.set_values(fig, axes, measurement_done, measurement_progress, info_dic,kill_qupyt)
     return fig, axes, measurement_done, measurement_progress, info_dic,kill_qupyt
 
 def safe_min(arr):
