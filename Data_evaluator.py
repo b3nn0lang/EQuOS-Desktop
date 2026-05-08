@@ -430,6 +430,9 @@ def ecqs_data_displayer(qs_data_reader, potentiostat, fitting_dic: dict, cache, 
         fig.clear()
         cache.last_measurement = current_measurement
         axes = fig.subplots(2, 2)
+        ax_light_with_pot = axes[1,1].twinx()
+        ax_light_with_pot.spines["right"].set_position(("outward", 60))
+        ax_light_with_pot.set_ylabel("Lightlevel [mV]")
         time_loop_begin=time()
         try:
             plot_up = ec_data[ec_data["direction"] == 1]
@@ -523,7 +526,7 @@ def ecqs_data_displayer(qs_data_reader, potentiostat, fitting_dic: dict, cache, 
                 except Exception as e:
                     print(e)
                 try:
-                    axes[1,1].plot(x_values_up, qs_light_up, color="blue", label = "Lightlevel")
+                    ax_light_with_pot.plot(x_values_up, qs_light_up, color="blue", label = "Lightlevel")
                 except Exception as e:
                     print(e)
         except Exception as e:
@@ -619,7 +622,8 @@ def ecqs_data_displayer(qs_data_reader, potentiostat, fitting_dic: dict, cache, 
                 except Exception as e:
                     print(e)
                 try:
-                    axes[1,1].plot(x_values_down, qs_light_down, color="red", label = "Lightlevel")
+                    
+                    ax_light_with_pot.plot(x_values_down, qs_light_down, color="red", label = "Lightlevel")
                 except Exception as e:
                     print(e)
         except Exception as e:
@@ -686,6 +690,23 @@ def ecqs_data_displayer(qs_data_reader, potentiostat, fitting_dic: dict, cache, 
                 
         integral = potentiostat.get_measurement_integrals()
         axes[1,0].plot(range(1, len(integral) + 1), integral,  label="Current sum")    
+        
+        #Code lightlevel over time here
+        raw_ec_data = potentiostat.get_measurement_results()[1]
+        time_min = np.min(raw_ec_data["Time_begin"])
+        time_max = np.max(raw_ec_data["Time_end"])
+        ll_list = []
+        time_lists = np.linspace(time_min, time_max, current_measurement*2)
+        x_list = np.linspace(1, current_measurement,current_measurement*2)
+        ax_ll = axes[1,0].twinx()
+        ax_ll.set_ylabel("Lightlevel [mV]")
+        for i in range(len(time_lists)-1):
+            time_array=np.array([[time_lists[i], time_lists[i+1]]])
+            qs_data_i = qs_data_reader.evaluate_qs_data(time_array=time_array)
+            ll_i = np.mean(qs_data_i["reference_mean"])
+            ll_list.append(ll_i)             
+        ax_ll.plot(x_list[1:],ll_list, label="Lightlevel",color="green")
+        del ll_list,x_list
         
         if not points_up and not points_down:
             measurement_progress=0

@@ -223,6 +223,7 @@ class Potentiostat():
         self.set_measurement_results([self.load_pssession_file(file_name),self.load_csv_file(file_name)])
         self.n_scans = len(self.get_measurement_results()[0])
         self.method=self.get_measurement_results()[0][0].method
+        self.avg_per_point=1 #Dummy value
         settings = self.method.to_settings()  # returns the typed BaseTechnique dataclass
         if self.method.id == "cv":
             self.measurement_name = "Cyclic Voltammetry"
