@@ -116,19 +116,22 @@ class QS_data_reader():
                 for i in range(10):
                     print(f"No new data points - waiting for qupyt [{i}/10]")
                     time.sleep(self.qupyt_is_dead_time / 10)
-                    new_rows = self.count_filled_rows(dat_file)
+                    try:
+                        new_rows = self.count_filled_rows(dat_file)
+                    except OSError:
+                       time.sleep(0.5)  # back off on network error
+                       new_rows = self.count_filled_rows(dat_file)
                     if new_rows != current_rows:
                         return dat_file, new_rows, False
                     current_rows = new_rows
     
                 print("Assuming measurement interruption. Moving file to measurement folder.")
                 time.sleep(0.1)
-                shutil.copy(
+                shutil.move(
                     os.path.join(self.temp_path, f"{self.file_name}_temp.dat"),
                     os.path.join(self.file_path, f"{self.file_name}_temp.dat")
                 )
-                time.sleep(0.1)
-                os.remove(os.path.join(self.temp_path, f"{self.file_name}_temp.dat"))
+               
                 return os.path.join(self.file_path, f"{self.file_name}_temp.dat"), current_rows, True
     
             else:
@@ -423,12 +426,10 @@ class QS_data_reader():
             time.sleep(self.scanning_interval)
         try:
             time.sleep(0.1)
-            shutil.copy(
+            shutil.move(
                 os.path.join(self.temp_path, f"{self.file_name}_temp.dat"),
                 os.path.join(self.file_path, f"{self.file_name}_temp.dat")
             )
-            time.sleep(0.1)
-            os.remove(os.path.join(self.temp_path, f"{self.file_name}_temp.dat"))
             final_path = os.path.join(self.file_path, f"{self.file_name}_temp.dat")
             self._active_dat_file = final_path
         except:

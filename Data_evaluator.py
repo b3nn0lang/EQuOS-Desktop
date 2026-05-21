@@ -124,7 +124,7 @@ def qs_data_displayer(qs_data_reader: object, fitting_parameters: dict, fig: Fig
             if measurement_type == "Rabi" or measurement_type == "Rabi_ECQS":
                 if ("rabi_sin_fit" in fitting_parameters.keys() and fitting_parameters["rabi_sin_fit"] == True) or "rabi_sin_fit" not in fitting_parameters.keys():
                     p0= [
-                        0.01,              # A
+                        -0.03,              # A
                         2*np.pi/200,       # B
                         -np.pi/2,          # C (inverted start)
                         np.mean(contrast_mean)  # D
@@ -135,8 +135,8 @@ def qs_data_displayer(qs_data_reader: object, fitting_parameters: dict, fig: Fig
                         maxfev = 20000
                     if "rabi_use_bounds" in fitting_parameters.keys() and fitting_parameters["rabi_use_bounds"] == True:
                         bounds = (
-                            [0.0,        2*np.pi/400, -2*np.pi, 0.8],  # lower
-                            [0.1,        2*np.pi/50,   0, 1.2]   # upper
+                            [-0.2,        2*np.pi/800, -2*np.pi, 0.6],  # lower
+                            [0.0,        2*np.pi/20,   0, 1.2]   # upper
                             )
                     else:
                         bounds = (-np.inf, np.inf)
@@ -220,7 +220,7 @@ def qs_data_displayer(qs_data_reader: object, fitting_parameters: dict, fig: Fig
 def rabi_fit_function(x,a,b,c,d):
     return a * np.cos(b * x + c) + d
 def get_pi_from_rabi_fit(b,c):
-    for i in range(-4,4,2):
+    for i in range(-5,5,2):
         pi_fit= (np.pi - c + i*np.pi) / b
         if pi_fit>0:
             return pi_fit
