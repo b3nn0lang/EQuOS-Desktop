@@ -210,6 +210,7 @@ class App(tk.Tk):
         #T1
         t1_labels = [
             "Points:",
+            "Spacing:",
             "Averages:",
             "Max. \u03C4 [ms]:",
             "\u03C0-pulse Length [ns]:",
@@ -219,6 +220,7 @@ class App(tk.Tk):
             ]
         t1_defaults = [
             self.t1.points,
+            self.t1.spacing,
             self.t1.averages,
             self.t1.tau_max,
             self.t1.pi_pulse_length,
@@ -313,6 +315,7 @@ class App(tk.Tk):
         #CV-T1
         cv_t1_labels = [
             "Points:",
+            "Spacing:",
             "Max. \u03C4 [ms]:",
             "\u03C0-pulse Length [ns]:",
             "MW Frequency [Ghz]:",
@@ -326,6 +329,7 @@ class App(tk.Tk):
             ]
         cv_t1_defaults = [
             self.t1.points,
+            self.t1.spacing,
             self.t1.tau_max,
             self.t1.pi_pulse_length,
             self.t1.mw_frequency,
@@ -373,6 +377,7 @@ class App(tk.Tk):
         #SWV-T1
         swv_t1_labels = [
             "Points:",
+            "Spacing:",
             "Max. \u03C4 [ms]:",
             "\u03C0-pulse Length [ns]:",
             "MW Frequency [Ghz]:",
@@ -387,6 +392,7 @@ class App(tk.Tk):
             ]
         swv_t1_defaults = [
             self.t1.points,
+            self.t1.spacing,
             self.t1.tau_max,
             self.t1.pi_pulse_length,
             self.t1.mw_frequency,
@@ -434,6 +440,7 @@ class App(tk.Tk):
        
         #LSV-T1
         lsv_t1_labels = [ "Points:",
+                         "Spacing:",
          "Max. \u03C4 [ms]:",
          "\u03C0-pulse Length [ns]:",
          "MW Frequency [Ghz]:",
@@ -441,6 +448,7 @@ class App(tk.Tk):
          "Start Potential [V]:","End Potential [V]:","Potential Step [mV]:","Scanrate [mV/s]:","T1-averages / LSV-point:","Annotation:"]
         lsv_t1_defaults= [
             self.t1.points,
+            self.t1.spacing,
             self.t1.tau_max,
             self.t1.pi_pulse_length,
             self.t1.mw_frequency,
@@ -942,14 +950,15 @@ class App(tk.Tk):
         self.cleanup_measurement_state()
         values = [e.get() for e in self.t1_entries]
         self.t1.points = values[0]
-        self.t1.averages = values[1]
-        self.t1.tau_max = values[2]
-        self.t1.pi_pulse_length = values[3]
-        self.t1.mw_frequency = values[4]
-        self.t1.mw_amplitude = values[5]
+        self.t1.spacing = values[1]
+        self.t1.averages = values[2]
+        self.t1.tau_max = values[3]
+        self.t1.pi_pulse_length = values[4]
+        self.t1.mw_frequency = values[5]
+        self.t1.mw_amplitude = values[6]
         self.t1.laser_spot_position = float(self.laser_spot.get())
         user_params = self.t1.export_params()
-        self.qs_file_name, _ = create_file_name(qs_type="T1", annotation=values[6])
+        self.qs_file_name, _ = create_file_name(qs_type="T1", annotation=values[7])
         Send_t1_measurement(self.qs_file_name, user_params)
         self.current_measurement_method = "T1"
         self.qs_data_reader = QS_data_reader(self.data_folder, self.qs_file_name)
@@ -1001,19 +1010,20 @@ class App(tk.Tk):
         #"Start Potential [V]:","End Potential [V]:","Potential Step [mV]:","Sweeping Rate [mV/s]:","T1-averages / CV-point:","Annotation:"
         values = [e.get() for e in self.cv_t1_entries]
         self.t1.points = values[0]
-        self.t1.tau_max = values[1]
-        self.t1.pi_pulse_length = values[2]
-        self.t1.mw_frequency = values[3]
-        self.t1.mw_amplitude = values[4]
+        self.t1.spacing = values[1]
+        self.t1.tau_max = values[2]
+        self.t1.pi_pulse_length = values[3]
+        self.t1.mw_frequency = values[4]
+        self.t1.mw_amplitude = values[5]
         self.t1.laser_spot_position = float(self.laser_spot.get())
-        begin_potential = float(values[5])
-        end_potential = float(values[6])
-        step_potential = float(values[7])/1000
-        scanrate = float(values[8])/1000
+        begin_potential = float(values[6])
+        end_potential = float(values[7])
+        step_potential = float(values[8])/1000
+        scanrate = float(values[9])/1000
         method = self.potentiostat.cv_measurement(begin_potential, end_potential, step_potential, scanrate)
         ec_points = (abs(begin_potential-end_potential)/step_potential)*2
         ec_time = step_potential/scanrate
-        avg_p_p = int(values[9])
+        avg_p_p = int(values[10])
         self.t1.averages = calculate_t1_averages(ec_points, avg_p_p, ec_time, int(values[0]), float(values[1]))
         user_params = self.t1.export_params()
         self.qs_file_name, self.ec_file_name = create_file_name(qs_type="T1",ec_type="CV",annotation=values[10])
@@ -1045,18 +1055,19 @@ class App(tk.Tk):
         """
         values = [e.get() for e in self.swv_t1_entries]
         self.t1.points = values[0]
-        self.t1.tau_max = values[1]
-        self.t1.pi_pulse_length = values[2]
-        self.t1.mw_frequency = values[3]
-        self.t1.mw_amplitude = values[4]
+        self.t1.spacing = values[1]
+        self.t1.tau_max = values[2]
+        self.t1.pi_pulse_length = values[3]
+        self.t1.mw_frequency = values[4]
+        self.t1.mw_amplitude = values[5]
         self.t1.laser_spot_position = float(self.laser_spot.get())
-        begin_potential = float(values[5])
-        end_potential = float(values[6])
-        step_potential = float(values[7])/1000
-        frequency = float(values[8])
-        amplitude = float(values[9])/1000
+        begin_potential = float(values[6])
+        end_potential = float(values[7])
+        step_potential = float(values[8])/1000
+        frequency = float(values[9])
+        amplitude = float(values[10])/1000
         method = self.potentiostat.swv_measurement(begin_potential, end_potential, step_potential, frequency, amplitude)
-        avg_p_p = int(values[10])
+        avg_p_p = int(values[11])
         ec_points = (abs(begin_potential-end_potential)/step_potential)
         ec_time = 1/frequency
         self.t1.averages = calculate_t1_averages(ec_points, avg_p_p, ec_time, int(values[0]), float(values[1]))
@@ -1085,17 +1096,18 @@ class App(tk.Tk):
         """
         values = [e.get() for e in self.lsv_t1_entries]
         self.t1.points = values[0]
-        self.t1.tau_max = values[1]
-        self.t1.pi_pulse_length = values[2]
-        self.t1.mw_frequency = values[3]
-        self.t1.mw_amplitude = values[4]
+        self.t1.spacing = values[1]
+        self.t1.tau_max = values[2]
+        self.t1.pi_pulse_length = values[3]
+        self.t1.mw_frequency = values[4]
+        self.t1.mw_amplitude = values[5]
         self.t1.laser_spot_position = float(self.laser_spot.get())
-        begin_potential = float(values[5])
-        end_potential = float(values[6])
-        step_potential = float(values[7])/1000
-        scanrate = float(values[8])/1000
+        begin_potential = float(values[6])
+        end_potential = float(values[7])
+        step_potential = float(values[8])/1000
+        scanrate = float(values[9])/1000
         method = self.potentiostat.lsv_measurement(begin_potential, end_potential, step_potential, scanrate)
-        avg_p_p = int(values[9])
+        avg_p_p = int(values[10])
         ec_points = (abs(begin_potential-end_potential)/step_potential)
         ec_time = step_potential/scanrate
         self.t1.averages = calculate_t1_averages(ec_points, avg_p_p, ec_time, int(values[0]), float(values[1]))

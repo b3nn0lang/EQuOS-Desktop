@@ -158,6 +158,7 @@ class User_T1_input(User_parameter_input):
         self.file_name ="T1_ECQS.yaml"
         super().__init__(self.file_name)
         self.points = int(self.params["sensor"]["config"]["number_measurements"]/2)
+        self.spacing = str(self.params["pulse_sequence"]["spacing_type"])
         self.averages = int(self.params["averages"])
         self.tau_max = float(self.params["pulse_sequence"]["t1_max"])/1000
         self.pi_pulse_length = float(self.params['pulse_sequence']['mw_duration']) *1000
@@ -167,6 +168,7 @@ class User_T1_input(User_parameter_input):
     def export_params(self):
         export = self.params
         export["sensor"]["config"]["number_measurements"] = int(self.points)
+        export["pulse_sequence"]["spacing_type"] = str(self.spacing)
         export["pulse_sequence"]["t1_steps"] = int(self.points)*2
         export['sensor']['config']['number_measurements'] = int(self.points)*2
         export["averages"] = int(self.averages)

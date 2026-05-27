@@ -744,8 +744,8 @@ def ecqs_data_displayer(qs_data_reader, potentiostat, fitting_dic: dict, cache, 
         up_fig_name = "QS_Up_all.png"
         down_fig_name = "QS_Down_all.png"
         
-        all_up_ax.legend()
-        all_down_ax.legend()
+        all_up_ax.legend(loc="se")
+        all_down_ax.legend(loc="se")
         all_up_fig.savefig(os.path.join(sub_path, up_fig_name), dpi=300)
         all_down_fig.savefig(os.path.join(sub_path, down_fig_name), dpi=300)
         plt.close(all_up_fig)
