@@ -15,6 +15,7 @@ try:
 except ImportError:
     pass
 import numpy as np
+import matplotlib.pyplot as plt
 import pypalmsens as ps
 import nest_asyncio
 nest_asyncio.apply()
@@ -90,6 +91,14 @@ class Potentiostat():
                 elif isinstance(measurement, dict) and "current_integral" in measurement:
                     integrals.append(float(measurement["current_integral"]))
             return integrals
+    def get_measurement_plots(self) ->list:
+        with self.result_lock:
+            measurements = self.measurement_results[0]
+        plots = []
+        for measurement in measurements:
+            figure = measurement.curves[0].plot()
+            plots.append(figure)
+        return plots
     def append_measurement_frame(self, results_df: pd.DataFrame, new_rows: pd.DataFrame) -> pd.DataFrame:
         if results_df.empty:
             return new_rows.reset_index(drop=True)

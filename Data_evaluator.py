@@ -5,11 +5,13 @@ Created on Thu Apr  9 15:29:10 2026
 @author: Benno Dauer
 """
 import matplotlib.pyplot as plt
+import matplotlib as mpl
 from matplotlib.figure import Figure
 from scipy.signal import find_peaks
 from scipy.optimize import curve_fit
 import numpy as np
 from time import time
+import os
 
 def qs_data_displayer(qs_data_reader: object, fitting_parameters: dict, fig: Figure | None = None) -> tuple[object, object, bool]:
     data = qs_data_reader.evaluate_qs_data()
@@ -66,8 +68,8 @@ def qs_data_displayer(qs_data_reader: object, fitting_parameters: dict, fig: Fig
                 if "t1_bi_exp_fit" in fitting_parameters.keys() and fitting_parameters["t1_bi_exp_fit"] == True:
                     p0 = [x_data[-1] / 10,  # tau1 - fast
                           x_data[-1] / 2,   # tau2 - slow
-                          contrast_mean[0],  # y0 from actual first point
-                          0.5]               # a
+                          np.min(contrast_mean),  # y0 from actual first point
+                          0.5]                  
                     if "t1_max_bi_tries" in fitting_parameters.keys() :
                         maxfev= fitting_parameters["t1_max_bi_tries"]
                     else:
@@ -80,22 +82,24 @@ def qs_data_displayer(qs_data_reader: object, fitting_parameters: dict, fig: Fig
                     else:
                         bounds = (-np.inf, np.inf)
                     try:
-                        popt, pcov = curve_fit(bi_exp, x_data, contrast_mean, p0=p0, bounds=bounds, maxfev=maxfev)
+                        min_idx = np.argmin(contrast_mean)
+                        popt, pcov = curve_fit(bi_exp, x_data[min_idx:], contrast_mean[min_idx:], p0=p0, bounds=bounds, maxfev=maxfev)
                         tau = np.min([popt[0],popt[1]])
                         y_fit = bi_exp(x_data, *popt)
-                        r_square = r_squared(contrast_mean, y_fit)
+                        r_square = r_squared(contrast_mean[min_idx:], y_fit[min_idx:])
                         axes[0].plot([], [], label=f"tau (biexp.): {tau:.4f} ms",color="orange")
-                        info_dic["Biexponential Fit"] = f"1-({popt[3]:.3f}*e^(-x/{popt[0]:.3f}) + (1-{popt[3]:.3f}*e^(-x/{popt[1]:.3f})) - R^2 = {r_square}"
+                        info_dic["Biexponential Fit"] = f"{popt[2]:.3f} + (1-{popt[2]:.3f})*( 1-({popt[3]:.3f}*e^(-x/{popt[0]:.3f}) + (1-{popt[3]:.3f})*e^(-x/{popt[1]:.3f}))) - R^2 = {r_square:.3f}"
                         if "t1_show_bi_fit" in fitting_parameters.keys() and fitting_parameters["t1_show_bi_fit"] == True:
-                            axes[0].plot(x_data, y_fit, linestyle="--",color="orange", label=f"1-({popt[3]:.3f}*e^(-x/{popt[0]:.3f}) + (1-{popt[3]:.3f}*e^(-x/{popt[1]:.3f}))")
+                            axes[0].plot(x_data, y_fit, linestyle="--",color="orange", label=f"{popt[2]:.3f} + (1-{popt[2]:.3f})*( 1-({popt[3]:.3f}*e^(-x/{popt[0]:.3f}) + (1-{popt[3]:.3f})*e^(-x/{popt[1]:.3f})))")
                     except  RuntimeError as e:
                         info_dic["Bi Exp fit"] = "Fit did not work"
                         print(e)
                         
                 if ("t1_stretched_exp_fit" in fitting_parameters.keys() and fitting_parameters["t1_stretched_exp_fit"]) or "t1_stretched_exp_fit" not in fitting_parameters.keys():
                     p0 = [x_data[-1] / 3,  # tau ~ 1/3 of x range
-                          contrast_mean[0], # y0 from actual first point
-                          1.0]              # beta
+                          np.min(contrast_mean), # y0 from actual first point
+                          1.0]              #beta
+                                      
 
                     if "t1_max_stretch_tries" in fitting_parameters.keys():
                         maxfev= fitting_parameters["t1_max_stretch_tries"]
@@ -110,14 +114,15 @@ def qs_data_displayer(qs_data_reader: object, fitting_parameters: dict, fig: Fig
                     else:
                         bounds = (-np.inf, np.inf)
                     try:
-                        popt, pcov = curve_fit(stretched_exp, x_data, contrast_mean, p0=p0, bounds=bounds, maxfev=maxfev)
+                        min_idx = np.argmin(contrast_mean)
+                        popt, pcov = curve_fit(stretched_exp, x_data[min_idx:], contrast_mean[min_idx:], p0=p0, bounds=bounds, maxfev=maxfev)
                         tau = popt[0]
                         y_fit = stretched_exp(x_data, *popt)
-                        r_square = r_squared(contrast_mean, y_fit)
+                        r_square = r_squared(contrast_mean[min_idx:], y_fit[min_idx:])
                         axes[0].plot([], [], label=f"tau (str.exp.): {tau:.4f} ms",color="green")
-                        info_dic["Stretched Exp Fit"] = f"{popt[1]:.3f} + (1-{popt[1]:.3f}) * (1-e^(-x/{popt[0]:.3f})^{popt[2]:.3f}) - R^2 = {r_square}"
+                        info_dic["Stretched Exp Fit"] = f"{popt[1]:.3f} + (1-{popt[1]:.3f}) * (1-e^(-(x/{popt[0]:.3f})^{popt[2]:.3f})) - R^2 = {r_square:.3f}"
                         if "t1_show_stretch_fit" in fitting_parameters.keys() and fitting_parameters["t1_show_stretch_fit"] == True:
-                            axes[0].plot(x_data, y_fit, linestyle="--",color="green", label=f"{popt[1]:.3f} + (1-{popt[1]:.3f}) * (1-e^(-x/{popt[0]:.3f})^{popt[2]:.3f})")
+                            axes[0].plot(x_data, y_fit, linestyle="--",color="green", label=f"{popt[1]:.3f} + (1-{popt[1]:.3f}) * (1-e^(-(x/{popt[0]:.3f})^{popt[2]:.3f}))")
                     except  RuntimeError as e:
                          info_dic["Stretched exp fit"] = "Fit did not work"
                          print(e)
@@ -127,7 +132,7 @@ def qs_data_displayer(qs_data_reader: object, fitting_parameters: dict, fig: Fig
                         -0.03,              # A
                         2*np.pi/200,       # B
                         -np.pi/2,          # C (inverted start)
-                        np.mean(contrast_mean)  # D
+                        np.mean(contrast_mean)# D
                         ]
                     if "rabi_max_tries" in fitting_parameters.keys():
                         maxfev = fitting_parameters["rabi_max_tries"]
@@ -235,6 +240,8 @@ def bi_exp(x,tau1, tau2, y0, a):
     return y0 + (1 - y0) * (
         1 - (a * np.exp(-x / tau1) + (1 - a) * np.exp(-x / tau2))
     )
+
+
 
 def ec_data_displayer(potentiostat:object, fitting_dic:dict, fig: Figure | None = None):
     info_dic = {}
@@ -413,6 +420,13 @@ def ecqs_data_displayer(qs_data_reader, potentiostat, fitting_dic: dict, cache, 
     except:
         pass
     
+    sub_path = os.path.join(qs_data_reader.file_path, qs_data_reader.file_name)
+    os.makedirs(sub_path,exist_ok=True)
+    all_up_fig = Figure(figsize=(12,8), constrained_layout=True)
+    all_up_ax = all_up_fig.subplots()
+    all_down_fig = Figure(figsize=(12,8), constrained_layout=True)
+    all_down_ax = all_down_fig.subplots()
+    
     ec_data = potentiostat.evaluated_data()
     #print(f"EC data: {ec_data}")
     ec_figure_title = potentiostat.measurement_name
@@ -456,6 +470,7 @@ def ecqs_data_displayer(qs_data_reader, potentiostat, fitting_dic: dict, cache, 
                 x_values_up = plot_up["Potential"]
                 qs_light_up = []
                 print(f"v_values_up length: {len(x_values_up)}")
+                all_up_ax.set_prop_cycle(color=mpl.colormaps['Blues'](np.linspace(0.2, 1.0, len(plot_up))))
                 for i,row in plot_up.iterrows():
                     time_begin = np.atleast_1d(row["Time_begin"])
                     time_end   = np.atleast_1d(row["Time_end"])
@@ -489,8 +504,9 @@ def ecqs_data_displayer(qs_data_reader, potentiostat, fitting_dic: dict, cache, 
                         qs_points = 0
                     
                     p0 = [qs_tau[-1] / 3,  # tau ~ 1/3 of x range
-                          qs_contrast[0], # y0 from actual first point
-                          1.0]              # beta
+                          np.min(qs_contrast), # y0 from actual first point
+                          1.0              # beta
+                          ]                #Amp
                     if "use_bounds" in fitting_dic.keys() and fitting_dic["use_bounds"]==True:
                         bounds = (
                             [qs_tau[1],        0.5, 0.1],          # lower
@@ -500,15 +516,26 @@ def ecqs_data_displayer(qs_data_reader, potentiostat, fitting_dic: dict, cache, 
                         bounds = (-np.inf, np.inf)
                     #time_0=time()
                     try:
-                        popt, pcov = curve_fit(stretched_exp, qs_tau, qs_contrast, p0=p0, bounds=bounds,maxfev=maxfev)
+                        min_idx = np.argmin(qs_contrast)
+                        popt, pcov = curve_fit(stretched_exp, qs_tau[min_idx:], qs_contrast[min_idx:], p0=p0, bounds=bounds,maxfev=maxfev)
                         tau = popt[0]
                         if tau < 0:
                             tau =0
                         tau_values_up.append(tau)
-                        y_fit = stretched_exp(qs_tau, *popt)
-                        r_square = r_squared(qs_contrast, y_fit)
+                        y_fit = stretched_exp(qs_tau[min_idx:], *popt)
+                        r_square = r_squared(qs_contrast[min_idx:], y_fit)
                         r_square_up.append(r_square)
-                        
+                        """
+                        Plot figure for every potential
+                        """
+                        plt.plot(qs_tau,qs_contrast,marker="x",color="blue",label=f"{x_values_up[i]:.3f}V")
+                        all_up_ax.plot(qs_tau,qs_contrast,marker="x",label=f"{x_values_up[i]:.3f}V")
+                        plt.plot(qs_tau[min_idx:],y_fit,linestyle="--",color="blue",label=f"fit: {tau:.3f} ms, R^2 = {r_square:.3f}")
+                        name = f"QS_Up_{x_values_up[i]:.3f}V.png"
+                        fig_path = os.path.join(sub_path,name)
+                        plt.legend()
+                        plt.savefig(fig_path, dpi=300)
+                        plt.close()
                     except Exception as e:
                         print(e)
                         tau_values_up.append(0)
@@ -553,6 +580,7 @@ def ecqs_data_displayer(qs_data_reader, potentiostat, fitting_dic: dict, cache, 
                 x_values_down = plot_down["Potential"]
                 qs_light_down = []
                 print(f"v_values_down length: {len(x_values_down)}")
+                all_down_ax.set_prop_cycle(color=mpl.colormaps['Reds'](np.linspace(0.2, 1.0, len(plot_down))))
                 for i,row in plot_down.iterrows():
                     time_begin = np.atleast_1d(row["Time_begin"])
                     time_end   = np.atleast_1d(row["Time_end"])
@@ -585,8 +613,9 @@ def ecqs_data_displayer(qs_data_reader, potentiostat, fitting_dic: dict, cache, 
                        
                     
                     p0 = [qs_tau[-1] / 3,  # tau ~ 1/3 of x range
-                          qs_contrast[0], # y0 from actual first point
-                          1.0]              # beta
+                          np.min(qs_contrast), # y0 from actual first point
+                          1.0                    # beta
+                          ]                      
                     if "use_bounds" in fitting_dic.keys() and fitting_dic["use_bounds"]==True:
                         bounds = (
                             [qs_tau[1],        0.5, 0.1],          # lower
@@ -596,15 +625,27 @@ def ecqs_data_displayer(qs_data_reader, potentiostat, fitting_dic: dict, cache, 
                         bounds = (-np.inf, np.inf)
                    # t0 = time()
                     try:
-                        popt, pcov = curve_fit(stretched_exp, qs_tau, qs_contrast, p0=p0,bounds=bounds, maxfev=maxfev)
+                        min_idx = np.argmin(qs_contrast)
+                        popt, pcov = curve_fit(stretched_exp, qs_tau[min_idx:], qs_contrast[min_idx:], p0=p0,bounds=bounds, maxfev=maxfev)
                         tau = popt[0]
                         if tau < 0:
                             tau =0
                         tau_values_down.append(tau)
-                        y_fit = stretched_exp(qs_tau, *popt)
-                        r_square = r_squared(qs_contrast, y_fit)
+                        y_fit = stretched_exp(qs_tau[min_idx:], *popt)
+                        r_square = r_squared(qs_contrast[min_idx:], y_fit)
                         r_square_down.append(r_square)
-                       
+                        """
+                        Plot figure for every potential
+                        """
+                        plt.plot(qs_tau,qs_contrast,color="red",marker="x",label=f"{x_values_down[i]:.3f}")
+                        all_down_ax.plot(qs_tau,qs_contrast,marker="x",label=f"{x_values_down[i]:.3f}")
+                        plt.plot(qs_tau[min_idx:],y_fit,linestyle="--",color="red",label=f"fit: {tau:.3f} ms, R^2 = {r_square:.3f}")
+                        name = f"QS_Down_{x_values_down[i]:.3f}V.png"
+                        fig_path = os.path.join(sub_path,name)
+                        plt.legend()
+                        plt.savefig(fig_path, dpi=300)
+                        plt.close()
+                        
                     except Exception as e:
                         print(e)
                         tau_values_down.append(0)
@@ -691,6 +732,24 @@ def ecqs_data_displayer(qs_data_reader, potentiostat, fitting_dic: dict, cache, 
         integral = potentiostat.get_measurement_integrals()
         axes[1,0].plot(range(1, len(integral) + 1), integral,  label="Current sum")    
         
+        #Get all EC figures
+        for i,figure in enumerate(potentiostat.get_measurement_plots()):
+            fig_path = os.path.join(sub_path,f"EC_{i}.png")
+            if os.path.exists(fig_path):
+                pass
+            else:
+                figure.savefig(fig_path, dpi=300)
+            plt.close(figure)
+            
+        up_fig_name = "QS_Up_all.png"
+        down_fig_name = "QS_Down_all.png"
+        
+        all_up_ax.legend()
+        all_down_ax.legend()
+        all_up_fig.savefig(os.path.join(sub_path, up_fig_name), dpi=300)
+        all_down_fig.savefig(os.path.join(sub_path, down_fig_name), dpi=300)
+        plt.close(all_up_fig)
+        plt.close(all_down_fig)
         #Code lightlevel over time here
         raw_ec_data = potentiostat.get_measurement_results()[1]
         time_min = np.min(raw_ec_data["Time_begin"])
