@@ -914,6 +914,7 @@ class App(tk.Tk):
                 pass
         self.live_status_label.config(text="Stopping measurement...")
     def on_esr_send(self):
+        self.esr = User_ESR_input()
         self.cleanup_measurement_state()
         values = [e.get() for e in self.esr_entries]
         self.esr.points = values[0]
@@ -931,6 +932,7 @@ class App(tk.Tk):
         self.show_frame("live")
         self.update_qs_live_figure()
     def on_rabi_send(self):
+        self.rabi = User_Rabi_input()
         self.cleanup_measurement_state()
         values = [e.get() for e in self.rabi_entries]
         self.rabi.max_pulse_duration = values[0]
@@ -947,6 +949,7 @@ class App(tk.Tk):
         self.show_frame("live")
         self.update_qs_live_figure()
     def on_t1_send(self):
+        self.t1 = User_T1_input()
         self.cleanup_measurement_state()
         values = [e.get() for e in self.t1_entries]
         self.t1.points = values[0]
@@ -1003,6 +1006,7 @@ class App(tk.Tk):
         self.update_ec_live_figure()
             
     def on_cv_t1_send(self):
+        self.t1 = User_T1_input()
         self.cleanup_measurement_state()
         self.potentiostat = Potentiostat(self.data_folder)
         self.ecqs_cache = ECQS_cache()
@@ -1036,6 +1040,7 @@ class App(tk.Tk):
         self.show_frame("live")
         self.update_ecqs_live_figure()
     def on_swv_t1_send(self):
+        self.t1 = User_T1_input()
         self.cleanup_measurement_state()
         self.potentiostat = Potentiostat(self.data_folder)
         self.ecqs_cache = ECQS_cache()
@@ -1083,6 +1088,7 @@ class App(tk.Tk):
         self.update_ecqs_live_figure()
         
     def on_lsv_t1_send(self):
+        self.t1 = User_T1_input()
         self.cleanup_measurement_state()
         self.potentiostat = Potentiostat(self.data_folder)
         self.ecqs_cache = ECQS_cache()
