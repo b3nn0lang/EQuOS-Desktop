@@ -17,6 +17,7 @@ from Potentiostat import Potentiostat
 import numpy as np
 import gc
 
+max_db = 8 
 class App(tk.Tk):
     def __init__(self):
         super().__init__()
@@ -115,7 +116,7 @@ class App(tk.Tk):
             "Averages:",
             "Min MW Freq [Ghz]:",
             "MAX MW Freq [Ghz]:",
-            "MW Ampltude [dB]:",
+            f"MW Ampltude [dB] (max. {max_db}):",
             "Annotation:"
         ]
 
@@ -167,7 +168,7 @@ class App(tk.Tk):
             "max. \u03C0-pulse Length [ns]:",
             "Averages:",
             "MW Frequency [Ghz]:",
-            "MW Amplitude [dB]:",
+            f"MW Ampltude [dB] (max. {max_db}):",
             "Annotation:"
             ]
         rabi_defaults = [
@@ -215,7 +216,7 @@ class App(tk.Tk):
             "Max. \u03C4 [ms]:",
             "\u03C0-pulse Length [ns]:",
             "MW Frequency [Ghz]:",
-            "MW Amplitude [dB]:",
+            f"MW Ampltude [dB] (max. {max_db}):",
             "Annotation:"
             ]
         t1_defaults = [
@@ -319,7 +320,7 @@ class App(tk.Tk):
             "Max. \u03C4 [ms]:",
             "\u03C0-pulse Length [ns]:",
             "MW Frequency [Ghz]:",
-            "MW Amplitude [dB]:",
+            f"MW Ampltude [dB] (max. {max_db}):",
             "Start Potential [V]:",
             "End Potential [V]:",
             "Potential Step [mV]:",
@@ -381,7 +382,7 @@ class App(tk.Tk):
             "Max. \u03C4 [ms]:",
             "\u03C0-pulse Length [ns]:",
             "MW Frequency [Ghz]:",
-            "MW Amplitude [dB]:",
+            f"MW Ampltude [dB] (max. {max_db}):",
             "Start Potential [V]:",
             "End Potential [V]:",
             "Potential Step [mV]:",
@@ -444,7 +445,7 @@ class App(tk.Tk):
          "Max. \u03C4 [ms]:",
          "\u03C0-pulse Length [ns]:",
          "MW Frequency [Ghz]:",
-         "MW Amplitude [dB]:",
+         f"MW Ampltude [dB] (max. {max_db}):",
          "Start Potential [V]:","End Potential [V]:","Potential Step [mV]:","Scanrate [mV/s]:","T1-averages / LSV-point:","Annotation:"]
         lsv_t1_defaults= [
             self.t1.points,

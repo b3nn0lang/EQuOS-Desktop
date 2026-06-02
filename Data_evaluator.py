@@ -128,34 +128,54 @@ def qs_data_displayer(qs_data_reader: object, fitting_parameters: dict, fig: Fig
                          print(e)
             if measurement_type == "Rabi" or measurement_type == "Rabi_ECQS":
                 if ("rabi_sin_fit" in fitting_parameters.keys() and fitting_parameters["rabi_sin_fit"] == True) or "rabi_sin_fit" not in fitting_parameters.keys():
-                    p0= [
-                        -0.03,              # A
-                        2*np.pi/200,       # B
-                        -np.pi/2,          # C (inverted start)
-                        np.mean(contrast_mean)# D
-                        ]
+                    p0 = [
+                                0.008,          # A
+                                2*np.pi/75,     # omega
+                                0.0,            # phi
+                                250,            # T
+                                0.992           # offset
+                            ]
                     if "rabi_max_tries" in fitting_parameters.keys():
                         maxfev = fitting_parameters["rabi_max_tries"]
                     else:
                         maxfev = 20000
                     if "rabi_use_bounds" in fitting_parameters.keys() and fitting_parameters["rabi_use_bounds"] == True:
                         bounds = (
-                            [-0.2,        2*np.pi/800, -2*np.pi, 0.6],  # lower
-                            [0.0,        2*np.pi/20,   0, 1.2]   # upper
-                            )
+                                    [
+                                        0.001,           # A
+                                        2*np.pi/200,     # period max 120 ns
+                                        -2*np.pi,        # phi
+                                        50,              # T
+                                        0.985            # offset
+                                    ],
+                                    [
+                                        0.03,            # A
+                                        2*np.pi/15,      # period min 40 ns
+                                        2*np.pi,         # phi
+                                        2000,            # T
+                                        1.000            # offset
+                                    ]
+                                )
                     else:
                         bounds = (-np.inf, np.inf)
                     try:
+                      #  weights = np.exp(-x_data / (x_data[-1] / 1))   # decay scale ~ 1/3 of x range
+                       # sigma = 1.0 / (weights + 1e-10)                 # invert: high weight → small sigma
                         popt, pcov = curve_fit(
                             rabi_fit_function,
                             x_data,
                             contrast_mean,
                             p0=p0,
                             bounds=bounds,
-                            maxfev=maxfev)
-                        pi_pulse_duration = get_pi_from_rabi_fit(popt[1], popt[2])
-                        y = np.interp(pi_pulse_duration, x_data, contrast_mean)
+                            maxfev=maxfev
+                            #sigma=sigma,
+                           # absolute_sigma=False
+                           )
+                        #pi_pulse_duration = get_pi_from_rabi_fit(popt[1], popt[2]) OLD
                         y_fit = rabi_fit_function(x_data,*popt) 
+                        pi_idx = np.argmin(y_fit)
+                        pi_pulse_duration = x_data[pi_idx]
+                        y = np.interp(pi_pulse_duration, x_data, contrast_mean)
                         
                         r_square = r_squared(contrast_mean, y_fit)
                         axes[0].plot(pi_pulse_duration, y,"gx",label =f"pi pulse: {pi_pulse_duration} ns")
@@ -221,14 +241,19 @@ def qs_data_displayer(qs_data_reader: object, fitting_parameters: dict, fig: Fig
         pass
     finally:
         return fig, axes, measurement_done, measurement_progress, info_dic
-        
+"""        
 def rabi_fit_function(x,a,b,c,d):
     return a * np.cos(b * x + c) + d
-def get_pi_from_rabi_fit(b,c):
+"""
+def rabi_fit_function(x, A, omega, phi, T, offset):
+    return A * np.exp(-x/T) * np.cos(omega*x + phi) + offset
+
+"""def get_pi_from_rabi_fit(b,c):
     for i in range(-5,5,2):
         pi_fit= (np.pi - c + i*np.pi) / b
         if pi_fit>0:
             return pi_fit
+"""
 def r_squared(ydata, yfit):
     ss_res = np.sum((ydata - yfit) ** 2)
     ss_tot = np.sum((ydata - np.mean(ydata)) ** 2)
