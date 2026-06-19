@@ -758,19 +758,22 @@ def ecqs_data_displayer(qs_data_reader, potentiostat, fitting_dic: dict, cache, 
         axes[1,0].plot(range(1, len(integral) + 1), integral,  label="Current sum")    
         
         #Get all EC figures
-        for i,figure in enumerate(potentiostat.get_measurement_plots()):
-            fig_path = os.path.join(sub_path,f"EC_{i}.png")
-            if os.path.exists(fig_path):
-                pass
-            else:
-                figure.savefig(fig_path, dpi=300)
-            plt.close(figure)
+        try:
+            for i,figure in enumerate(potentiostat.get_measurement_plots()):
+                fig_path = os.path.join(sub_path,f"EC_{i}.png")
+                if os.path.exists(fig_path):
+                    pass
+                else:
+                    figure.savefig(fig_path, dpi=300)
+                plt.close(figure)
+        except:
+            pass
             
         up_fig_name = "QS_Up_all.png"
         down_fig_name = "QS_Down_all.png"
         
-        all_up_ax.legend(loc="se")
-        all_down_ax.legend(loc="se")
+        all_up_ax.legend(loc="lower right")
+        all_down_ax.legend(loc="lower right")
         all_up_fig.savefig(os.path.join(sub_path, up_fig_name), dpi=300)
         all_down_fig.savefig(os.path.join(sub_path, down_fig_name), dpi=300)
         plt.close(all_up_fig)

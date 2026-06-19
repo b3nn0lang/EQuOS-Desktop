@@ -1011,8 +1011,22 @@ class App(tk.Tk):
         self.cleanup_measurement_state()
         self.potentiostat = Potentiostat(self.data_folder)
         self.ecqs_cache = ECQS_cache()
-        #  "Points:","Max. \u03C4 [ms]:","\u03C0-pulse Length [ns], MW Frequency [Ghz]:","MW Amplitude [dB]:",
-        #"Start Potential [V]:","End Potential [V]:","Potential Step [mV]:","Sweeping Rate [mV/s]:","T1-averages / CV-point:","Annotation:"
+        
+        """cv_t1_labels = [
+            "Points:",
+            "Spacing:",
+            "Max. \u03C4 [ms]:",
+            "\u03C0-pulse Length [ns]:",
+            "MW Frequency [Ghz]:",
+            f"MW Ampltude [dB] (max. {max_db}):",
+            "Start Potential [V]:",
+            "End Potential [V]:",
+            "Potential Step [mV]:",
+            "Sweeping Rate [mV/s]:",
+            "T1-averages / CV-point:",
+            "Annotation:"
+            ]
+        """
         values = [e.get() for e in self.cv_t1_entries]
         self.t1.points = values[0]
         self.t1.spacing = values[1]
@@ -1029,9 +1043,9 @@ class App(tk.Tk):
         ec_points = (abs(begin_potential-end_potential)/step_potential)*2
         ec_time = step_potential/scanrate
         avg_p_p = int(values[10])
-        self.t1.averages = calculate_t1_averages(ec_points, avg_p_p, ec_time, int(values[0]), float(values[1]))
+        self.t1.averages = calculate_t1_averages(ec_points, avg_p_p, ec_time, int(values[0]), float(values[2]))
         user_params = self.t1.export_params()
-        self.qs_file_name, self.ec_file_name = create_file_name(qs_type="T1",ec_type="CV",annotation=values[10])
+        self.qs_file_name, self.ec_file_name = create_file_name(qs_type="T1",ec_type="CV",annotation=values[11])
         self.current_measurement_method = "CV-T1"
         
         Send_t1_measurement(self.qs_file_name, user_params)
@@ -1076,7 +1090,7 @@ class App(tk.Tk):
         avg_p_p = int(values[11])
         ec_points = (abs(begin_potential-end_potential)/step_potential)
         ec_time = 1/frequency
-        self.t1.averages = calculate_t1_averages(ec_points, avg_p_p, ec_time, int(values[0]), float(values[1]))
+        self.t1.averages = calculate_t1_averages(ec_points, avg_p_p, ec_time, int(values[0]), float(values[2]))
         user_params = self.t1.export_params()
         self.qs_file_name, self.ec_file_name = create_file_name(qs_type="T1",ec_type="SWV",annotation=values[11])
         self.current_measurement_method = "SWV-T1"
@@ -1117,9 +1131,9 @@ class App(tk.Tk):
         avg_p_p = int(values[10])
         ec_points = (abs(begin_potential-end_potential)/step_potential)
         ec_time = step_potential/scanrate
-        self.t1.averages = calculate_t1_averages(ec_points, avg_p_p, ec_time, int(values[0]), float(values[1]))
+        self.t1.averages = calculate_t1_averages(ec_points, avg_p_p, ec_time, int(values[0]), float(values[2]))
         user_params = self.t1.export_params()
-        self.qs_file_name, self.ec_file_name = create_file_name(qs_type="T1",ec_type="LSV",annotation=values[10])
+        self.qs_file_name, self.ec_file_name = create_file_name(qs_type="T1",ec_type="LSV",annotation=values[11])
         self.current_measurement_method = "LSV-T1"
         Send_t1_measurement(self.qs_file_name, user_params)
         self.potentiostat.start_measurement_until_stop(self.ec_file_name, method,avg_p_p)
