@@ -711,9 +711,10 @@ class QS_data_reader():
         row_max = np.max(data, axis=1, keepdims=True)
         row_range = row_max - row_min
     
-        return np.divide(
+        normalized = np.divide(
             data - row_min,
             row_range,
             out=np.zeros_like(data, dtype=float),
             where=row_range != 0,
         )
+        return 1.0 - normalized
