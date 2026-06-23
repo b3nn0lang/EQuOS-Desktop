@@ -33,8 +33,12 @@ def qs_data_displayer(qs_data_reader: object, fitting_parameters: dict, fig: Fig
         measurement_done = qs_data_reader.dataframe_loop_stop.is_set()
         x_data = np.array(data["x_data"])
         x_label = f"{data['x_label']} / {data['x_unit']}" if data["x_unit"] else data["x_label"]
-        contrast_mean = np.array(data["contrast_mean"])
-        contrast_std =  np.array(data["contrast_std"])
+        if data["experiment"] == "T1_ECQS":
+            contrast_mean = np.array(data["normalized_contrast_mean"])
+            contrast_std =  np.array(data["normalized_contrast_std"])
+        else:
+            contrast_mean = np.array(data["contrast_mean"])
+            contrast_std =  np.array(data["contrast_std"])
         if x_data.size == 0:
             return fig, axes, measurement_done, measurement_progress, info_dic
         info_dic["Measurement_time"] = f"{np.mean(data['time_measure_mean'])*1000:.0f} +- {np.mean(data['time_measure_std'])*1000:.0f} ms"
@@ -504,8 +508,9 @@ def ecqs_data_displayer(qs_data_reader, potentiostat, fitting_dic: dict, cache, 
                     #print(time_frames_up)
                     qs_data_up = qs_data_reader.evaluate_qs_data(cutoff_rate=cutoff_rate,time_array=time_frames_up)
                     qs_tau = qs_data_up["x_data"]
-                    qs_contrast = qs_data_up["contrast_mean"]
-                    qs_lightlevel = np.mean(qs_data_up["reference_mean"])*10
+                    #qs_contrast = qs_data_up["contrast_mean"]
+                    qs_contrast = qs_data_up["normalized_contrast_mean"]
+                    qs_lightlevel = np.mean(qs_data_up["reference_mean"])
                     
                     try:
                         qs_tau = np.atleast_1d(np.asarray(qs_tau, dtype=float))
@@ -613,8 +618,9 @@ def ecqs_data_displayer(qs_data_reader, potentiostat, fitting_dic: dict, cache, 
                    # print("shape:", time_frames_down.shape)
                     qs_data_down = qs_data_reader.evaluate_qs_data(cutoff_rate=cutoff_rate,time_array=time_frames_down)
                     qs_tau = qs_data_down["x_data"]
-                    qs_contrast = qs_data_down["contrast_mean"]
-                    qs_lightlevel = np.mean(qs_data_down["reference_mean"])*10
+                   # qs_contrast = qs_data_down["contrast_mean"]
+                    qs_contrast = qs_data_down["normalized_contrast_mean"]
+                    qs_lightlevel = np.mean(qs_data_down["reference_mean"])
                     try:
                         qs_tau = np.atleast_1d(np.asarray(qs_tau, dtype=float))
                         qs_contrast = np.atleast_1d(np.asarray(qs_contrast, dtype=float))
