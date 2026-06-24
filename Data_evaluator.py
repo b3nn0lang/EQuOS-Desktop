@@ -48,6 +48,7 @@ def qs_data_displayer(qs_data_reader: object, fitting_parameters: dict, fig: Fig
         info_dic["Saving time"] = f"{np.mean(data['time_save_mean'])*1000:.0f} +- {np.mean(data['time_save_std'])*1000:.0f} ms"
         info_dic["Light Level"] = f"{np.mean(data['reference_mean']):.4f} V"
         info_dic["Measurement points"] = f"{len(data['x_data'])} points x {data['contrast_length'][0]} averages"
+        add_qs_measurement_parameters(info_dic, qs_data_reader)
         axes[0].plot(x_data, contrast_mean, color="tab:blue", label="contrast mean")
         """ axes[0].fill_between(
             x_data,
@@ -268,6 +269,94 @@ def r_squared(ydata, yfit):
         return 0
     return 1 - (ss_res / ss_tot)
 
+def add_qs_measurement_parameters(info_dic, qs_data_reader, prefix=""):
+    params = getattr(qs_data_reader, "params", None)
+    if not isinstance(params, dict):
+        return
+
+    experiment = params.get("experiment_type", getattr(qs_data_reader, "experiment_type", ""))
+    add_if_not_none(info_dic, f"{prefix}Experiment", experiment)
+    add_if_not_none(info_dic, f"{prefix}Averages", params.get("averages"))
+    add_if_not_none(info_dic, f"{prefix}Dynamic points", params.get("dynamic_steps", get_nested(params, ["data", "dynamic_steps"])))
+    add_if_not_none(info_dic, f"{prefix}Averaging mode", get_nested(params, ["data", "averaging_mode"]))
+    add_if_not_none(info_dic, f"{prefix}Sensor measurements", get_nested(params, ["sensor", "config", "number_measurements"]))
+
+    if experiment in ("ESR", "ESR_ECQS"):
+        min_freq = get_nested(params, ["dynamic_devices", "mw_source", "config", "frequency", 0, 1, 0])
+        max_freq = get_nested(params, ["dynamic_devices", "mw_source", "config", "frequency", 0, 1, 1])
+        mw_amp = get_nested(params, ["dynamic_devices", "mw_source", "config", "amplitude", 0, 1, 0])
+        laser_spot = get_nested(params, ["dynamic_devices", "mw_source", "config", "frequency", 1, 1, 0])
+        add_if_not_none(info_dic, f"{prefix}MW frequency min", scale_value(min_freq, 1e-9), "GHz")
+        add_if_not_none(info_dic, f"{prefix}MW frequency max", scale_value(max_freq, 1e-9), "GHz")
+        add_if_not_none(info_dic, f"{prefix}MW amplitude", mw_amp, "dB")
+        add_if_not_none(info_dic, f"{prefix}Laser spot", scale_value(laser_spot, 1e-6), "MHz")
+        return
+
+    if experiment in ("Rabi", "Rabi_ECQS"):
+        mw_freq = get_nested(params, ["static_devices", "mw_source", "config", "frequency", 0, 1])
+        mw_amp = get_nested(params, ["static_devices", "mw_source", "config", "amplitude", 0, 1])
+        laser_spot = get_nested(params, ["static_devices", "mw_source", "config", "frequency", 1, 1])
+        pi_durations = params.get("pi_pulse_durations", [])
+        add_if_not_none(info_dic, f"{prefix}ESR frequency", scale_value(mw_freq, 1e-9), "GHz")
+        add_if_not_none(info_dic, f"{prefix}MW amplitude", mw_amp, "dB")
+        add_if_not_none(info_dic, f"{prefix}Laser spot", scale_value(laser_spot, 1e-6), "MHz")
+        add_if_not_none(info_dic, f"{prefix}Rabi max pulse", safe_max(pi_durations), "ns")
+        add_if_not_none(info_dic, f"{prefix}Rabi points", safe_len(pi_durations))
+        return
+
+    if experiment in ("T1", "T1_ECQS"):
+        mw_freq = get_nested(params, ["static_devices", "mw_source", "config", "frequency", 0, 1])
+        mw_amp = get_nested(params, ["static_devices", "mw_source", "config", "amplitude", 0, 1])
+        laser_spot = get_nested(params, ["static_devices", "mw_source", "config", "frequency", 1, 1])
+        pi_duration = get_nested(params, ["pulse_sequence", "mw_duration"])
+        tau_max = get_nested(params, ["pulse_sequence", "t1_max"])
+        tau_spacings = params.get("tau_spacings", [])
+        add_if_not_none(info_dic, f"{prefix}ESR frequency", scale_value(mw_freq, 1e-9), "GHz")
+        add_if_not_none(info_dic, f"{prefix}MW amplitude", mw_amp, "dB")
+        add_if_not_none(info_dic, f"{prefix}Laser spot", scale_value(laser_spot, 1e-6), "MHz")
+        add_if_not_none(info_dic, f"{prefix}Pi pulse duration", scale_value(pi_duration, 1000), "ns")
+        add_if_not_none(info_dic, f"{prefix}T1 max tau", scale_value(tau_max, 0.001), "ms")
+        add_if_not_none(info_dic, f"{prefix}T1 spacing", get_nested(params, ["pulse_sequence", "spacing_type"]))
+        add_if_not_none(info_dic, f"{prefix}T1 points", safe_len(tau_spacings))
+
+def get_nested(data, path):
+    current = data
+    try:
+        for key in path:
+            current = current[key]
+        return current
+    except (KeyError, IndexError, TypeError):
+        return None
+
+def scale_value(value, factor):
+    if value is None:
+        return None
+    try:
+        return float(value) * factor
+    except (TypeError, ValueError):
+        return value
+
+def safe_len(value):
+    try:
+        return len(value)
+    except TypeError:
+        return None
+
+def safe_max(value):
+    try:
+        return max(value) if len(value) else None
+    except TypeError:
+        return None
+
+def add_if_not_none(info_dic, key, value, unit=None):
+    if value is None:
+        return
+    if isinstance(value, float):
+        text = f"{value:.6g}"
+    else:
+        text = str(value)
+    info_dic[key] = f"{text} {unit}" if unit else text
+
 def normalize_averaged_decay(mean, std=None):
     mean = np.atleast_1d(np.asarray(mean, dtype=float))
     if mean.size == 0:
@@ -478,6 +567,7 @@ def ecqs_data_displayer(qs_data_reader, potentiostat, fitting_dic: dict, cache, 
         info_dic["QS:Saving time"] = f"{np.mean(qs_data['time_save_mean'])*1000:.0f} +- {np.mean(qs_data['time_save_std'])*1000:.0f} ms"
         info_dic["QS:Light Level"] = f"{np.mean(qs_data['reference_mean']):.4f} V"
         info_dic["QS:Measurement points"] = f"{len(qs_data['x_data'])} points x {qs_data['contrast_length'][0]} averages"
+        add_qs_measurement_parameters(info_dic, qs_data_reader, prefix="QS:")
     except:
         pass
     
@@ -876,8 +966,6 @@ def ecqs_data_displayer(qs_data_reader, potentiostat, fitting_dic: dict, cache, 
     axes[1,0].set_ylabel("Abs Current Sum [uA]")
     axes[1,0].grid(True, alpha=0.3)
     axes[1,0].legend()
-    print("R2:")
-    print(sum([sum(r_square_down),sum(r_square_up)]))
     if potentiostat.potentiostat_disconnected.is_set() and qs_data_reader.dataframe_loop_stop.is_set():
         measurement_done=True
     elif qs_data_reader.dataframe_loop_stop.is_set() and not potentiostat.stop_measurement.is_set():
