@@ -37,7 +37,7 @@ class App(tk.Tk):
         self.live_update_job = None
         self.state("zoomed")
         self.iconbitmap("logo/EQuOS_icon.ico")       # .ico file
-        self.photo = tk.PhotoImage(file="logo/EQuOS_logo.png")
+        self.photo = tk.PhotoImage(file='logo/EQuOS_logo.png')
         self.logo = tk.Label(self, image=self.photo)
         self.logo.pack()
         tk.Button(self, text="📁 change directory", command=self.on_folder_send).pack()

@@ -239,8 +239,12 @@ class QS_data_reader():
         signal_rows = raw_rows[:, 2:].reshape(-1, self.points_per_row, self.reference_channels)
         channel_0 = signal_rows[:, :, 0]
         channel_1 = signal_rows[:, :, 1]
-        contrast = np.divide(channel_1, channel_0)
-
+        contrast = np.divide(
+            channel_1,
+            channel_0,
+            out=np.zeros_like(channel_1, dtype=float),
+            where=channel_0 != 0,
+        )
         with self._summary_lock:
             summary = self._live_summary
             if self.averaging_mode == "spread":
@@ -255,7 +259,7 @@ class QS_data_reader():
                 summary["time_measure_sum"] += float(np.sum(durations))
                 summary["time_measure_sumsq"] += float(np.sum(durations ** 2))
                 summary["time_measure_count"] += len(durations)
-
+                
                 gap_list = []
                 if summary["last_end"] is not None:
                     gap_list.append(float(t_begin[0] - summary["last_end"]))
@@ -534,9 +538,6 @@ class QS_data_reader():
         return_data["time_measure_length"] = summary["time_measure_length"]
         return_data["time_save_length"] = summary["time_save_length"]
         return_data["length"] = summary["length"]
-        return_data["normalized_contrast_mean"] = summary["normalized_contrast_mean"]
-        return_data["normalized_contrast_std"] = summary["normalized_contrast_std"]
-        return_data["normalized_contrast_length"] = summary["normalized_contrast_length"]
         return return_data
    
     def _time_stats(self, t_begin: np.ndarray, t_end: np.ndarray) -> tuple[float, float, int, float, float, int]:
@@ -645,19 +646,16 @@ class QS_data_reader():
                 "reference_mean": [],
                 "value_mean": [],
                 "contrast_mean": [],
-                "normalized_contrast_mean": [],
                 "time_measure_mean": [],
                 "time_save_mean": [],
                 "reference_std": [],
                 "value_std": [],
                 "contrast_std": [],
-                "normalized_contrast_std": [],
                 "time_measure_std": [],
                 "time_save_std": [],
                 "reference_length": [],
                 "value_length": [],
                 "contrast_length": [],
-                "normalized_contrast_length": [],
                 "time_measure_length": [],
                 "time_save_length": [],
                 "length": 0,
@@ -665,10 +663,13 @@ class QS_data_reader():
 
         channel_0 = signal_rows[:, :n_points, 0]
         channel_1 = signal_rows[:, :n_points, 1]
-        contrast = np.divide(channel_1, channel_0)
-        
-        normalized_contrast = self._normalize_rows_0_1(contrast)
-        
+        contrast = np.divide(
+            channel_1,
+            channel_0,
+            out=np.zeros_like(channel_1, dtype=float),
+            where=channel_0 != 0,
+        )
+
         n_rows = signal_rows.shape[0]
         t_measure_mean_i, t_measure_std_i, t_measure_len_i, t_save_mean_i, t_save_std_i, t_save_len_i = self._time_stats(
             t_begin_rows,
@@ -679,42 +680,17 @@ class QS_data_reader():
             "reference_mean": np.mean(channel_0, axis=0).tolist(),
             "value_mean": np.mean(channel_1, axis=0).tolist(),
             "contrast_mean": np.mean(contrast, axis=0).tolist(),
-            "normalized_contrast_mean": np.mean(normalized_contrast, axis=0).tolist(),
             "time_measure_mean": [t_measure_mean_i] * n_points,
             "time_save_mean": [t_save_mean_i] * n_points,
             "reference_std": (np.std(channel_0, axis=0) / np.sqrt(n_rows)).tolist(),
             "value_std": (np.std(channel_1, axis=0) / np.sqrt(n_rows)).tolist(),
             "contrast_std": (np.std(contrast, axis=0) / np.sqrt(n_rows)).tolist(),
-            "normalized_contrast_std": (
-                  np.std(normalized_contrast, axis=0) / np.sqrt(n_rows)
-              ).tolist(),
             "time_measure_std": [t_measure_std_i] * n_points,
             "time_save_std": [t_save_std_i] * n_points,
             "reference_length": [n_rows] * n_points,
             "value_length": [n_rows] * n_points,
             "contrast_length": [n_rows] * n_points,
-            "normalized_contrast_length": [n_rows] * n_points,
             "time_measure_length": [t_measure_len_i] * n_points,
             "time_save_length": [t_save_len_i] * n_points,
             "length": n_rows,
         }
-    def _normalize_rows_0_1(self, data: np.ndarray) -> np.ndarray:
-        """
-        Normalize each row independently to [0, 1].
-    
-        data shape:
-            rows x x_points
-    
-        If a row is constant, the normalized row is set to 0.
-        """
-        row_min = np.min(data, axis=1, keepdims=True)
-        row_max = np.max(data, axis=1, keepdims=True)
-        row_range = row_max - row_min
-    
-        normalized = np.divide(
-            data - row_min,
-            row_range,
-            out=np.zeros_like(data, dtype=float),
-            where=row_range != 0,
-        )
-        return 1.0 - normalized

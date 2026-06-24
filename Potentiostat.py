@@ -10,6 +10,7 @@ from time import time
 import os
 import threading
 import pandas as pd
+from tqdm import tqdm
 try:
     import zstandard  # force early load before pythonnet
 except ImportError:
@@ -85,7 +86,8 @@ class Potentiostat():
         with self.result_lock:
             measurements = self.measurement_results[0]
             integrals = []
-            for measurement in measurements:
+            print("Get EC Integrals")
+            for measurement in tqdm(measurements):
                 if hasattr(measurement, "dataset"):
                     integrals.append(float(np.sum(np.abs(measurement.dataset.arrays(type='Current')))))
                 elif isinstance(measurement, dict) and "current_integral" in measurement:
@@ -95,7 +97,8 @@ class Potentiostat():
         with self.result_lock:
             measurements = self.measurement_results[0]
         plots = []
-        for measurement in measurements:
+        print("Get EC Plots")
+        for measurement in tqdm(measurements):
             figure = measurement.curves[0].plot()
             plots.append(figure)
         return plots
@@ -233,7 +236,7 @@ class Potentiostat():
         self.n_scans = len(self.get_measurement_results()[0])
         self.method=self.get_measurement_results()[0][0].method
         self.avg_per_point=1 #Dummy value
-        settings = self.method.to_settings()  # returns the typed BaseTechnique dataclass
+        settings = self.method.to_settings() if hasattr(self.method, "to_settings") else self.method
         if self.method.id == "cv":
             self.measurement_name = "Cyclic Voltammetry"
             self.max_points = int(
