@@ -16,6 +16,8 @@ import matplotlib.pyplot as plt
 from Potentiostat import Potentiostat
 import numpy as np
 import gc
+from datetime import datetime, date, timedelta
+import uuid
 
 max_db = 8 
 class App(tk.Tk):
@@ -26,6 +28,13 @@ class App(tk.Tk):
         self.rabi = User_Rabi_input()
         self.t1 = User_T1_input()
         self.ecqs_cache = ECQS_cache()
+        self.measurement_busy = False
+        self.measurement_queue = []
+        self.queue_running = False
+        self.queue_timer_job = None
+        self.current_queue_item = None
+        self.queue_start_pending = False
+        self.start_measurement_buttons = []
         self.protocol("WM_DELETE_WINDOW", self.on_close)
         self.bind("<Configure>", self.on_resize)
         self.focus_force()
@@ -160,8 +169,7 @@ class App(tk.Tk):
 
             self.esr_entries.append(entry)
 
-        esr_button = tk.Button(esr_frame, text="Start ESR Experiment", command=self.on_esr_send)
-        esr_button.grid(row=len(esr_labels) + 2, column=0, columnspan=2, pady=10)
+        self.layout_measurement_actions(esr_frame, len(esr_labels) + 2, 2, "Start ESR Experiment", self.on_esr_send)
         
         #RABI     
         rabi_labels = [
@@ -205,8 +213,7 @@ class App(tk.Tk):
             entry.insert(0, default)
             entry.grid(row=i + 2, column=1, padx=5, pady=5)
             self.rabi_entries.append(entry)
-        rabi_button = tk.Button(rabi_frame, text="Start Rabi Experiment", command=self.on_rabi_send)
-        rabi_button.grid(row=len(rabi_labels) + 2, column=0, columnspan=2, pady=10)
+        self.layout_measurement_actions(rabi_frame, len(rabi_labels) + 2, 2, "Start Rabi Experiment", self.on_rabi_send)
         
         #T1
         t1_labels = [
@@ -254,8 +261,7 @@ class App(tk.Tk):
             entry.insert(0, default)
             entry.grid(row=i + 2, column=1, padx=5, pady=5)
             self.t1_entries.append(entry)
-        t1_button = tk.Button(t1_frame, text="Start T1 Experiment", command=self.on_t1_send)
-        t1_button.grid(row=len(t1_labels) + 2, column=0, columnspan=2, pady=10)
+        self.layout_measurement_actions(t1_frame, len(t1_labels) + 2, 2, "Start T1 Experiment", self.on_t1_send)
         
         
         
@@ -274,8 +280,7 @@ class App(tk.Tk):
             entry.insert(0, default)
             entry.grid(row=i + 1, column=1, padx=5, pady=5)
             self.cv_entries.append(entry)
-        cv_button = tk.Button(cv_frame, text="Start CV Experiment", command=self.on_cv_send)
-        cv_button.grid(row=len(cv_labels) + 1, column=0, columnspan=2, pady=10)
+        self.layout_measurement_actions(cv_frame, len(cv_labels) + 1, 2, "Start CV Experiment", self.on_cv_send)
         
         #SWV
         swv_labels = ["Start Potential [V]:","End Potential [V]:","Potential Step [mV]:","Frequency [Hz]:","Amplitude [mV]","Number of Measurements","Annotation:"]
@@ -292,8 +297,7 @@ class App(tk.Tk):
             entry.insert(0, default)
             entry.grid(row=i + 1, column=1, padx=5, pady=5)
             self.swv_entries.append(entry)
-        swv_button = tk.Button(swv_frame, text="Start SWV Experiment", command=self.on_swv_send)
-        swv_button.grid(row=len(swv_labels) + 1, column=0, columnspan=2, pady=10)
+        self.layout_measurement_actions(swv_frame, len(swv_labels) + 1, 2, "Start SWV Experiment", self.on_swv_send)
         
         #LSV
         lsv_labels = ["Start Potential [V]:","End Potential [V]:","Potential Step [mV]:","Scanrate [mV/s]:","Number of Measurements","Annotation:"]
@@ -310,8 +314,7 @@ class App(tk.Tk):
             entry.insert(0,default)
             entry.grid(row=i + 1, column=1, padx=5, pady=5)
             self.lsv_entries.append(entry)
-        lsv_button = tk.Button(lsv_frame,text="Start LCV Experiment",command=self.on_lsv_send)
-        lsv_button.grid(row=len(lsv_labels) + 1, column=0, columnspan=2, pady=10)
+        self.layout_measurement_actions(lsv_frame, len(lsv_labels) + 1, 2, "Start LSV Experiment", self.on_lsv_send)
         
         #CV-T1
         cv_t1_labels = [
@@ -372,8 +375,7 @@ class App(tk.Tk):
                 label.grid(row=i + 1, column=2, sticky="w", padx=5, pady=5)
                 entry.grid(row=i + 1, column=3, padx=5, pady=5)
             self.cv_t1_entries.append(entry)
-        cv_t1_button = tk.Button(cv_t1_frame, text="Start CV-T1 Experiment", command=self.on_cv_t1_send)
-        cv_t1_button.grid(row=len(cv_t1_labels) + 2, column=0, columnspan=4, pady=10)
+        self.layout_measurement_actions(cv_t1_frame, len(cv_t1_labels) + 2, 4, "Start CV-T1 Experiment", self.on_cv_t1_send)
         
         #SWV-T1
         swv_t1_labels = [
@@ -436,8 +438,7 @@ class App(tk.Tk):
                 label.grid(row=i + 1, column=2, sticky="w", padx=5, pady=5)
                 entry.grid(row=i + 1, column=3, padx=5, pady=5)
             self.swv_t1_entries.append(entry)
-        swv_t1_button = tk.Button(swv_t1_frame, text="Start SWV-T1 Experiment", command=self.on_swv_t1_send)
-        swv_t1_button.grid(row=len(swv_t1_labels) + 2, column=0, columnspan=4, pady=10)
+        self.layout_measurement_actions(swv_t1_frame, len(swv_t1_labels) + 2, 4, "Start SWV-T1 Experiment", self.on_swv_t1_send)
        
         #LSV-T1
         lsv_t1_labels = [ "Points:",
@@ -491,8 +492,39 @@ class App(tk.Tk):
                 label.grid(row=i + 1, column=2, sticky="w", padx=5, pady=5)
                 entry.grid(row=i + 1, column=3, padx=5, pady=5)
             self.lsv_t1_entries.append(entry)
-        lsv_t1_button = tk.Button(lsv_t1_frame, text="Start LSV-T1 Experiment", command=self.on_lsv_t1_send)
-        lsv_t1_button.grid(row=len(lsv_t1_labels) + 2, column=0, columnspan=4, pady=10)
+        self.layout_measurement_actions(lsv_t1_frame, len(lsv_t1_labels) + 2, 4, "Start LSV-T1 Experiment", self.on_lsv_t1_send)
+        
+        self.queue_frame = tk.Frame(self.measurement_frame, bd=1, relief="groove")
+        self.queue_frame.pack(fill=tk.BOTH, expand=True, padx=5, pady=8)
+        tk.Label(self.queue_frame, text="Measurement Queue", font=("Arial", 12, "bold")).pack()
+        schedule_frame = tk.Frame(self.queue_frame)
+        schedule_frame.pack(fill=tk.X, padx=5, pady=5)
+        self.queue_schedule_choice = tk.StringVar(value="after_previous")
+        tk.Radiobutton(schedule_frame, text="After previous", variable=self.queue_schedule_choice,
+                       value="after_previous").grid(row=0, column=0, sticky="w")
+        tk.Radiobutton(schedule_frame, text="At time", variable=self.queue_schedule_choice,
+                       value="specific_time").grid(row=0, column=1, sticky="w")
+        self.queue_time_entry = tk.Entry(schedule_frame, width=18)
+        self.queue_time_entry.insert(0, datetime.now().strftime("%Y-%m-%d %H:%M"))
+        self.queue_time_entry.grid(row=0, column=2, padx=5, sticky="w")
+        tk.Label(schedule_frame, text="YYYY-MM-DD HH:MM").grid(row=0, column=3, sticky="w")
+        self.queue_tree = ttk.Treeview(self.queue_frame, columns=("pos", "method", "start", "annotation"),
+                                       show="headings", height=6)
+        self.queue_tree.heading("pos", text="#")
+        self.queue_tree.heading("method", text="Method")
+        self.queue_tree.heading("start", text="Start")
+        self.queue_tree.heading("annotation", text="Annotation")
+        self.queue_tree.column("pos", width=35, stretch=False)
+        self.queue_tree.column("method", width=80, stretch=False)
+        self.queue_tree.column("start", width=140, stretch=False)
+        self.queue_tree.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
+        queue_buttons = tk.Frame(self.queue_frame)
+        queue_buttons.pack(fill=tk.X, padx=5, pady=5)
+        tk.Button(queue_buttons, text="Move Up", command=self.move_queue_item_up).pack(side=tk.LEFT, padx=2)
+        tk.Button(queue_buttons, text="Move Down", command=self.move_queue_item_down).pack(side=tk.LEFT, padx=2)
+        tk.Button(queue_buttons, text="Delete", command=self.delete_queue_item).pack(side=tk.LEFT, padx=2)
+        self.queue_start_stop_button = tk.Button(queue_buttons, text="Start Queue", command=self.toggle_queue)
+        self.queue_start_stop_button.pack(side=tk.LEFT, padx=10)
         
         #Treeview loader
         self.load = tk.Frame(measure)
@@ -688,13 +720,210 @@ class App(tk.Tk):
         
         
         self.focus_force()
+    def layout_measurement_actions(self, frame, row: int, columnspan: int, start_text: str, start_command) -> None:
+        action_frame = tk.Frame(frame)
+        action_frame.grid(row=row, column=0, columnspan=columnspan, pady=10)
+        start_button = tk.Button(action_frame, text=start_text, command=start_command)
+        start_button.pack(side=tk.LEFT, padx=4)
+        self.start_measurement_buttons.append(start_button)
+        tk.Button(action_frame, text="Add to Queue", command=self.add_current_measurement_to_queue).pack(side=tk.LEFT, padx=4)
+    def get_current_measurement_entries(self):
+        method = str(self.measurement_choice.get())
+        entry_map = {
+            "ESR": self.esr_entries,
+            "Rabi": self.rabi_entries,
+            "T1": self.t1_entries,
+            "CV": self.cv_entries,
+            "SWV": self.swv_entries,
+            "LSV": self.lsv_entries,
+            "CV-T1": self.cv_t1_entries,
+            "SWV-T1": self.swv_t1_entries,
+            "LSV-T1": self.lsv_t1_entries,
+        }
+        return method, entry_map[method]
+    def get_current_measurement_snapshot(self) -> dict:
+        method, entries = self.get_current_measurement_entries()
+        values = [entry.get() for entry in entries]
+        return {
+            "id": str(uuid.uuid4()),
+            "method": method,
+            "values": values,
+            "laser_spot": int(self.laser_spot.get()),
+            "annotation": values[-1] if values else "",
+            "run_at": self.get_queue_run_time(),
+        }
+    def get_queue_run_time(self):
+        if self.queue_schedule_choice.get() != "specific_time":
+            return None
+        text = self.queue_time_entry.get().strip()
+        for fmt in ("%Y-%m-%d %H:%M", "%Y-%m-%d %H:%M:%S"):
+            try:
+                return datetime.strptime(text, fmt)
+            except ValueError:
+                pass
+        try:
+            parsed_time = datetime.strptime(text, "%H:%M").time()
+            run_at = datetime.combine(date.today(), parsed_time)
+            if run_at < datetime.now():
+                run_at += timedelta(days=1)
+            return run_at
+        except ValueError:
+            raise ValueError("Use YYYY-MM-DD HH:MM or HH:MM for queue start time.")
+    def add_current_measurement_to_queue(self) -> None:
+        try:
+            item = self.get_current_measurement_snapshot()
+        except ValueError as exc:
+            self.live_status_label.config(text=str(exc))
+            return
+        self.measurement_queue.append(item)
+        self.refresh_queue_tree()
+        self.process_queue()
+    def refresh_queue_tree(self) -> None:
+        if not hasattr(self, "queue_tree"):
+            return
+        self.queue_tree.delete(*self.queue_tree.get_children())
+        for index, item in enumerate(self.measurement_queue, start=1):
+            start_text = "After previous"
+            if item["run_at"] is not None:
+                start_text = item["run_at"].strftime("%Y-%m-%d %H:%M")
+            self.queue_tree.insert("", "end", iid=item["id"], values=(
+                index,
+                item["method"],
+                start_text,
+                item["annotation"],
+            ))
+    def get_selected_queue_index(self):
+        selection = self.queue_tree.selection()
+        if not selection:
+            return None
+        item_id = selection[0]
+        for index, item in enumerate(self.measurement_queue):
+            if item["id"] == item_id:
+                return index
+        return None
+    def move_queue_item_up(self) -> None:
+        index = self.get_selected_queue_index()
+        if index is None or index == 0:
+            return
+        self.measurement_queue[index - 1], self.measurement_queue[index] = self.measurement_queue[index], self.measurement_queue[index - 1]
+        self.refresh_queue_tree()
+        self.queue_tree.selection_set(self.measurement_queue[index - 1]["id"])
+        self.reschedule_queue_timer()
+        self.process_queue()
+    def move_queue_item_down(self) -> None:
+        index = self.get_selected_queue_index()
+        if index is None or index >= len(self.measurement_queue) - 1:
+            return
+        self.measurement_queue[index + 1], self.measurement_queue[index] = self.measurement_queue[index], self.measurement_queue[index + 1]
+        self.refresh_queue_tree()
+        self.queue_tree.selection_set(self.measurement_queue[index + 1]["id"])
+        self.reschedule_queue_timer()
+        self.process_queue()
+    def delete_queue_item(self) -> None:
+        index = self.get_selected_queue_index()
+        if index is None:
+            return
+        del self.measurement_queue[index]
+        self.refresh_queue_tree()
+        self.reschedule_queue_timer()
+        self.process_queue()
+    def toggle_queue(self) -> None:
+        self.queue_running = not self.queue_running
+        self.queue_start_stop_button.config(text="Stop Queue" if self.queue_running else "Start Queue")
+        if self.queue_running:
+            self.process_queue()
+        else:
+            self.reschedule_queue_timer()
+            if self.queue_start_pending and self.current_queue_item is not None:
+                self.measurement_queue.insert(0, self.current_queue_item)
+                self.current_queue_item = None
+                self.queue_start_pending = False
+                self.refresh_queue_tree()
+                self.set_measurement_busy(False)
+    def set_measurement_busy(self, busy: bool) -> None:
+        self.measurement_busy = busy
+        state = tk.DISABLED if busy else tk.NORMAL
+        for button in self.start_measurement_buttons:
+            button.config(state=state)
+    def reschedule_queue_timer(self, delay_ms: int = None) -> None:
+        if self.queue_timer_job is not None:
+            try:
+                self.after_cancel(self.queue_timer_job)
+            except Exception:
+                pass
+            self.queue_timer_job = None
+        if delay_ms is not None and self.queue_running:
+            self.queue_timer_job = self.after(delay_ms, self.process_queue)
+    def process_queue(self) -> None:
+        if not self.queue_running or self.measurement_busy or self.queue_start_pending or not self.measurement_queue:
+            if self.queue_running and not self.measurement_queue:
+                self.queue_running = False
+                self.queue_start_stop_button.config(text="Start Queue")
+            return
+        next_item = self.measurement_queue[0]
+        run_at = next_item["run_at"]
+        if run_at is not None and run_at > datetime.now():
+            delay_ms = max(1000, int((run_at - datetime.now()).total_seconds() * 1000))
+            self.reschedule_queue_timer(delay_ms)
+            return
+        self.current_queue_item = self.measurement_queue.pop(0)
+        self.refresh_queue_tree()
+        self.queue_start_pending = True
+        self.set_measurement_busy(True)
+        self.live_status_label.config(text="Queue waiting 10 s for Qupyt reboot...")
+        self.reschedule_queue_timer()
+        if self.queue_running:
+            self.queue_timer_job = self.after(10000, self.run_pending_queue_item)
+    def run_pending_queue_item(self) -> None:
+        if not self.queue_running or self.current_queue_item is None:
+            self.queue_start_pending = False
+            self.set_measurement_busy(False)
+            return
+        item = self.current_queue_item
+        self.queue_start_pending = False
+        self.set_measurement_busy(False)
+        self.start_queued_measurement(item)
+    def start_queued_measurement(self, item: dict) -> None:
+        command_map = {
+            "ESR": self.on_esr_send,
+            "Rabi": self.on_rabi_send,
+            "T1": self.on_t1_send,
+            "CV": self.on_cv_send,
+            "SWV": self.on_swv_send,
+            "LSV": self.on_lsv_send,
+            "CV-T1": self.on_cv_t1_send,
+            "SWV-T1": self.on_swv_t1_send,
+            "LSV-T1": self.on_lsv_t1_send,
+        }
+        self.apply_measurement_snapshot(item)
+        command_map[item["method"]]()
+    def apply_measurement_snapshot(self, item: dict) -> None:
+        self.measurement_choice.set(item["method"])
+        self.change_method()
+        self.laser_spot.set(item["laser_spot"])
+        _, entries = self.get_current_measurement_entries()
+        for entry, value in zip(entries, item["values"]):
+            entry.delete(0, tk.END)
+            entry.insert(0, value)
+    def finish_measurement_run(self) -> None:
+        self.current_queue_item = None
+        self.set_measurement_busy(False)
+        self.process_queue()
     def change_method(self):
         for old_frame in self.measurement_methods.values():
             old_frame.pack_forget()
-        self.measurement_methods[str(self.measurement_choice.get())].pack()
+        selected_frame = self.measurement_methods[str(self.measurement_choice.get())]
+        if hasattr(self, "queue_frame"):
+            selected_frame.pack(before=self.queue_frame)
+        else:
+            selected_frame.pack()
     def show_frame(self, frame: str | list) -> None:
         for old_frame in self.frames.values():
             old_frame.pack_forget()
+        if frame == "live":
+            frame = ["live", "measure"]
+        elif isinstance(frame, list) and "live" in frame and "measure" not in frame:
+            frame = frame + ["measure"]
         if isinstance(frame, list):
             for single_frame in frame:
                 self.frames[single_frame].pack(padx=20, pady=20, fill="both", expand=True)
@@ -795,6 +1024,8 @@ class App(tk.Tk):
         gc.collect()
     def on_close(self):
         try: 
+            self.reschedule_queue_timer()
+            self.queue_running = False
             self.cleanup_measurement_state()
             self.qupyt.exit()          
         except:
@@ -915,6 +1146,9 @@ class App(tk.Tk):
                 pass
         self.live_status_label.config(text="Stopping measurement...")
     def on_esr_send(self):
+        if self.measurement_busy:
+            return
+        self.set_measurement_busy(True)
         self.esr = User_ESR_input()
         self.cleanup_measurement_state()
         values = [e.get() for e in self.esr_entries]
@@ -933,6 +1167,9 @@ class App(tk.Tk):
         self.show_frame("live")
         self.update_qs_live_figure()
     def on_rabi_send(self):
+        if self.measurement_busy:
+            return
+        self.set_measurement_busy(True)
         self.rabi = User_Rabi_input()
         self.cleanup_measurement_state()
         values = [e.get() for e in self.rabi_entries]
@@ -950,6 +1187,9 @@ class App(tk.Tk):
         self.show_frame("live")
         self.update_qs_live_figure()
     def on_t1_send(self):
+        if self.measurement_busy:
+            return
+        self.set_measurement_busy(True)
         self.t1 = User_T1_input()
         self.cleanup_measurement_state()
         values = [e.get() for e in self.t1_entries]
@@ -970,6 +1210,9 @@ class App(tk.Tk):
         self.show_frame("live")
         self.update_qs_live_figure()
     def on_cv_send(self):
+        if self.measurement_busy:
+            return
+        self.set_measurement_busy(True)
         self.cleanup_measurement_state()
         self.potentiostat = Potentiostat(self.data_folder)
         self.ecqs_cache = ECQS_cache()
@@ -982,6 +1225,9 @@ class App(tk.Tk):
         self.show_frame("live")
         self.update_ec_live_figure()
     def on_swv_send(self):
+        if self.measurement_busy:
+            return
+        self.set_measurement_busy(True)
         self.cleanup_measurement_state()
         self.potentiostat = Potentiostat(self.data_folder)
         #["Start Potential [V]:","End Potential [V]:","Potential Step [mV]:","Frequency [Hz]:","Amplitude [mV]","Number of Measurements","Annotation:"]
@@ -994,6 +1240,9 @@ class App(tk.Tk):
         self.update_ec_live_figure()
         
     def on_lsv_send(self):
+        if self.measurement_busy:
+            return
+        self.set_measurement_busy(True)
         self.cleanup_measurement_state()
         self.potentiostat = Potentiostat(self.data_folder)
         self.ecqs_cache = ECQS_cache()
@@ -1007,6 +1256,9 @@ class App(tk.Tk):
         self.update_ec_live_figure()
             
     def on_cv_t1_send(self):
+        if self.measurement_busy:
+            return
+        self.set_measurement_busy(True)
         self.t1 = User_T1_input()
         self.cleanup_measurement_state()
         self.potentiostat = Potentiostat(self.data_folder)
@@ -1055,6 +1307,9 @@ class App(tk.Tk):
         self.show_frame("live")
         self.update_ecqs_live_figure()
     def on_swv_t1_send(self):
+        if self.measurement_busy:
+            return
+        self.set_measurement_busy(True)
         self.t1 = User_T1_input()
         self.cleanup_measurement_state()
         self.potentiostat = Potentiostat(self.data_folder)
@@ -1103,6 +1358,9 @@ class App(tk.Tk):
         self.update_ecqs_live_figure()
         
     def on_lsv_t1_send(self):
+        if self.measurement_busy:
+            return
+        self.set_measurement_busy(True)
         self.t1 = User_T1_input()
         self.cleanup_measurement_state()
         self.potentiostat = Potentiostat(self.data_folder)
@@ -1168,6 +1426,7 @@ class App(tk.Tk):
             self.show_frame(["evaluator", "measure"])
             self.update_file_loader()
             self.finalize_cancelled_measurement()
+            self.finish_measurement_run()
     def _replace_final_canvas(self):
         if self.final_canvas is not None:
             old_fig = self.final_canvas.figure
@@ -1219,6 +1478,7 @@ class App(tk.Tk):
             self.show_frame(["evaluator","measure"])
             self.update_file_loader()
             self.finalize_cancelled_measurement()
+            self.finish_measurement_run()
     def eval_ec_figure(self,fitting_params:dict = None):
         if fitting_params == None:
             self.fig,_,_,_,info = ec_data_displayer(self.potentiostat, {"fitting":True})
@@ -1262,6 +1522,7 @@ class App(tk.Tk):
             self.update_file_loader()
             self.finalize_cancelled_measurement()
             self.eval_ecqs_figure()
+            self.finish_measurement_run()
     def eval_ecqs_figure(self,fitting_params:dict = None):
         self.ecqs_cache = ECQS_cache()
         if fitting_params == None:
