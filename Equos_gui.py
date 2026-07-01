@@ -7,7 +7,7 @@ Created on Tue Apr 14 10:25:46 2026
 import tkinter as tk
 from tkinter import filedialog, ttk
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-from QS_data_sender import Send_esr_measurement, Send_rabi_measurement, Send_t1_measurement, User_ESR_input, Qupyt_controller, User_Rabi_input, User_T1_input
+from QS_data_sender import Send_esr_measurement, Send_rabi_measurement, Send_t1_measurement, Send_laser_off, Send_laser_on, User_ESR_input, Qupyt_controller, User_Rabi_input, User_T1_input
 from QS_data_reader import QS_data_reader
 from Equos_logic import create_file_name, parse_file_folder, calculate_t1_averages, ECQS_cache
 from Data_evaluator import qs_data_displayer, ec_data_displayer, ecqs_data_displayer
@@ -116,6 +116,10 @@ class App(tk.Tk):
         swv_t1_method_button.grid(row=2,column=1,sticky="w")
         lsv_t1_method_button = tk.Radiobutton(self.method_choice_frame,text="LSV-T1",variable=self.measurement_choice,value="LSV-T1",command=self.change_method)
         lsv_t1_method_button.grid(row=2,column=2,sticky="w")
+        laser_off_method_button = tk.Radiobutton(self.method_choice_frame,text="Laser Off",variable=self.measurement_choice,value="LaserOff",command=self.change_method)
+        laser_off_method_button.grid(row=3,column=0,sticky="w")
+        laser_on_method_button = tk.Radiobutton(self.method_choice_frame,text="Laser On",variable=self.measurement_choice,value="LaserOn",command=self.change_method)
+        laser_on_method_button.grid(row=3,column=1,sticky="w")
         #Laser spot buttons
         self.laser_spot = tk.IntVar(value=270)
         
@@ -262,6 +266,22 @@ class App(tk.Tk):
             entry.grid(row=i + 2, column=1, padx=5, pady=5)
             self.t1_entries.append(entry)
         self.layout_measurement_actions(t1_frame, len(t1_labels) + 2, 2, "Start T1 Experiment", self.on_t1_send)
+        
+        #Laser Off
+        self.laser_off_entries = []
+        laser_off_frame = tk.Frame(self.measurement_frame)
+        self.measurement_methods["LaserOff"] = laser_off_frame
+        laser_off_title = tk.Label(laser_off_frame, text="Laser Off measurement", font=("Arial", 12, "bold"))
+        laser_off_title.grid(row=0, column=0, columnspan=2, pady=10)
+        self.layout_measurement_actions(laser_off_frame, 1, 2, "Start Laser Off Experiment", self.on_laser_off_send)
+        
+        #Laser On
+        self.laser_on_entries = []
+        laser_on_frame = tk.Frame(self.measurement_frame)
+        self.measurement_methods["LaserOn"] = laser_on_frame
+        laser_on_title = tk.Label(laser_on_frame, text="Laser On measurement", font=("Arial", 12, "bold"))
+        laser_on_title.grid(row=0, column=0, columnspan=2, pady=10)
+        self.layout_measurement_actions(laser_on_frame, 1, 2, "Start Laser On Experiment", self.on_laser_on_send)
         
         
         
@@ -614,6 +634,14 @@ class App(tk.Tk):
         self.t1_fitting_entries = self.layout_fitting_params(t1_fit_param_frame, t1_fitting_labels, t1_fitting_defaults)
         self.t1_fitting_button = tk.Button(t1_fitting_frame, text="Fit Data", command=self.t1_fitting)
         self.t1_fitting_button.pack()
+        laser_off_fitting_frame = tk.Frame(self.fitting_params_frame)
+        self.fitting_frames["LaserOff"] = laser_off_fitting_frame
+        laser_off_fitting_title = tk.Label(laser_off_fitting_frame, text="Laser Off data")
+        laser_off_fitting_title.pack()
+        laser_on_fitting_frame = tk.Frame(self.fitting_params_frame)
+        self.fitting_frames["LaserOn"] = laser_on_fitting_frame
+        laser_on_fitting_title = tk.Label(laser_on_fitting_frame, text="Laser On data")
+        laser_on_fitting_title.pack()
         #Rabi Fitting Params
         rabi_fitting_frame = tk.Frame(self.fitting_params_frame)
         self.fitting_frames["Rabi"] = rabi_fitting_frame
@@ -733,6 +761,8 @@ class App(tk.Tk):
             "ESR": self.esr_entries,
             "Rabi": self.rabi_entries,
             "T1": self.t1_entries,
+            "LaserOff": self.laser_off_entries,
+            "LaserOn": self.laser_on_entries,
             "CV": self.cv_entries,
             "SWV": self.swv_entries,
             "LSV": self.lsv_entries,
@@ -888,6 +918,8 @@ class App(tk.Tk):
             "ESR": self.on_esr_send,
             "Rabi": self.on_rabi_send,
             "T1": self.on_t1_send,
+            "LaserOff": self.on_laser_off_send,
+            "LaserOn": self.on_laser_on_send,
             "CV": self.on_cv_send,
             "SWV": self.on_swv_send,
             "LSV": self.on_lsv_send,
@@ -1047,6 +1079,10 @@ class App(tk.Tk):
                     m["time"],
                     m["annotation"]
                 ))
+    def schedule_file_loader_refreshes(self, delays_ms: tuple = (1000, 3000, 7000, 12000)) -> None:
+        self.update_file_loader()
+        for delay_ms in delays_ms:
+            self.after(delay_ms, self.update_file_loader)
     def file_selected(self, event):
         item_id = self.loader.selection()
         if not item_id:
@@ -1209,6 +1245,38 @@ class App(tk.Tk):
         self.qs_data_reader.start_data_building()
         self.show_frame("live")
         self.update_qs_live_figure()
+    def on_laser_off_send(self):
+        if self.measurement_busy:
+            return
+        self.set_measurement_busy(True)
+        try:
+            self.cleanup_measurement_state()
+            self.qs_file_name, _ = create_file_name(qs_type="LaserOff")
+            Send_laser_off(self.qs_file_name)
+            self.current_measurement_method = "LaserOff"
+            self.live_status_label.config(text=f"Sent utility measurement: {self.qs_file_name}")
+            self.show_frame("measure")
+            self.schedule_file_loader_refreshes()
+            self.finish_measurement_run()
+        except Exception as exc:
+            self.live_status_label.config(text=f"Laser Off failed: {exc}")
+            self.finish_measurement_run()
+    def on_laser_on_send(self):
+        if self.measurement_busy:
+            return
+        self.set_measurement_busy(True)
+        try:
+            self.cleanup_measurement_state()
+            self.qs_file_name, _ = create_file_name(qs_type="LaserOn")
+            Send_laser_on(self.qs_file_name)
+            self.current_measurement_method = "LaserOn"
+            self.live_status_label.config(text=f"Sent utility measurement: {self.qs_file_name}")
+            self.show_frame("measure")
+            self.schedule_file_loader_refreshes()
+            self.finish_measurement_run()
+        except Exception as exc:
+            self.live_status_label.config(text=f"Laser On failed: {exc}")
+            self.finish_measurement_run()
     def on_cv_send(self):
         if self.measurement_busy:
             return
@@ -1441,7 +1509,10 @@ class App(tk.Tk):
     def eval_qs_figure(self, fitting_params:dict = None):
        
         if fitting_params == None:
-            self.fig,_,_,_,info = qs_data_displayer(self.qs_data_reader, {"fitting":True})
+            self.fig,_,_,_,info = qs_data_displayer(
+                self.qs_data_reader,
+                {"fitting": self.current_measurement_method not in ("LaserOff", "LaserOn")}
+            )
         else:
             self.fig,_,_,_,info = qs_data_displayer(self.qs_data_reader,fitting_params)
         self._replace_final_canvas()

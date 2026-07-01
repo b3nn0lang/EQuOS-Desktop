@@ -67,10 +67,16 @@ class Send_t1_measurement(Send_measurement):
         super().__init__( file_name, user_params)    
         
 class Send_laser_off(Send_measurement):
-    def __init__(self):
+    def __init__(self, file_name="laser_off"):
         self.measurement_type = "Laser_off"
-        self.specific_fixed_params = {}
-        super().__init__("laser_off")
+        self.specific_fixed_params = {"experiment_type": "T1"}
+        super().__init__(file_name)
+
+class Send_laser_on(Send_measurement):
+    def __init__(self, file_name="laser_on"):
+        self.measurement_type = "Laser_on"
+        self.specific_fixed_params = {"experiment_type": "Rabi"}
+        super().__init__(file_name)
         
         
 #this class will close and open qupyt. there is a waiting period of 7 sec after opening qupyt to boot. after init it will close if qupyt was still open and delete the waiting room
