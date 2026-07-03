@@ -101,13 +101,14 @@ class QS_data_reader():
    
     def scan_data_files(self):
         try:
-            if os.path.isfile(f"{self.file_path}/{self.file_name}_temp.dat"):
+            final_dat_file = os.path.join(self.file_path, f"{self.file_name}_temp.dat")
+            temp_dat_file = os.path.join(self.temp_path, f"{self.file_name}_temp.dat")
+            if os.path.isfile(final_dat_file):
                 print("temp.dat exists in file folder - measurement finished")
-                dat_file = f"{self.file_path}/{self.file_name}_temp.dat"
-                return dat_file, self.count_filled_rows(dat_file), True
+                return final_dat_file, self.count_filled_rows(final_dat_file), True
     
-            elif os.path.isfile(f"{self.temp_path}/{self.file_name}_temp.dat"):
-                dat_file = f"{self.temp_path}/{self.file_name}_temp.dat"
+            elif os.path.isfile(temp_dat_file):
+                dat_file = temp_dat_file
                 current_rows = self.count_filled_rows(dat_file)
     
                 if current_rows != self._processed_rows:
@@ -119,26 +120,33 @@ class QS_data_reader():
                     try:
                         new_rows = self.count_filled_rows(dat_file)
                     except OSError:
-                       time.sleep(0.5)  # back off on network error
-                       new_rows = self.count_filled_rows(dat_file)
+                        time.sleep(0.5)  # back off on network or file-move races
+                        if os.path.isfile(final_dat_file):
+                            return final_dat_file, self.count_filled_rows(final_dat_file), True
+                        if os.path.isfile(dat_file):
+                            new_rows = self.count_filled_rows(dat_file)
+                        else:
+                            return self._active_dat_file or dat_file, current_rows, False
                     if new_rows != current_rows:
                         return dat_file, new_rows, False
                     current_rows = new_rows
     
                 print("Assuming measurement interruption. Moving file to measurement folder.")
                 time.sleep(0.1)
-                shutil.move(
-                    os.path.join(self.temp_path, f"{self.file_name}_temp.dat"),
-                    os.path.join(self.file_path, f"{self.file_name}_temp.dat")
-                )
+                if os.path.isfile(temp_dat_file):
+                    shutil.move(temp_dat_file, final_dat_file)
+                elif os.path.isfile(final_dat_file):
+                    pass
+                else:
+                    return self._active_dat_file or temp_dat_file, current_rows, False
                
-                return os.path.join(self.file_path, f"{self.file_name}_temp.dat"), current_rows, True
+                return final_dat_file, current_rows, True
     
             else:
                 raise FileNotFoundError(f"Error: {self.file_name}_temp.dat not found")
     
         except Exception as e:
-            raise Exception(e)
+            raise
 
     
     
@@ -419,14 +427,19 @@ class QS_data_reader():
     def data_building_loop(self ) -> None:
         self.dataframe_loop_stop.clear()
         while not self.dataframe_loop_stop.is_set(): 
-            dat_file, filled_rows, status = self.scan_data_files()
-            self.build_dataframe(dat_file, filled_rows)
-            #print(f"[{len(self.raw_dataframe)}/{self.data_array_dim[0]}] - Data points done!")
-            with self._progress_lock:
-                self.raw_dataframe_progress = self._processed_rows / self.data_array_dim[0]
-            if status:
-                self.dataframe_loop_stop.set()
-                print("Finished building raw dataloop!!")
+            try:
+                dat_file, filled_rows, status = self.scan_data_files()
+                self.build_dataframe(dat_file, filled_rows)
+                #print(f"[{len(self.raw_dataframe)}/{self.data_array_dim[0]}] - Data points done!")
+                with self._progress_lock:
+                    self.raw_dataframe_progress = self._processed_rows / self.data_array_dim[0]
+                if status:
+                    self.dataframe_loop_stop.set()
+                    print("Finished building raw dataloop!!")
+            except FileNotFoundError as e:
+                print(e)
+            except OSError as e:
+                print(e)
             time.sleep(self.scanning_interval)
         try:
             time.sleep(0.1)
