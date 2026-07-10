@@ -136,34 +136,13 @@ def qs_data_displayer(qs_data_reader: object, fitting_parameters: dict, fig: Fig
                          print(e)
             if measurement_type == "Rabi" or measurement_type == "Rabi_ECQS":
                 if ("rabi_sin_fit" in fitting_parameters.keys() and fitting_parameters["rabi_sin_fit"] == True) or "rabi_sin_fit" not in fitting_parameters.keys():
-                    p0 = [
-                                0.008,          # A
-                                2*np.pi/75,     # omega
-                                0.0,            # phi
-                                250,            # T
-                                0.992           # offset
-                            ]
+                    p0 = estimate_rabi_initial_guess(x_data, contrast_mean)
                     if "rabi_max_tries" in fitting_parameters.keys():
                         maxfev = fitting_parameters["rabi_max_tries"]
                     else:
                         maxfev = 20000
                     if "rabi_use_bounds" in fitting_parameters.keys() and fitting_parameters["rabi_use_bounds"] == True:
-                        bounds = (
-                                    [
-                                        0.001,           # A
-                                        2*np.pi/200,     # period max 120 ns
-                                        -2*np.pi,        # phi
-                                        50,              # T
-                                        0.985            # offset
-                                    ],
-                                    [
-                                        0.03,            # A
-                                        2*np.pi/15,      # period min 40 ns
-                                        2*np.pi,         # phi
-                                        2000,            # T
-                                        1.000            # offset
-                                    ]
-                                )
+                        bounds = rabi_fit_bounds(x_data, contrast_mean)
                     else:
                         bounds = (-np.inf, np.inf)
                     try:
@@ -181,16 +160,16 @@ def qs_data_displayer(qs_data_reader: object, fitting_parameters: dict, fig: Fig
                            )
                         #pi_pulse_duration = get_pi_from_rabi_fit(popt[1], popt[2]) OLD
                         y_fit = rabi_fit_function(x_data,*popt) 
-                        pi_idx = np.argmin(y_fit)
-                        pi_pulse_duration = x_data[pi_idx]
+                        pi_pulse_duration = first_rabi_dip_from_fit(x_data, popt)
                         y = np.interp(pi_pulse_duration, x_data, contrast_mean)
                         
                         r_square = r_squared(contrast_mean, y_fit)
                         axes[0].plot(pi_pulse_duration, y,"gx",label =f"pi pulse: {pi_pulse_duration} ns")
                         if "rabi_show_fit" in fitting_parameters.keys() and fitting_parameters["rabi_show_fit"] == True:
-                            axes[0].plot(x_data,y_fit,linestyle="--",color="green", label=f"{popt[0]:.3f} *cos({popt[1]:.3f} * x + {popt[2]:.3f}) + {popt[3]:.3f}")
-                        info_dic["Decaying sin fit"] = f"{popt[0]:.3f} *cos({popt[1]:.3f} * x + {popt[2]:.3f}) + {popt[3]:.3f} - R^2 = {r_square:.3f}"
-                    except RuntimeError as e:
+                            axes[0].plot(x_data,y_fit,linestyle="--",color="green", label=f"{popt[0]:.3f} * exp(-x/{popt[3]:.0f}) * cos({popt[1]:.3f} * x + {popt[2]:.3f}) + {popt[4]:.3f}")
+                        info_dic["Decaying sin fit"] = f"{popt[0]:.3f} * exp(-x/{popt[3]:.0f}) * cos({popt[1]:.3f} * x + {popt[2]:.3f}) + {popt[4]:.3f} - R^2 = {r_square:.3f}"
+                        info_dic["Pi pulse duration"] = f"{pi_pulse_duration:.2f} ns"
+                    except (RuntimeError, ValueError) as e:
                         info_dic["Decaying sin fit"] = "Fit did not work"
                         print(e)
                 if "rabi_find_peak" in fitting_parameters.keys() and fitting_parameters["rabi_find_peak"] == True:
@@ -255,6 +234,62 @@ def rabi_fit_function(x,a,b,c,d):
 """
 def rabi_fit_function(x, A, omega, phi, T, offset):
     return A * np.exp(-x/T) * np.cos(omega*x + phi) + offset
+
+def estimate_rabi_initial_guess(x_data, contrast_mean):
+    x_data = np.asarray(x_data, dtype=float)
+    contrast_mean = np.asarray(contrast_mean, dtype=float)
+    x_span = max(float(np.ptp(x_data)), 1.0)
+    y_span = max(float(np.ptp(contrast_mean)), 0.002)
+    offset = float(np.median(contrast_mean))
+    amplitude = min(max(y_span / 2, 0.005), 0.12)
+    dips, _ = find_peaks(-contrast_mean)
+    if len(dips) > 0:
+        first_dip = max(float(x_data[dips[0]]), 1.0)
+        period = min(max(first_dip * 2, 35.0), 300.0)
+    else:
+        period = 50.0
+    return [
+        amplitude,
+        2 * np.pi / period,
+        0.0,
+        max(x_span, 250.0),
+        offset,
+    ]
+
+def rabi_fit_bounds(x_data, contrast_mean):
+    x_data = np.asarray(x_data, dtype=float)
+    contrast_mean = np.asarray(contrast_mean, dtype=float)
+    x_span = max(float(np.ptp(x_data)), 1.0)
+    y_min = float(np.min(contrast_mean))
+    y_max = float(np.max(contrast_mean))
+    y_span = max(y_max - y_min, 0.01)
+    return (
+        [
+            0.0005,          # A
+            2 * np.pi / 300, # period up to 300 ns
+            -2 * np.pi,      # phi
+            10,              # T
+            y_min - y_span,  # offset
+        ],
+        [
+            0.20,            # A, enough for about 8-10% contrast and beyond
+            2 * np.pi / 10,  # period down to 10 ns
+            2 * np.pi,       # phi
+            max(5000, x_span * 20),
+            y_max + y_span,  # offset
+        ],
+    )
+
+def first_rabi_dip_from_fit(x_data, popt):
+    x_data = np.asarray(x_data, dtype=float)
+    dense_points = max(1000, len(x_data) * 20)
+    x_fit_dense = np.linspace(float(np.min(x_data)), float(np.max(x_data)), dense_points)
+    y_fit_dense = rabi_fit_function(x_fit_dense, *popt)
+    dips, _ = find_peaks(-y_fit_dense)
+    dips = [dip for dip in dips if x_fit_dense[dip] > x_fit_dense[0]]
+    if dips:
+        return float(x_fit_dense[dips[0]])
+    return float(x_fit_dense[int(np.argmin(y_fit_dense))])
 
 """def get_pi_from_rabi_fit(b,c):
     for i in range(-5,5,2):
@@ -571,8 +606,10 @@ def ecqs_data_displayer(qs_data_reader, potentiostat, fitting_dic: dict, cache, 
     except:
         pass
     
+    save_detail_plots = bool(fitting_dic.get("fitting", False)) or "ec_fitting" in fitting_dic
     sub_path = os.path.join(qs_data_reader.file_path, qs_data_reader.file_name)
-    os.makedirs(sub_path,exist_ok=True)
+    if save_detail_plots:
+        os.makedirs(sub_path,exist_ok=True)
     all_up_fig = Figure(figsize=(12,8), constrained_layout=True)
     all_up_ax = all_up_fig.subplots()
     all_down_fig = Figure(figsize=(12,8), constrained_layout=True)
@@ -681,14 +718,15 @@ def ecqs_data_displayer(qs_data_reader, potentiostat, fitting_dic: dict, cache, 
                         """
                         Plot figure for every potential
                         """
-                        plt.plot(qs_tau,qs_contrast,marker="x",color="blue",label=f"{x_values_up[i]:.3f}V")
-                        all_up_ax.plot(qs_tau,qs_contrast,marker="x",label=f"{x_values_up[i]:.3f}V")
-                        plt.plot(qs_tau[max_idx:],y_fit,linestyle="--",color="blue",label=f"fit: {tau:.3f} ms, R^2 = {r_square:.3f}")
-                        name = f"QS_Up_{x_values_up[i]:.3f}V.png"
-                        fig_path = os.path.join(sub_path,name)
-                        plt.legend()
-                        plt.savefig(fig_path, dpi=300)
-                        plt.close()
+                        if save_detail_plots:
+                            plt.plot(qs_tau,qs_contrast,marker="x",color="blue",label=f"{x_values_up[i]:.3f}V")
+                            all_up_ax.plot(qs_tau,qs_contrast,marker="x",label=f"{x_values_up[i]:.3f}V")
+                            plt.plot(qs_tau[max_idx:],y_fit,linestyle="--",color="blue",label=f"fit: {tau:.3f} ms, R^2 = {r_square:.3f}")
+                            name = f"QS_Up_{x_values_up[i]:.3f}V.png"
+                            fig_path = os.path.join(sub_path,name)
+                            plt.legend()
+                            plt.savefig(fig_path, dpi=300)
+                            plt.close()
                     except Exception as e:
                         print(e)
                         tau_values_up.append(0)
@@ -792,14 +830,15 @@ def ecqs_data_displayer(qs_data_reader, potentiostat, fitting_dic: dict, cache, 
                         """
                         Plot figure for every potential
                         """
-                        plt.plot(qs_tau,qs_contrast,color="red",marker="x",label=f"{x_values_down[i]:.3f}")
-                        all_down_ax.plot(qs_tau,qs_contrast,marker="x",label=f"{x_values_down[i]:.3f}")
-                        plt.plot(qs_tau[max_idx:],y_fit,linestyle="--",color="red",label=f"fit: {tau:.3f} ms, R^2 = {r_square:.3f}")
-                        name = f"QS_Down_{x_values_down[i]:.3f}V.png"
-                        fig_path = os.path.join(sub_path,name)
-                        plt.legend()
-                        plt.savefig(fig_path, dpi=300)
-                        plt.close()
+                        if save_detail_plots:
+                            plt.plot(qs_tau,qs_contrast,color="red",marker="x",label=f"{x_values_down[i]:.3f}")
+                            all_down_ax.plot(qs_tau,qs_contrast,marker="x",label=f"{x_values_down[i]:.3f}")
+                            plt.plot(qs_tau[max_idx:],y_fit,linestyle="--",color="red",label=f"fit: {tau:.3f} ms, R^2 = {r_square:.3f}")
+                            name = f"QS_Down_{x_values_down[i]:.3f}V.png"
+                            fig_path = os.path.join(sub_path,name)
+                            plt.legend()
+                            plt.savefig(fig_path, dpi=300)
+                            plt.close()
                         
                     except Exception as e:
                         print(e)
@@ -888,25 +927,27 @@ def ecqs_data_displayer(qs_data_reader, potentiostat, fitting_dic: dict, cache, 
         axes[1,0].plot(range(1, len(integral) + 1), integral,  label="Current sum")    
         
         #Get all EC figures
-        try:
-            print("Saving EC plots")
-            for i,figure in tqdm(enumerate(potentiostat.get_measurement_plots())):
-                fig_path = os.path.join(sub_path,f"EC_{i}.png")
-                if os.path.exists(fig_path):
-                    pass
-                else:
-                    figure.savefig(fig_path, dpi=300)
-                plt.close(figure)
-        except:
-            pass
+        if save_detail_plots:
+            try:
+                print("Saving EC plots")
+                for i,figure in tqdm(enumerate(potentiostat.get_measurement_plots())):
+                    fig_path = os.path.join(sub_path,f"EC_{i}.png")
+                    if os.path.exists(fig_path):
+                        pass
+                    else:
+                        figure.savefig(fig_path, dpi=300)
+                    plt.close(figure)
+            except:
+                pass
             
         up_fig_name = "QS_Up_all.png"
         down_fig_name = "QS_Down_all.png"
         
-        all_up_ax.legend(loc="lower right")
-        all_down_ax.legend(loc="lower right")
-        all_up_fig.savefig(os.path.join(sub_path, up_fig_name), dpi=300)
-        all_down_fig.savefig(os.path.join(sub_path, down_fig_name), dpi=300)
+        if save_detail_plots:
+            all_up_ax.legend(loc="lower right")
+            all_down_ax.legend(loc="lower right")
+            all_up_fig.savefig(os.path.join(sub_path, up_fig_name), dpi=300)
+            all_down_fig.savefig(os.path.join(sub_path, down_fig_name), dpi=300)
         plt.close(all_up_fig)
         plt.close(all_down_fig)
         #Code lightlevel over time here
