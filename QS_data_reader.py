@@ -314,9 +314,17 @@ class QS_data_reader():
                 n_points = len(self._x_values_array)
                 denom = max(n_rows, 1)
                 result["x_data"] = self._x_values_array.tolist()
-                result["reference_mean"] = (summary["sum_ref"] / denom).tolist()
-                result["value_mean"] = (summary["sum_val"] / denom).tolist()
-                result["contrast_mean"] = (summary["sum_contr"] / denom).tolist()
+                reference_mean = summary["sum_ref"] / denom
+                value_mean = summary["sum_val"] / denom
+                contrast_mean = np.divide(
+                    value_mean,
+                    reference_mean,
+                    out=np.zeros_like(value_mean, dtype=float),
+                    where=reference_mean != 0,
+                )
+                result["reference_mean"] = reference_mean.tolist()
+                result["value_mean"] = value_mean.tolist()
+                result["contrast_mean"] = contrast_mean.tolist()
                 result["reference_std"] = np.sqrt(np.maximum(summary["sumsq_ref"] / denom - (summary["sum_ref"] / denom) ** 2, 0.0)).tolist()
                 result["value_std"] = np.sqrt(np.maximum(summary["sumsq_val"] / denom - (summary["sum_val"] / denom) ** 2, 0.0)).tolist()
                 result["contrast_std"] = np.sqrt(np.maximum(summary["sumsq_contr"] / denom - (summary["sum_contr"] / denom) ** 2, 0.0)).tolist()
@@ -348,9 +356,17 @@ class QS_data_reader():
             x_idx = np.flatnonzero(valid)
             elem_counts = counts[valid] * self.points_per_row
             result["x_data"] = self._x_values_array[valid].tolist()
-            result["reference_mean"] = (summary["sum_ref"][valid] / elem_counts).tolist()
-            result["value_mean"] = (summary["sum_val"][valid] / elem_counts).tolist()
-            result["contrast_mean"] = (summary["sum_contr"][valid] / elem_counts).tolist()
+            reference_mean = summary["sum_ref"][valid] / elem_counts
+            value_mean = summary["sum_val"][valid] / elem_counts
+            contrast_mean = np.divide(
+                value_mean,
+                reference_mean,
+                out=np.zeros_like(value_mean, dtype=float),
+                where=reference_mean != 0,
+            )
+            result["reference_mean"] = reference_mean.tolist()
+            result["value_mean"] = value_mean.tolist()
+            result["contrast_mean"] = contrast_mean.tolist()
             ref_var = np.maximum(summary["sumsq_ref"][valid] / elem_counts - (summary["sum_ref"][valid] / elem_counts) ** 2, 0.0)
             val_var = np.maximum(summary["sumsq_val"][valid] / elem_counts - (summary["sum_val"][valid] / elem_counts) ** 2, 0.0)
             contr_var = np.maximum(summary["sumsq_contr"][valid] / elem_counts - (summary["sum_contr"][valid] / elem_counts) ** 2, 0.0)
@@ -609,10 +625,12 @@ class QS_data_reader():
             t_end_group = t_end_rows[mask]
             n_group = int(np.count_nonzero(mask))
 
+            ref_mean = float(np.mean(ch0_group))
+            val_mean = float(np.mean(ch1_group))
             x_data.append(float(key))
-            reference_mean.append(float(np.mean(ch0_group)))
-            value_mean.append(float(np.mean(ch1_group)))
-            contrast_mean.append(float(np.mean(contrast_group)))
+            reference_mean.append(ref_mean)
+            value_mean.append(val_mean)
+            contrast_mean.append(val_mean / ref_mean if ref_mean != 0 else 0.0)
             reference_std.append(float(np.std(ch0_group) / np.sqrt(n_group)))
             value_std.append(float(np.std(ch1_group) / np.sqrt(n_group)))
             contrast_std.append(float(np.std(contrast_group) / np.sqrt(n_group)))
@@ -688,11 +706,19 @@ class QS_data_reader():
             t_begin_rows,
             t_end_rows,
         )
+        reference_mean = np.mean(channel_0, axis=0)
+        value_mean = np.mean(channel_1, axis=0)
+        contrast_mean = np.divide(
+            value_mean,
+            reference_mean,
+            out=np.zeros_like(value_mean, dtype=float),
+            where=reference_mean != 0,
+        )
         return {
             "x_data": self._x_values_array[:n_points].tolist(),
-            "reference_mean": np.mean(channel_0, axis=0).tolist(),
-            "value_mean": np.mean(channel_1, axis=0).tolist(),
-            "contrast_mean": np.mean(contrast, axis=0).tolist(),
+            "reference_mean": reference_mean.tolist(),
+            "value_mean": value_mean.tolist(),
+            "contrast_mean": contrast_mean.tolist(),
             "time_measure_mean": [t_measure_mean_i] * n_points,
             "time_save_mean": [t_save_mean_i] * n_points,
             "reference_std": (np.std(channel_0, axis=0) / np.sqrt(n_rows)).tolist(),

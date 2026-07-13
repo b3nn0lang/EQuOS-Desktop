@@ -34,11 +34,22 @@ def qs_data_displayer(qs_data_reader: object, fitting_parameters: dict, fig: Fig
         measurement_done = qs_data_reader.dataframe_loop_stop.is_set()
         x_data = np.array(data["x_data"])
         x_label = f"{data['x_label']} / {data['x_unit']}" if data["x_unit"] else data["x_label"]
+        reference_mean = np.array(data["reference_mean"])
+        reference_std = np.array(data["reference_std"])
+        value_mean = np.array(data["value_mean"])
+        value_std = np.array(data["value_std"])
         if data["experiment"] == "T1" or data["experiment"] == "T1_ECQS":
-            contrast_mean, contrast_std = normalize_averaged_decay(
+            contrast_mean, contrast_std, t1_cutoff_idx = normalize_averaged_decay(
                 data["contrast_mean"],
                 data["contrast_std"],
+                return_cutoff=True,
             )
+            x_data = x_data[t1_cutoff_idx:]
+            reference_mean = reference_mean[t1_cutoff_idx:]
+            reference_std = reference_std[t1_cutoff_idx:]
+            value_mean = value_mean[t1_cutoff_idx:]
+            value_std = value_std[t1_cutoff_idx:]
+            info_dic["T1 normalization cutoff"] = f"{t1_cutoff_idx} points"
         else:
             contrast_mean = np.array(data["contrast_mean"])
             contrast_std =  np.array(data["contrast_std"])
@@ -90,11 +101,10 @@ def qs_data_displayer(qs_data_reader: object, fitting_parameters: dict, fig: Fig
                     else:
                         bounds = (-np.inf, np.inf)
                     try:
-                        max_idx = np.argmax(contrast_mean)
-                        popt, pcov = curve_fit(bi_exp, x_data[max_idx:], contrast_mean[max_idx:], p0=p0, bounds=bounds, maxfev=maxfev)
+                        popt, pcov = curve_fit(bi_exp, x_data, contrast_mean, p0=p0, bounds=bounds, maxfev=maxfev)
                         tau = np.min([popt[0],popt[1]])
                         y_fit = bi_exp(x_data, *popt)
-                        r_square = r_squared(contrast_mean[max_idx:], y_fit[max_idx:])
+                        r_square = r_squared(contrast_mean, y_fit)
                         axes[0].plot([], [], label=f"tau (biexp.): {tau:.4f} ms",color="orange")
                         info_dic["Biexponential Fit"] = f"{popt[2]:.3f}*e^(-x/{popt[0]:.3f}) + (1-{popt[2]:.3f})*e^(-x/{popt[1]:.3f}) - R^2 = {r_square:.3f}"
                         if "t1_show_bi_fit" in fitting_parameters.keys() and fitting_parameters["t1_show_bi_fit"] == True:
@@ -122,11 +132,10 @@ def qs_data_displayer(qs_data_reader: object, fitting_parameters: dict, fig: Fig
                     else:
                         bounds = (-np.inf, np.inf)
                     try:
-                        max_idx = np.argmax(contrast_mean)
-                        popt, pcov = curve_fit(stretched_exp, x_data[max_idx:], contrast_mean[max_idx:], p0=p0, bounds=bounds, maxfev=maxfev)
+                        popt, pcov = curve_fit(stretched_exp, x_data, contrast_mean, p0=p0, bounds=bounds, maxfev=maxfev)
                         tau = popt[0]
                         y_fit = stretched_exp(x_data, *popt)
-                        r_square = r_squared(contrast_mean[max_idx:], y_fit[max_idx:])
+                        r_square = r_squared(contrast_mean, y_fit)
                         axes[0].plot([], [], label=f"tau (str.exp.): {tau:.4f} ms",color="green")
                         info_dic["Stretched Exp Fit"] = f"e^(-(x/{popt[0]:.3f})^{popt[1]:.3f}) - R^2 = {r_square:.3f}"
                         if "t1_show_stretch_fit" in fitting_parameters.keys() and fitting_parameters["t1_show_stretch_fit"] == True:
@@ -192,11 +201,6 @@ def qs_data_displayer(qs_data_reader: object, fitting_parameters: dict, fig: Fig
         
         
         
-        reference_mean = data["reference_mean"]
-        reference_std = data["reference_std"]
-        value_mean = data["value_mean"]
-        value_std = data["value_std"]
-    
         axes[1].plot(x_data, reference_mean, color="tab:orange", label="reference mean")
         """axes[1].fill_between(
             x_data,
@@ -392,26 +396,26 @@ def add_if_not_none(info_dic, key, value, unit=None):
         text = str(value)
     info_dic[key] = f"{text} {unit}" if unit else text
 
-def normalize_averaged_decay(mean, std=None):
+def normalize_averaged_decay(mean, std=None, return_cutoff=False):
     mean = np.atleast_1d(np.asarray(mean, dtype=float))
     if mean.size == 0:
         if std is None:
-            return mean
-        return mean, np.atleast_1d(np.asarray(std, dtype=float))
+            return (mean, 0) if return_cutoff else mean
+        normalized_std = np.atleast_1d(np.asarray(std, dtype=float))
+        return (mean, normalized_std, 0) if return_cutoff else (mean, normalized_std)
 
-    curve_min = np.min(mean)
-    curve_max = np.max(mean)
-    curve_range = curve_max - curve_min
-    if curve_range == 0:
-        normalized_mean = np.zeros_like(mean, dtype=float)
-        normalized_std = np.zeros_like(mean, dtype=float)
+    cutoff_idx = int(np.argmin(mean))
+    normalized_mean = 1.0 - mean[cutoff_idx:]
+    scale = np.max(normalized_mean)
+    if scale == 0:
+        normalized_std = None if std is None else np.zeros_like(np.atleast_1d(np.asarray(std, dtype=float))[cutoff_idx:])
     else:
-        normalized_mean = (mean - curve_min) / curve_range
-        normalized_std = None if std is None else np.atleast_1d(np.asarray(std, dtype=float)) / curve_range
+        normalized_mean = normalized_mean / scale
+        normalized_std = None if std is None else np.atleast_1d(np.asarray(std, dtype=float))[cutoff_idx:] / abs(scale)
 
     if std is None:
-        return 1.0-normalized_mean
-    return 1.0-normalized_mean, normalized_std
+        return (normalized_mean, cutoff_idx) if return_cutoff else normalized_mean
+    return (normalized_mean, normalized_std, cutoff_idx) if return_cutoff else (normalized_mean, normalized_std)
 
 def positive_tau_lower_bound(x_data):
     x_data = np.atleast_1d(np.asarray(x_data, dtype=float))
@@ -673,7 +677,8 @@ def ecqs_data_displayer(qs_data_reader, potentiostat, fitting_dic: dict, cache, 
                     
                     try:
                         qs_tau = np.atleast_1d(np.asarray(qs_tau, dtype=float))
-                        qs_contrast = normalize_averaged_decay(qs_contrast)
+                        qs_contrast, t1_cutoff_idx = normalize_averaged_decay(qs_contrast, return_cutoff=True)
+                        qs_tau = qs_tau[t1_cutoff_idx:]
                     except (TypeError, ValueError):
                         qs_tau = np.array([])
                         qs_contrast = np.array([])
@@ -706,14 +711,13 @@ def ecqs_data_displayer(qs_data_reader, potentiostat, fitting_dic: dict, cache, 
                         bounds = (-np.inf, np.inf)
                     #time_0=time()
                     try:
-                        max_idx = np.argmax(qs_contrast)
-                        popt, pcov = curve_fit(stretched_exp, qs_tau[max_idx:], qs_contrast[max_idx:], p0=p0, bounds=bounds,maxfev=maxfev)
+                        popt, pcov = curve_fit(stretched_exp, qs_tau, qs_contrast, p0=p0, bounds=bounds,maxfev=maxfev)
                         tau = popt[0]
                         if tau < 0:
                             tau =0
                         tau_values_up.append(tau)
-                        y_fit = stretched_exp(qs_tau[max_idx:], *popt)
-                        r_square = r_squared(qs_contrast[max_idx:], y_fit)
+                        y_fit = stretched_exp(qs_tau, *popt)
+                        r_square = r_squared(qs_contrast, y_fit)
                         r_square_up.append(r_square)
                         """
                         Plot figure for every potential
@@ -721,7 +725,7 @@ def ecqs_data_displayer(qs_data_reader, potentiostat, fitting_dic: dict, cache, 
                         if save_detail_plots:
                             plt.plot(qs_tau,qs_contrast,marker="x",color="blue",label=f"{x_values_up[i]:.3f}V")
                             all_up_ax.plot(qs_tau,qs_contrast,marker="x",label=f"{x_values_up[i]:.3f}V")
-                            plt.plot(qs_tau[max_idx:],y_fit,linestyle="--",color="blue",label=f"fit: {tau:.3f} ms, R^2 = {r_square:.3f}")
+                            plt.plot(qs_tau,y_fit,linestyle="--",color="blue",label=f"fit: {tau:.3f} ms, R^2 = {r_square:.3f}")
                             name = f"QS_Up_{x_values_up[i]:.3f}V.png"
                             fig_path = os.path.join(sub_path,name)
                             plt.legend()
@@ -784,7 +788,8 @@ def ecqs_data_displayer(qs_data_reader, potentiostat, fitting_dic: dict, cache, 
                     qs_lightlevel = np.mean(qs_data_down["reference_mean"])
                     try:
                         qs_tau = np.atleast_1d(np.asarray(qs_tau, dtype=float))
-                        qs_contrast = normalize_averaged_decay(qs_contrast)
+                        qs_contrast, t1_cutoff_idx = normalize_averaged_decay(qs_contrast, return_cutoff=True)
+                        qs_tau = qs_tau[t1_cutoff_idx:]
                     except (TypeError, ValueError):
                         qs_tau = np.array([])
                         qs_contrast = np.array([])
@@ -818,14 +823,13 @@ def ecqs_data_displayer(qs_data_reader, potentiostat, fitting_dic: dict, cache, 
                         bounds = (-np.inf, np.inf)
                    # t0 = time()
                     try:
-                        max_idx = np.argmax(qs_contrast)
-                        popt, pcov = curve_fit(stretched_exp, qs_tau[max_idx:], qs_contrast[max_idx:], p0=p0,bounds=bounds, maxfev=maxfev)
+                        popt, pcov = curve_fit(stretched_exp, qs_tau, qs_contrast, p0=p0,bounds=bounds, maxfev=maxfev)
                         tau = popt[0]
                         if tau < 0:
                             tau =0
                         tau_values_down.append(tau)
-                        y_fit = stretched_exp(qs_tau[max_idx:], *popt)
-                        r_square = r_squared(qs_contrast[max_idx:], y_fit)
+                        y_fit = stretched_exp(qs_tau, *popt)
+                        r_square = r_squared(qs_contrast, y_fit)
                         r_square_down.append(r_square)
                         """
                         Plot figure for every potential
@@ -833,7 +837,7 @@ def ecqs_data_displayer(qs_data_reader, potentiostat, fitting_dic: dict, cache, 
                         if save_detail_plots:
                             plt.plot(qs_tau,qs_contrast,color="red",marker="x",label=f"{x_values_down[i]:.3f}")
                             all_down_ax.plot(qs_tau,qs_contrast,marker="x",label=f"{x_values_down[i]:.3f}")
-                            plt.plot(qs_tau[max_idx:],y_fit,linestyle="--",color="red",label=f"fit: {tau:.3f} ms, R^2 = {r_square:.3f}")
+                            plt.plot(qs_tau,y_fit,linestyle="--",color="red",label=f"fit: {tau:.3f} ms, R^2 = {r_square:.3f}")
                             name = f"QS_Down_{x_values_down[i]:.3f}V.png"
                             fig_path = os.path.join(sub_path,name)
                             plt.legend()
