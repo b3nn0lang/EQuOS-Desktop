@@ -57,7 +57,7 @@ def qs_data_displayer(qs_data_reader: object, fitting_parameters: dict, fig: Fig
             return fig, axes, measurement_done, measurement_progress, info_dic
         info_dic["Measurement_time"] = f"{np.mean(data['time_measure_mean'])*1000:.0f} +- {np.mean(data['time_measure_std'])*1000:.0f} ms"
         info_dic["Saving time"] = f"{np.mean(data['time_save_mean'])*1000:.0f} +- {np.mean(data['time_save_std'])*1000:.0f} ms"
-        info_dic["Light Level"] = f"{np.mean(data['reference_mean']):.4f} V"
+        info_dic["Light Level"] = f"{np.mean(data['reference_mean']):.4f} mV"
         info_dic["Measurement points"] = f"{len(data['x_data'])} points x {data['contrast_length'][0]} averages"
         add_qs_measurement_parameters(info_dic, qs_data_reader)
         axes[0].plot(x_data, contrast_mean, color="tab:blue", label="contrast mean")
@@ -220,7 +220,7 @@ def qs_data_displayer(qs_data_reader: object, fitting_parameters: dict, fig: Fig
             label="value std",
         )"""
         axes[1].set_xlabel(x_label)
-        axes[1].set_ylabel("light-level")
+        axes[1].set_ylabel("light-level [mV]")
         axes[1].set_title("Reference and Value")
         axes[1].grid(True, alpha=0.3)
         axes[1].legend()
@@ -307,6 +307,62 @@ def r_squared(ydata, yfit):
     if ss_tot == 0:
         return 0
     return 1 - (ss_res / ss_tot)
+
+def plot_line_with_missing_fit_markers(ax, x_values, y_values, color, label):
+    x_values = np.asarray(x_values, dtype=float)
+    y_values = np.asarray(y_values, dtype=float)
+    valid = np.isfinite(y_values)
+    missing = ~valid
+
+    if np.any(valid):
+        ax.plot(x_values[valid], y_values[valid], color=color, label=label)
+    if np.any(missing) and np.any(valid):
+        sort_idx = np.argsort(x_values[valid])
+        marker_y = np.interp(
+            x_values[missing],
+            x_values[valid][sort_idx],
+            y_values[valid][sort_idx],
+        )
+        ax.scatter(
+            x_values[missing],
+            marker_y,
+            marker="o",
+            facecolors="none",
+            edgecolors=color,
+            linewidths=1.5,
+            label=f"{label} missing fit",
+            zorder=4,
+        )
+
+def save_ecqs_t1_detail_plot(qs_tau, qs_contrast, potential, color, direction, sub_path, all_ax, y_fit=None, tau=None, r_square=None, fit_error=None):
+    qs_tau = np.asarray(qs_tau, dtype=float)
+    qs_contrast = np.asarray(qs_contrast, dtype=float)
+    label = f"{potential:.3f}V"
+    name = f"QS_{direction}_{potential:.3f}V.png"
+    fig_path = os.path.join(sub_path, name)
+
+    if len(qs_tau) and len(qs_contrast):
+        plt.plot(qs_tau, qs_contrast, marker="x", color=color, label=label)
+        all_ax.plot(qs_tau, qs_contrast, marker="x", label=label)
+    else:
+        plt.plot([], [], marker="x", color=color, label=f"{label}: no T1 data")
+
+    if y_fit is not None and tau is not None and r_square is not None:
+        plt.plot(
+            qs_tau,
+            y_fit,
+            linestyle="--",
+            color=color,
+            label=f"fit: {tau:.3f} ms, R^2 = {r_square:.3f}",
+        )
+    elif fit_error:
+        plt.plot([], [], color=color, label=f"fit failed: {fit_error}")
+
+    plt.xlabel("tau spacing")
+    plt.ylabel("normalized contrast")
+    plt.legend()
+    plt.savefig(fig_path, dpi=300)
+    plt.close()
 
 def add_qs_measurement_parameters(info_dic, qs_data_reader, prefix=""):
     params = getattr(qs_data_reader, "params", None)
@@ -604,7 +660,7 @@ def ecqs_data_displayer(qs_data_reader, potentiostat, fitting_dic: dict, cache, 
     try:
         info_dic["QS:Measurement_time"] = f"{np.mean(qs_data['time_measure_mean'])*1000:.0f} +- {np.mean(qs_data['time_measure_std'])*1000:.0f} ms"
         info_dic["QS:Saving time"] = f"{np.mean(qs_data['time_save_mean'])*1000:.0f} +- {np.mean(qs_data['time_save_std'])*1000:.0f} ms"
-        info_dic["QS:Light Level"] = f"{np.mean(qs_data['reference_mean']):.4f} V"
+        info_dic["QS:Light Level"] = f"{np.mean(qs_data['reference_mean']):.4f} mV"
         info_dic["QS:Measurement points"] = f"{len(qs_data['x_data'])} points x {qs_data['contrast_length'][0]} averages"
         add_qs_measurement_parameters(info_dic, qs_data_reader, prefix="QS:")
     except:
@@ -683,13 +739,6 @@ def ecqs_data_displayer(qs_data_reader, potentiostat, fitting_dic: dict, cache, 
                         qs_tau = np.array([])
                         qs_contrast = np.array([])
                         print("data could not be normalized")
-                    if len(qs_contrast) <3 or len(qs_tau) <3:
-                        tau_values_up.append(0)
-                        r_square_up.append(0)
-                        points_up.append(0)
-                        continue
-                    #print("Contrast length:", len(qs_contrast))
-                   # print(len(qs_tau))
                     cl = qs_data_up["contrast_length"]
                     if isinstance(cl, (list, np.ndarray)) and len(cl) > 0:
                         qs_points = cl[0]
@@ -697,6 +746,25 @@ def ecqs_data_displayer(qs_data_reader, potentiostat, fitting_dic: dict, cache, 
                         qs_points = cl
                     else:
                         qs_points = 0
+                    if len(qs_contrast) <3 or len(qs_tau) <3:
+                        if save_detail_plots:
+                            save_ecqs_t1_detail_plot(
+                                qs_tau,
+                                qs_contrast,
+                                float(row["Potential"]),
+                                "blue",
+                                "Up",
+                                sub_path,
+                                all_up_ax,
+                                fit_error="not enough data",
+                            )
+                        tau_values_up.append(np.nan)
+                        r_square_up.append(np.nan)
+                        points_up.append(qs_points)
+                        qs_light_up.append(qs_lightlevel)
+                        continue
+                    #print("Contrast length:", len(qs_contrast))
+                   # print(len(qs_tau))
                     
                     min_tau = positive_tau_lower_bound(qs_tau)
                     p0 = [qs_tau[-1] / 3,  # tau ~ 1/3 of x range
@@ -710,11 +778,15 @@ def ecqs_data_displayer(qs_data_reader, potentiostat, fitting_dic: dict, cache, 
                     else:
                         bounds = (-np.inf, np.inf)
                     #time_0=time()
+                    y_fit = None
+                    tau = None
+                    r_square = None
+                    fit_error = None
                     try:
                         popt, pcov = curve_fit(stretched_exp, qs_tau, qs_contrast, p0=p0, bounds=bounds,maxfev=maxfev)
                         tau = popt[0]
                         if tau < 0:
-                            tau =0
+                            raise ValueError(f"Negative T1 fit tau: {tau}")
                         tau_values_up.append(tau)
                         y_fit = stretched_exp(qs_tau, *popt)
                         r_square = r_squared(qs_contrast, y_fit)
@@ -722,29 +794,44 @@ def ecqs_data_displayer(qs_data_reader, potentiostat, fitting_dic: dict, cache, 
                         """
                         Plot figure for every potential
                         """
-                        if save_detail_plots:
-                            plt.plot(qs_tau,qs_contrast,marker="x",color="blue",label=f"{x_values_up[i]:.3f}V")
-                            all_up_ax.plot(qs_tau,qs_contrast,marker="x",label=f"{x_values_up[i]:.3f}V")
-                            plt.plot(qs_tau,y_fit,linestyle="--",color="blue",label=f"fit: {tau:.3f} ms, R^2 = {r_square:.3f}")
-                            name = f"QS_Up_{x_values_up[i]:.3f}V.png"
-                            fig_path = os.path.join(sub_path,name)
-                            plt.legend()
-                            plt.savefig(fig_path, dpi=300)
-                            plt.close()
                     except Exception as e:
                         print(e)
-                        tau_values_up.append(0)
-                        r_square_up.append(0)
+                        fit_error = str(e)
+                        tau_values_up.append(np.nan)
+                        r_square_up.append(np.nan)
                     finally:
+                        if save_detail_plots:
+                            save_ecqs_t1_detail_plot(
+                                qs_tau,
+                                qs_contrast,
+                                float(row["Potential"]),
+                                "blue",
+                                "Up",
+                                sub_path,
+                                all_up_ax,
+                                y_fit=y_fit,
+                                tau=tau,
+                                r_square=r_square,
+                                fit_error=fit_error,
+                            )
                         points_up.append(qs_points)
                         qs_light_up.append(qs_lightlevel)
                   #  print(f"Up-fittingtime:{(time()-time_0)*1000} ms")
                 try:
-                    axes[0,1].plot(x_values_up,tau_values_up,color="blue",label="T1 Time Upwards current")
+                    plot_line_with_missing_fit_markers(
+                        axes[0,1],
+                        x_values_up,
+                        tau_values_up,
+                        "blue",
+                        "T1 Time Upwards current",
+                    )
                 except Exception as e:
                     print(e)
                 try:
-                    axes[1,1].plot(x_values_up,r_square_up,color="blue",linestyle="--",label="R^2 T1")
+                    x_up_array = np.asarray(x_values_up, dtype=float)
+                    r_square_up_array = np.asarray(r_square_up, dtype=float)
+                    valid_r_square_up = np.isfinite(r_square_up_array)
+                    axes[1,1].plot(x_up_array[valid_r_square_up], r_square_up_array[valid_r_square_up], color="blue", linestyle="--", label="R^2 T1")
                 except Exception as e:
                     print(e)
                 try:
@@ -794,13 +881,6 @@ def ecqs_data_displayer(qs_data_reader, potentiostat, fitting_dic: dict, cache, 
                         qs_tau = np.array([])
                         qs_contrast = np.array([])
                         print("data could not be normalized")
-                    if len(qs_contrast) == 0 or len(qs_tau) == 0:
-                        tau_values_down.append(0)
-                        r_square_down.append(0)
-                        points_down.append(0)
-                        continue
-                   # print("Contrast length: ", len(qs_contrast))
-                   # print(len(qs_tau))
                     cl = qs_data_down["contrast_length"]
                     if isinstance(cl, (list, np.ndarray)) and len(cl) > 0:
                         qs_points = cl[0]
@@ -808,6 +888,25 @@ def ecqs_data_displayer(qs_data_reader, potentiostat, fitting_dic: dict, cache, 
                         qs_points = cl
                     else:
                         qs_points = 0
+                    if len(qs_contrast) < 3 or len(qs_tau) < 3:
+                        if save_detail_plots:
+                            save_ecqs_t1_detail_plot(
+                                qs_tau,
+                                qs_contrast,
+                                float(row["Potential"]),
+                                "red",
+                                "Down",
+                                sub_path,
+                                all_down_ax,
+                                fit_error="not enough data",
+                            )
+                        tau_values_down.append(np.nan)
+                        r_square_down.append(np.nan)
+                        points_down.append(qs_points)
+                        qs_light_down.append(qs_lightlevel)
+                        continue
+                   # print("Contrast length: ", len(qs_contrast))
+                   # print(len(qs_tau))
                        
                     
                     min_tau = positive_tau_lower_bound(qs_tau)
@@ -822,11 +921,15 @@ def ecqs_data_displayer(qs_data_reader, potentiostat, fitting_dic: dict, cache, 
                     else:
                         bounds = (-np.inf, np.inf)
                    # t0 = time()
+                    y_fit = None
+                    tau = None
+                    r_square = None
+                    fit_error = None
                     try:
                         popt, pcov = curve_fit(stretched_exp, qs_tau, qs_contrast, p0=p0,bounds=bounds, maxfev=maxfev)
                         tau = popt[0]
                         if tau < 0:
-                            tau =0
+                            raise ValueError(f"Negative T1 fit tau: {tau}")
                         tau_values_down.append(tau)
                         y_fit = stretched_exp(qs_tau, *popt)
                         r_square = r_squared(qs_contrast, y_fit)
@@ -834,30 +937,45 @@ def ecqs_data_displayer(qs_data_reader, potentiostat, fitting_dic: dict, cache, 
                         """
                         Plot figure for every potential
                         """
-                        if save_detail_plots:
-                            plt.plot(qs_tau,qs_contrast,color="red",marker="x",label=f"{x_values_down[i]:.3f}")
-                            all_down_ax.plot(qs_tau,qs_contrast,marker="x",label=f"{x_values_down[i]:.3f}")
-                            plt.plot(qs_tau,y_fit,linestyle="--",color="red",label=f"fit: {tau:.3f} ms, R^2 = {r_square:.3f}")
-                            name = f"QS_Down_{x_values_down[i]:.3f}V.png"
-                            fig_path = os.path.join(sub_path,name)
-                            plt.legend()
-                            plt.savefig(fig_path, dpi=300)
-                            plt.close()
                         
                     except Exception as e:
                         print(e)
-                        tau_values_down.append(0)
-                        r_square_down.append(0)
+                        fit_error = str(e)
+                        tau_values_down.append(np.nan)
+                        r_square_down.append(np.nan)
                     finally:
+                        if save_detail_plots:
+                            save_ecqs_t1_detail_plot(
+                                qs_tau,
+                                qs_contrast,
+                                float(row["Potential"]),
+                                "red",
+                                "Down",
+                                sub_path,
+                                all_down_ax,
+                                y_fit=y_fit,
+                                tau=tau,
+                                r_square=r_square,
+                                fit_error=fit_error,
+                            )
                         points_down.append(qs_points)
                         qs_light_down.append(qs_lightlevel)
                 #print(f"fitting_time: {(time()-t0)*1000} ms")
                 try:
-                    axes[0,1].plot(x_values_down,tau_values_down,color="red",label="T1 Time Downwards current")
+                    plot_line_with_missing_fit_markers(
+                        axes[0,1],
+                        x_values_down,
+                        tau_values_down,
+                        "red",
+                        "T1 Time Downwards current",
+                    )
                 except Exception as e:
                     print(e)
                 try:
-                    axes[1,1].plot(x_values_down,r_square_down,color="red",linestyle="--",label="R^2 T1")
+                    x_down_array = np.asarray(x_values_down, dtype=float)
+                    r_square_down_array = np.asarray(r_square_down, dtype=float)
+                    valid_r_square_down = np.isfinite(r_square_down_array)
+                    axes[1,1].plot(x_down_array[valid_r_square_down], r_square_down_array[valid_r_square_down], color="red", linestyle="--", label="R^2 T1")
                 except Exception as e:
                     print(e)
                 try:

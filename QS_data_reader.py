@@ -14,6 +14,8 @@ import os
 import shutil
 import threading
 
+LIGHT_LEVEL_TO_MV = 1000.0
+
 #This class gets the data file path and name and will write the raw data to a pandas frame
 class QS_data_reader():
       
@@ -245,14 +247,16 @@ class QS_data_reader():
         t_begin = raw_rows[:, 0]
         t_end = raw_rows[:, 1]
         signal_rows = raw_rows[:, 2:].reshape(-1, self.points_per_row, self.reference_channels)
-        channel_0 = signal_rows[:, :, 0]
-        channel_1 = signal_rows[:, :, 1]
+        raw_channel_0 = signal_rows[:, :, 0]
+        raw_channel_1 = signal_rows[:, :, 1]
         contrast = np.divide(
-            channel_1,
-            channel_0,
-            out=np.zeros_like(channel_1, dtype=float),
-            where=channel_0 != 0,
+            raw_channel_1,
+            raw_channel_0,
+            out=np.zeros_like(raw_channel_1, dtype=float),
+            where=raw_channel_0 != 0,
         )
+        channel_0 = raw_channel_0 * LIGHT_LEVEL_TO_MV
+        channel_1 = raw_channel_1 * LIGHT_LEVEL_TO_MV
         with self._summary_lock:
             summary = self._live_summary
             if self.averaging_mode == "spread":
@@ -405,6 +409,7 @@ class QS_data_reader():
             t_begin = np.array(raw_rows[:, 0], copy=True)
             t_end = np.array(raw_rows[:, 1], copy=True)
             signal_rows = np.array(raw_rows[:, 2:], copy=True).reshape(-1, self.points_per_row, self.reference_channels)
+            signal_rows *= LIGHT_LEVEL_TO_MV
         finally:
             del mm
         return t_begin, t_end, signal_rows
