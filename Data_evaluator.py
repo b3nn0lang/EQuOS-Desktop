@@ -628,8 +628,15 @@ def ecqs_data_displayer(qs_data_reader, potentiostat, fitting_dic: dict, cache, 
          maxfev = fitting_dic["max_tries"]
     else:
          maxfev = 50
+    use_r_square_threshold = bool(fitting_dic.get("use_r_square_threshold", False))
+    try:
+        r_square_threshold = float(fitting_dic.get("r_square_threshold", 0.95))
+    except (TypeError, ValueError):
+        r_square_threshold = 0.95
         
     info_dic ={}
+    if use_r_square_threshold:
+        info_dic["T1 R^2 threshold"] = f"{r_square_threshold:.3f}"
     measurement_done = False
     kill_qupyt =False
     method = potentiostat.method.to_dict()
@@ -787,9 +794,15 @@ def ecqs_data_displayer(qs_data_reader, potentiostat, fitting_dic: dict, cache, 
                         tau = popt[0]
                         if tau < 0:
                             raise ValueError(f"Negative T1 fit tau: {tau}")
-                        tau_values_up.append(tau)
                         y_fit = stretched_exp(qs_tau, *popt)
                         r_square = r_squared(qs_contrast, y_fit)
+                        if use_r_square_threshold and r_square < r_square_threshold:
+                            failed_r_square = r_square
+                            y_fit = None
+                            tau = None
+                            r_square = None
+                            raise ValueError(f"R^2 below threshold: {failed_r_square:.3f} < {r_square_threshold:.3f}")
+                        tau_values_up.append(tau)
                         r_square_up.append(r_square)
                         """
                         Plot figure for every potential
@@ -930,9 +943,15 @@ def ecqs_data_displayer(qs_data_reader, potentiostat, fitting_dic: dict, cache, 
                         tau = popt[0]
                         if tau < 0:
                             raise ValueError(f"Negative T1 fit tau: {tau}")
-                        tau_values_down.append(tau)
                         y_fit = stretched_exp(qs_tau, *popt)
                         r_square = r_squared(qs_contrast, y_fit)
+                        if use_r_square_threshold and r_square < r_square_threshold:
+                            failed_r_square = r_square
+                            y_fit = None
+                            tau = None
+                            r_square = None
+                            raise ValueError(f"R^2 below threshold: {failed_r_square:.3f} < {r_square_threshold:.3f}")
+                        tau_values_down.append(tau)
                         r_square_down.append(r_square)
                         """
                         Plot figure for every potential
@@ -1133,7 +1152,7 @@ def ecqs_data_displayer(qs_data_reader, potentiostat, fitting_dic: dict, cache, 
         measurement_done=True
     elif qs_data_reader.dataframe_loop_stop.is_set() and not potentiostat.stop_measurement.is_set():
         potentiostat.stop_measurement.set()
-
+    print("Evaluation Run complete")
     return fig, axes, measurement_done, measurement_progress, info_dic,kill_qupyt
 
 def safe_min(arr):

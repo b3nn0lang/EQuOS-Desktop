@@ -700,8 +700,8 @@ class App(tk.Tk):
         self.lsv_fitting_button = tk.Button(lsv_fitting_frame,text="Fit Data",command=self.lsv_fitting)
         self.lsv_fitting_button.pack()
         
-        ECQS_labels = ["Fitting:","Prominence:","Distance:","Cutoff Rate","Use Bounds:","Max. Tries:"]
-        ECQS_standards = [True, 1e-6,10,0.5,False,5000]
+        ECQS_labels = ["Fitting:","Prominence:","Distance:","Cutoff Rate","Use Bounds:","Max. Tries:","Use R^2 Threshold:","Min. R^2:"]
+        ECQS_standards = [True, 1e-6,10,0.5,False,5000,False,0.95]
         
         #CV-T1 Fitting
         cv_t1_fitting_frame = tk.Frame(self.fitting_params_frame)
@@ -1823,36 +1823,42 @@ class App(tk.Tk):
         self.eval_ec_figure(fit_dict)
     
     def cv_t1_fitting(self):
-        #["Fitting:","Prominence:","Distance:","Cutoff Rate","Use Bounds:","Max. Tries:"]
+        #["Fitting:","Prominence:","Distance:","Cutoff Rate","Use Bounds:","Max. Tries:","Use R^2 Threshold:","Min. R^2:"]
         values = [self.get_fitting_value(item) for item in self.cv_t1_fitting_entries]
         fit_dict = {"ec_fitting":values[0],
                     "cutoff_rate":values[3],
                     "max_tries":values[5],
                     "use_bounds":values[4],
                     "prominence":values[1],
-                    "distance":values[2]}
+                    "distance":values[2],
+                    "use_r_square_threshold":values[6],
+                    "r_square_threshold":values[7]}
         print(values)
         self.eval_ecqs_figure(fit_dict)
     def swv_t1_fitting(self):
-        #["Fitting:","Prominence:","Distance:","Cutoff Rate","Use Bounds:","Max. Tries:"]
+        #["Fitting:","Prominence:","Distance:","Cutoff Rate","Use Bounds:","Max. Tries:","Use R^2 Threshold:","Min. R^2:"]
         values = [self.get_fitting_value(item) for item in self.swv_t1_fitting_entries]
         fit_dict = {"ec_fitting":values[0],
                     "cutoff_rate":values[3],
                     "max_tries":values[5],
                     "use_bounds":values[4],
                     "prominence":values[1],
-                    "distance":values[2]}
+                    "distance":values[2],
+                    "use_r_square_threshold":values[6],
+                    "r_square_threshold":values[7]}
         print(values)
         self.eval_ecqs_figure(fit_dict)
     def lsv_t1_fitting(self):
-        #["Fitting:","Prominence:","Distance:","Cutoff Rate","Use Bounds:","Max. Tries:"]
+        #["Fitting:","Prominence:","Distance:","Cutoff Rate","Use Bounds:","Max. Tries:","Use R^2 Threshold:","Min. R^2:"]
         values = [self.get_fitting_value(item) for item in self.lsv_t1_fitting_entries]
         fit_dict = {"ec_fitting":values[0],
                     "cutoff_rate":values[3],
                     "max_tries":values[5],
                     "use_bounds":values[4],
                     "prominence":values[1],
-                    "distance":values[2]}
+                    "distance":values[2],
+                    "use_r_square_threshold":values[6],
+                    "r_square_threshold":values[7]}
         print(values)
         self.eval_ecqs_figure(fit_dict)
     def reset_live_canvas(self):
