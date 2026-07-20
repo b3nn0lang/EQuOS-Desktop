@@ -308,6 +308,27 @@ def r_squared(ydata, yfit):
         return 0
     return 1 - (ss_res / ss_tot)
 
+def axes_at_same_position(ax):
+    base_bounds = ax.get_position().bounds
+    return [
+        candidate
+        for candidate in ax.figure.axes
+        if np.allclose(candidate.get_position().bounds, base_bounds)
+    ]
+
+def combined_legend(ax, loc="best"):
+    handles = []
+    labels = []
+    for candidate in axes_at_same_position(ax):
+        candidate_handles, candidate_labels = candidate.get_legend_handles_labels()
+        for handle, label in zip(candidate_handles, candidate_labels):
+            if not label or label.startswith("_") or label in labels:
+                continue
+            handles.append(handle)
+            labels.append(label)
+    if handles:
+        ax.legend(handles, labels, loc=loc)
+
 def plot_line_with_missing_fit_markers(ax, x_values, y_values, color, label):
     x_values = np.asarray(x_values, dtype=float)
     y_values = np.asarray(y_values, dtype=float)
@@ -614,9 +635,10 @@ def ec_data_displayer(potentiostat:object, fitting_dic:dict, fig: Figure | None 
     
     
     integral = potentiostat.get_measurement_integrals()
-    axes[1].plot(range(1, len(integral) + 1), integral,  label="Current sum")
+    axes[1].plot(range(1, len(integral) + 1), integral, color="tab:orange", label="Current sum")
     axes[1].set_xlabel("N Measurement")
     axes[1].set_ylabel("Abs Current Sum [A]")
+    combined_legend(axes[1])
     return fig, axes, measurement_done, measurement_progress, info_dic
     
 def ecqs_data_displayer(qs_data_reader, potentiostat, fitting_dic: dict, cache, fig: Figure | None = None):
@@ -702,6 +724,9 @@ def ecqs_data_displayer(qs_data_reader, potentiostat, fitting_dic: dict, cache, 
         ax_light_with_pot = axes[1,1].twinx()
         ax_light_with_pot.spines["right"].set_position(("outward", 60))
         ax_light_with_pot.set_ylabel("Lightlevel [mV]")
+        ax_contrast_with_pot = axes[1,1].twinx()
+        ax_contrast_with_pot.spines["right"].set_position(("outward", 120))
+        ax_contrast_with_pot.set_ylabel("Contrast scale")
         time_loop_begin=time()
         try:
             plot_up = ec_data[ec_data["direction"] == 1]
@@ -724,6 +749,7 @@ def ecqs_data_displayer(qs_data_reader, potentiostat, fitting_dic: dict, cache, 
                 r_square_up = []
                 x_values_up = plot_up["Potential"]
                 qs_light_up = []
+                contrast_scale_up = []
                 print(f"v_values_up length: {len(x_values_up)}")
                 all_up_ax.set_prop_cycle(color=mpl.colormaps['viridis'](np.linspace(0.2, 1.0, len(plot_up))))
                 print("Processing plot up")
@@ -737,11 +763,15 @@ def ecqs_data_displayer(qs_data_reader, potentiostat, fitting_dic: dict, cache, 
                     qs_tau = qs_data_up["x_data"]
                     qs_contrast = qs_data_up["contrast_mean"]
                     qs_lightlevel = np.mean(qs_data_up["reference_mean"])
+                    contrast_scale = np.nan
                     
                     try:
                         qs_tau = np.atleast_1d(np.asarray(qs_tau, dtype=float))
+                        raw_qs_contrast = np.atleast_1d(np.asarray(qs_contrast, dtype=float))
                         qs_contrast, t1_cutoff_idx = normalize_averaged_decay(qs_contrast, return_cutoff=True)
                         qs_tau = qs_tau[t1_cutoff_idx:]
+                        contrast_window = 1.0 - raw_qs_contrast[t1_cutoff_idx:]
+                        contrast_scale = float(np.max(contrast_window)) if contrast_window.size else np.nan
                     except (TypeError, ValueError):
                         qs_tau = np.array([])
                         qs_contrast = np.array([])
@@ -769,6 +799,7 @@ def ecqs_data_displayer(qs_data_reader, potentiostat, fitting_dic: dict, cache, 
                         r_square_up.append(np.nan)
                         points_up.append(qs_points)
                         qs_light_up.append(qs_lightlevel)
+                        contrast_scale_up.append(contrast_scale)
                         continue
                     #print("Contrast length:", len(qs_contrast))
                    # print(len(qs_tau))
@@ -808,7 +839,7 @@ def ecqs_data_displayer(qs_data_reader, potentiostat, fitting_dic: dict, cache, 
                         Plot figure for every potential
                         """
                     except Exception as e:
-                        print(e)
+                        #print(e)
                         fit_error = str(e)
                         tau_values_up.append(np.nan)
                         r_square_up.append(np.nan)
@@ -829,6 +860,7 @@ def ecqs_data_displayer(qs_data_reader, potentiostat, fitting_dic: dict, cache, 
                             )
                         points_up.append(qs_points)
                         qs_light_up.append(qs_lightlevel)
+                        contrast_scale_up.append(contrast_scale)
                   #  print(f"Up-fittingtime:{(time()-time_0)*1000} ms")
                 try:
                     plot_line_with_missing_fit_markers(
@@ -848,7 +880,8 @@ def ecqs_data_displayer(qs_data_reader, potentiostat, fitting_dic: dict, cache, 
                 except Exception as e:
                     print(e)
                 try:
-                    ax_light_with_pot.plot(x_values_up, qs_light_up, color="blue", label = "Lightlevel")
+                    ax_light_with_pot.plot(x_values_up, qs_light_up, color="tab:blue", label = "Up Lightlevel")
+                    ax_contrast_with_pot.plot(x_values_up, contrast_scale_up, color="tab:purple", linestyle="-", label="Up Contrast scale")
                 except Exception as e:
                     print(e)
         except Exception as e:
@@ -874,6 +907,7 @@ def ecqs_data_displayer(qs_data_reader, potentiostat, fitting_dic: dict, cache, 
                 r_square_down = []
                 x_values_down = plot_down["Potential"]
                 qs_light_down = []
+                contrast_scale_down = []
                 print(f"v_values_down length: {len(x_values_down)}")
                 all_down_ax.set_prop_cycle(color=mpl.colormaps['viridis'](np.linspace(0.2, 1.0, len(plot_down))))
                 print("Processing plot down")
@@ -886,10 +920,14 @@ def ecqs_data_displayer(qs_data_reader, potentiostat, fitting_dic: dict, cache, 
                     qs_tau = qs_data_down["x_data"]
                     qs_contrast = qs_data_down["contrast_mean"]
                     qs_lightlevel = np.mean(qs_data_down["reference_mean"])
+                    contrast_scale = np.nan
                     try:
                         qs_tau = np.atleast_1d(np.asarray(qs_tau, dtype=float))
+                        raw_qs_contrast = np.atleast_1d(np.asarray(qs_contrast, dtype=float))
                         qs_contrast, t1_cutoff_idx = normalize_averaged_decay(qs_contrast, return_cutoff=True)
                         qs_tau = qs_tau[t1_cutoff_idx:]
+                        contrast_window = 1.0 - raw_qs_contrast[t1_cutoff_idx:]
+                        contrast_scale = float(np.max(contrast_window)) if contrast_window.size else np.nan
                     except (TypeError, ValueError):
                         qs_tau = np.array([])
                         qs_contrast = np.array([])
@@ -917,6 +955,7 @@ def ecqs_data_displayer(qs_data_reader, potentiostat, fitting_dic: dict, cache, 
                         r_square_down.append(np.nan)
                         points_down.append(qs_points)
                         qs_light_down.append(qs_lightlevel)
+                        contrast_scale_down.append(contrast_scale)
                         continue
                    # print("Contrast length: ", len(qs_contrast))
                    # print(len(qs_tau))
@@ -958,7 +997,7 @@ def ecqs_data_displayer(qs_data_reader, potentiostat, fitting_dic: dict, cache, 
                         """
                         
                     except Exception as e:
-                        print(e)
+                        #print(e)
                         fit_error = str(e)
                         tau_values_down.append(np.nan)
                         r_square_down.append(np.nan)
@@ -979,6 +1018,7 @@ def ecqs_data_displayer(qs_data_reader, potentiostat, fitting_dic: dict, cache, 
                             )
                         points_down.append(qs_points)
                         qs_light_down.append(qs_lightlevel)
+                        contrast_scale_down.append(contrast_scale)
                 #print(f"fitting_time: {(time()-t0)*1000} ms")
                 try:
                     plot_line_with_missing_fit_markers(
@@ -999,7 +1039,8 @@ def ecqs_data_displayer(qs_data_reader, potentiostat, fitting_dic: dict, cache, 
                     print(e)
                 try:
                     
-                    ax_light_with_pot.plot(x_values_down, qs_light_down, color="red", label = "Lightlevel")
+                    ax_light_with_pot.plot(x_values_down, qs_light_down, color="tab:red", linestyle="-", label = "Down Lightlevel")
+                    ax_contrast_with_pot.plot(x_values_down, contrast_scale_down, color="tab:pink", linestyle="-", label="Down Contrast scale")
                 except Exception as e:
                     print(e)
         except Exception as e:
@@ -1012,10 +1053,10 @@ def ecqs_data_displayer(qs_data_reader, potentiostat, fitting_dic: dict, cache, 
         ax_bar = axes[1,1].twinx()
         ax_bar.set_ylabel("Averages")
         try:
-            ax_bar.bar(x_values_up - float(method["step_potential"])/4, points_up, float(method["step_potential"])/2, label="Upwards Averages",color="blue",alpha=0.6)
+            ax_bar.bar(x_values_up - float(method["step_potential"])/4, points_up, float(method["step_potential"])/2, label="Upwards Averages",color="blue",alpha=0.3)
         finally:
             try:
-                ax_bar.bar(x_values_down + float(method["step_potential"])/4, points_down, float(method["step_potential"])/2, label="Downwards Averages",color="red",alpha=0.6)
+                ax_bar.bar(x_values_down + float(method["step_potential"])/4, points_down, float(method["step_potential"])/2, label="Downwards Averages",color="red",alpha=0.3)
             except:
                 pass
         # Let bar axis autoscale independently, don't let it affect R² axis
@@ -1065,7 +1106,7 @@ def ecqs_data_displayer(qs_data_reader, potentiostat, fitting_dic: dict, cache, 
                 label=f"Cathodic: {np.round(x[neg_peaks], 3)} V")
                 
         integral = potentiostat.get_measurement_integrals()
-        axes[1,0].plot(range(1, len(integral) + 1), integral,  label="Current sum")    
+        axes[1,0].plot(range(1, len(integral) + 1), integral, color="tab:orange", label="Current sum")    
         
         #Get all EC figures
         if save_detail_plots:
@@ -1101,7 +1142,7 @@ def ecqs_data_displayer(qs_data_reader, potentiostat, fitting_dic: dict, cache, 
         ax_ll.set_ylabel("Lightlevel [mV]")
         print("Evaluating Light-level")
         ll_list = lightlevel_by_time_bins(qs_data_reader, time_lists)
-        ax_ll.plot(x_list[1:],ll_list, label="Lightlevel",color="green")
+        ax_ll.plot(x_list[1:],ll_list, label="Lightlevel",color="tab:cyan")
         del ll_list,x_list
         
         if not points_up and not points_down:
@@ -1119,6 +1160,7 @@ def ecqs_data_displayer(qs_data_reader, potentiostat, fitting_dic: dict, cache, 
         cache.measurement_progress = measurement_progress
         cache.kill_qupyt = kill_qupyt
         cache.fig = fig
+        print("Evaluation Run complete")
     elif ec_data is not None:
         axes = cache.axes
         fig = cache.fig
@@ -1130,29 +1172,36 @@ def ecqs_data_displayer(qs_data_reader, potentiostat, fitting_dic: dict, cache, 
         axes = fig.subplots(2, 2)
     #Plot Callback
     try:
-        axes[0,0].plot(callback_data['Potential'],callback_data["Current"],"gx")
-    except:
-        pass
+        old_callback_artist = getattr(cache, "callback_artist", None)
+        if old_callback_artist is not None:
+            try:
+                old_callback_artist.remove()
+            except ValueError:
+                pass
+        callback_artists = axes[0,0].plot(callback_data['Potential'],callback_data["Current"],"gx")
+        cache.callback_artist = callback_artists[0] if callback_artists else None
+    except Exception:
+        cache.callback_artist = None
     axes[0,0].set_xlabel("Potential [V]")
     axes[0,0].set_ylabel("Current [uA]")
     axes[0,1].set_xlabel("Potential [V]")
     axes[0,1].set_ylabel("T1 Time")
     #axes[0,1].set_ylim(0,2)
     axes[0,0].grid(True, alpha=0.3)
-    axes[0,0].legend()
+    combined_legend(axes[0,0])
     axes[0,1].grid(True, alpha=0.3)
-    axes[0,1].legend()
+    combined_legend(axes[0,1])
     axes[1,1].grid(True, alpha=0.3)
-    axes[1,1].legend()
+    combined_legend(axes[1,1], loc="upper left")
     axes[1,0].set_xlabel("N Measurement")
     axes[1,0].set_ylabel("Abs Current Sum [uA]")
     axes[1,0].grid(True, alpha=0.3)
-    axes[1,0].legend()
+    combined_legend(axes[1,0])
     if potentiostat.potentiostat_disconnected.is_set() and qs_data_reader.dataframe_loop_stop.is_set():
         measurement_done=True
     elif qs_data_reader.dataframe_loop_stop.is_set() and not potentiostat.stop_measurement.is_set():
         potentiostat.stop_measurement.set()
-    print("Evaluation Run complete")
+
     return fig, axes, measurement_done, measurement_progress, info_dic,kill_qupyt
 
 def safe_min(arr):
