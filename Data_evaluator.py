@@ -355,6 +355,22 @@ def plot_line_with_missing_fit_markers(ax, x_values, y_values, color, label):
             zorder=4,
         )
 
+def set_t1_axis_from_zero(ax):
+    y_values = []
+    for line in ax.lines:
+        y_data = np.asarray(line.get_ydata(), dtype=float)
+        y_values.extend(y_data[np.isfinite(y_data)])
+
+    if not y_values:
+        ax.set_ylim(bottom=0)
+        return
+
+    y_max = max(y_values)
+    if y_max <= 0:
+        ax.set_ylim(0, 1)
+    else:
+        ax.set_ylim(0, y_max * 1.05)
+
 def save_ecqs_t1_detail_plot(qs_tau, qs_contrast, potential, color, direction, sub_path, all_ax, y_fit=None, tau=None, r_square=None, fit_error=None):
     qs_tau = np.asarray(qs_tau, dtype=float)
     qs_contrast = np.asarray(qs_contrast, dtype=float)
@@ -1143,7 +1159,13 @@ def ecqs_data_displayer(qs_data_reader, potentiostat, fitting_dic: dict, cache, 
         print("Evaluating Light-level")
         ll_list = lightlevel_by_time_bins(qs_data_reader, time_lists)
         ax_ll.plot(x_list[1:],ll_list, label="Lightlevel",color="tab:cyan")
-        del ll_list,x_list
+        ax_contrast_time = axes[1,0].twinx()
+        ax_contrast_time.spines["right"].set_position(("outward", 60))
+        ax_contrast_time.set_ylabel("Contrast scale")
+        print("Evaluating Contrast")
+        contrast_time_list = contrast_scale_by_time_bins(qs_data_reader, time_lists)
+        ax_contrast_time.plot(x_list[1:], contrast_time_list, label="Contrast scale", color="tab:purple")
+        del ll_list,contrast_time_list,x_list
         
         if not points_up and not points_down:
             measurement_progress=0
@@ -1186,7 +1208,7 @@ def ecqs_data_displayer(qs_data_reader, potentiostat, fitting_dic: dict, cache, 
     axes[0,0].set_ylabel("Current [uA]")
     axes[0,1].set_xlabel("Potential [V]")
     axes[0,1].set_ylabel("T1 Time")
-    #axes[0,1].set_ylim(0,2)
+    set_t1_axis_from_zero(axes[0,1])
     axes[0,0].grid(True, alpha=0.3)
     combined_legend(axes[0,0])
     axes[0,1].grid(True, alpha=0.3)
@@ -1250,3 +1272,62 @@ def lightlevel_by_time_bins(qs_data_reader, time_edges):
         lightlevels[i] = float(np.mean(group_means)) if group_means else np.nan
 
     return lightlevels
+
+def contrast_scale_by_time_bins(qs_data_reader, time_edges):
+    t_begin, t_end, signal_rows = qs_data_reader._load_raw_data()
+    n_bins = max(len(time_edges) - 1, 0)
+    if n_bins == 0 or len(t_begin) == 0:
+        return np.full(n_bins, np.nan)
+
+    order = np.argsort(t_begin)
+    t_begin_sorted = t_begin[order]
+    t_end_sorted = t_end[order]
+    signal_rows_sorted = signal_rows[order]
+
+    if getattr(qs_data_reader, "averaging_mode", None) == "sum" and len(qs_data_reader._x_values_array) > 0:
+        x_values = qs_data_reader._x_values_array[np.arange(len(t_begin)) % len(qs_data_reader._x_values_array)]
+        x_values = x_values[order]
+    else:
+        x_values = None
+
+    contrast_scales = np.full(n_bins, np.nan)
+    for i, (bin_start, bin_end) in enumerate(zip(time_edges[:-1], time_edges[1:])):
+        start_idx = np.searchsorted(t_begin_sorted, bin_start, side="left")
+        stop_idx = np.searchsorted(t_begin_sorted, bin_end, side="right")
+        if stop_idx <= start_idx:
+            continue
+
+        candidate_end = t_end_sorted[start_idx:stop_idx]
+        in_bin = candidate_end <= bin_end
+        if not np.any(in_bin):
+            continue
+
+        rows = signal_rows_sorted[start_idx:stop_idx][in_bin]
+        if x_values is None:
+            refs = np.mean(rows[:, :, 0], axis=0)
+            vals = np.mean(rows[:, :, 1], axis=0)
+        else:
+            xs = x_values[start_idx:stop_idx][in_bin]
+            refs = []
+            vals = []
+            for key in dict.fromkeys(xs.tolist()):
+                group = rows[xs == key]
+                refs.append(float(np.mean(group[:, :, 0])))
+                vals.append(float(np.mean(group[:, :, 1])))
+            refs = np.asarray(refs, dtype=float)
+            vals = np.asarray(vals, dtype=float)
+
+        if len(refs) == 0:
+            continue
+
+        raw_contrast = np.divide(
+            vals,
+            refs,
+            out=np.zeros_like(vals, dtype=float),
+            where=refs != 0,
+        )
+        cutoff_idx = int(np.argmin(raw_contrast))
+        contrast_window = 1.0 - raw_contrast[cutoff_idx:]
+        contrast_scales[i] = float(np.max(contrast_window)) if contrast_window.size else np.nan
+
+    return contrast_scales
