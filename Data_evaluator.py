@@ -145,13 +145,17 @@ def qs_data_displayer(qs_data_reader: object, fitting_parameters: dict, fig: Fig
                          print(e)
             if measurement_type == "Rabi" or measurement_type == "Rabi_ECQS":
                 if ("rabi_sin_fit" in fitting_parameters.keys() and fitting_parameters["rabi_sin_fit"] == True) or "rabi_sin_fit" not in fitting_parameters.keys():
-                    p0 = estimate_rabi_initial_guess(x_data, contrast_mean)
+                    rabi_fit_skip_points = 5
+                    x_fit_data = x_data[rabi_fit_skip_points:]
+                    contrast_fit_mean = contrast_mean[rabi_fit_skip_points:]
+                    info_dic["Rabi fit skipped"] = "first 10 ns / 5 points"
+                    p0 = estimate_rabi_initial_guess(x_fit_data, contrast_fit_mean)
                     if "rabi_max_tries" in fitting_parameters.keys():
                         maxfev = fitting_parameters["rabi_max_tries"]
                     else:
                         maxfev = 20000
                     if "rabi_use_bounds" in fitting_parameters.keys() and fitting_parameters["rabi_use_bounds"] == True:
-                        bounds = rabi_fit_bounds(x_data, contrast_mean)
+                        bounds = rabi_fit_bounds(x_fit_data, contrast_fit_mean)
                     else:
                         bounds = (-np.inf, np.inf)
                     try:
@@ -159,8 +163,8 @@ def qs_data_displayer(qs_data_reader: object, fitting_parameters: dict, fig: Fig
                        # sigma = 1.0 / (weights + 1e-10)                 # invert: high weight → small sigma
                         popt, pcov = curve_fit(
                             rabi_fit_function,
-                            x_data,
-                            contrast_mean,
+                            x_fit_data,
+                            contrast_fit_mean,
                             p0=p0,
                             bounds=bounds,
                             maxfev=maxfev
@@ -169,10 +173,11 @@ def qs_data_displayer(qs_data_reader: object, fitting_parameters: dict, fig: Fig
                            )
                         #pi_pulse_duration = get_pi_from_rabi_fit(popt[1], popt[2]) OLD
                         y_fit = rabi_fit_function(x_data,*popt) 
-                        pi_pulse_duration = first_rabi_dip_from_fit(x_data, popt)
+                        y_fit_for_score = rabi_fit_function(x_fit_data,*popt)
+                        pi_pulse_duration = first_rabi_dip_from_fit(x_fit_data, popt)
                         y = np.interp(pi_pulse_duration, x_data, contrast_mean)
                         
-                        r_square = r_squared(contrast_mean, y_fit)
+                        r_square = r_squared(contrast_fit_mean, y_fit_for_score)
                         axes[0].plot(pi_pulse_duration, y,"gx",label =f"pi pulse: {pi_pulse_duration} ns")
                         if "rabi_show_fit" in fitting_parameters.keys() and fitting_parameters["rabi_show_fit"] == True:
                             axes[0].plot(x_data,y_fit,linestyle="--",color="green", label=f"{popt[0]:.3f} * exp(-x/{popt[3]:.0f}) * cos({popt[1]:.3f} * x + {popt[2]:.3f}) + {popt[4]:.3f}")
