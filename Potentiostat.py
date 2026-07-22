@@ -20,6 +20,20 @@ import matplotlib.pyplot as plt
 import pypalmsens as ps
 import nest_asyncio
 nest_asyncio.apply()
+
+
+class FinishedECMethod:
+    def __init__(self, method_id: str, settings: dict):
+        self.id = method_id
+        self._settings = settings
+
+    def to_dict(self) -> dict:
+        return {"id": self.id, **self._settings}
+
+    def to_settings(self):
+        return type("FinishedECSettings", (), self._settings)()
+
+
 class Potentiostat():
     def __init__(self, folder_path):
         ps.settings.General.power_frequency = 50
@@ -232,9 +246,22 @@ class Potentiostat():
     def save_df_to_csv(self, df : pd.DataFrame, file_name) -> None:
         df.to_csv(os.path.join(self.folder_path, f"{file_name}.csv"), index=False)
     def load_measurement_from_file(self, file_name):
-        self.set_measurement_results([self.load_pssession_file(file_name),self.load_csv_file(file_name)])
-        self.n_scans = len(self.get_measurement_results()[0])
-        self.method=self.get_measurement_results()[0][0].method
+        csv_data = self.load_csv_file(file_name)
+        session_path = os.path.join(self.folder_path, f"{file_name}.pssession")
+        measurements = []
+        if os.path.isfile(session_path):
+            try:
+                measurements = self.load_pssession_file(file_name)
+            except Exception as exc:
+                print(f"Could not load {file_name}.pssession, using CSV only: {exc}")
+        if not measurements:
+            measurements = self.build_finished_measurement_summaries(csv_data)
+        self.set_measurement_results([measurements, csv_data])
+        self.n_scans = max(1, len(measurements))
+        if hasattr(measurements[0], "method"):
+            self.method = measurements[0].method
+        else:
+            self.method = self.build_method_from_csv(file_name, csv_data)
         self.avg_per_point=1 #Dummy value
         settings = self.method.to_settings() if hasattr(self.method, "to_settings") else self.method
         if self.method.id == "cv":
@@ -254,8 +281,55 @@ class Potentiostat():
             self.max_points = int(abs(
                 settings.begin_potential - settings.end_potential
             ) / settings.step_potential)
+        self.potentiostat_disconnected.set()
+
+    def build_finished_measurement_summaries(self, df: pd.DataFrame) -> list[dict]:
+        if df.empty or "Current" not in df:
+            return [{"current_integral": 0.0}]
+        return [{"current_integral": float(np.sum(np.abs(df["Current"])))}]
+
+    def build_method_from_csv(self, file_name: str, df: pd.DataFrame) -> FinishedECMethod:
+        parts = file_name.split("_")
+        method_name = parts[1].lower() if len(parts) > 1 else ""
+        method_id = {"cv": "cv", "swv": "swv", "lsv": "lsv"}.get(method_name, method_name)
+        if "Potential" in df and not df.empty:
+            potentials = df["Potential"].dropna().astype(float)
+            begin = float(potentials.iloc[0])
+            end = float(potentials.iloc[-1])
+            unique_potentials = np.sort(potentials.unique())
+            diffs = np.abs(np.diff(unique_potentials))
+            diffs = diffs[diffs > 0]
+            step = float(np.min(diffs)) if len(diffs) else 1.0
+        else:
+            begin = 0.0
+            end = 0.0
+            step = 1.0
+        if "Time" in df and len(df["Time"].dropna()) > 1:
+            time_diffs = np.diff(np.sort(df["Time"].dropna().astype(float).to_numpy()))
+            time_diffs = time_diffs[time_diffs > 0]
+            time_per_point = float(np.median(time_diffs)) if len(time_diffs) else 1.0
+        else:
+            time_per_point = 1.0
+        settings = {
+            "begin_potential": begin,
+            "end_potential": end,
+            "step_potential": step,
+        }
+        if method_id == "cv":
+            settings.update(
+                {
+                    "vertex1_potential": begin,
+                    "vertex2_potential": float(df["Potential"].max()) if "Potential" in df and not df.empty else end,
+                    "scanrate": step / time_per_point if time_per_point else 1.0,
+                }
+            )
+        elif method_id == "swv":
+            settings.update({"frequency": 1 / time_per_point if time_per_point else 1.0, "amplitude": 0.0})
+        elif method_id == "lsv":
+            settings.update({"scanrate": step / time_per_point if time_per_point else 1.0})
+        return FinishedECMethod(method_id, settings)
     def discover_devices(self):
-        return ps.discover()
+        raise RuntimeError("Device discovery is disabled in the EQuOS viewer.")
     def load_csv_file(self,file_name):
         df = pd.read_csv(os.path.join(self.folder_path, f"{file_name}.csv"))
         return df
@@ -274,15 +348,9 @@ class Potentiostat():
         self.avg_per_point = 0
         self.set_measurement_results([[], pd.DataFrame()])
     def start_n_measurements(self,file_name,method,n_scans):
-        thread = threading.Thread(target=self.measure_n_times, args=(file_name, method, n_scans),daemon=True)
-        self.n_scans = n_scans
-        thread.start()
-        print("EC Experiment started")
+        raise RuntimeError("Starting EC measurements is disabled in the EQuOS viewer.")
     def start_measurement_until_stop(self,file_name,method,avg_per_point):
-        thread = threading.Thread(target=self.measure_until_done, args=(file_name,method),daemon=True)
-        self.avg_per_point = avg_per_point
-        thread.start()
-        print("EC Experiment started")
+        raise RuntimeError("Starting EC measurements is disabled in the EQuOS viewer.")
     
   
 

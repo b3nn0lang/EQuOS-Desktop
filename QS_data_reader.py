@@ -9,9 +9,7 @@ Created on Tue Apr  7 09:22:07 2026
 import numpy as np
 import pandas as pd
 import yaml
-import time
 import os
-import shutil
 import threading
 
 LIGHT_LEVEL_TO_MV = 1000.0
@@ -25,31 +23,20 @@ class QS_data_reader():
         self.dataframe_loop_stop = threading.Event()
         self.dataframe_loop_stop.set()
         self.raw_dataframe_progress = 0
-        self.scanning_interval = 0.5
-        self.qupyt_is_dead_time = 3
-        self.qupyt_param_creation_time = 10
-        self.temp_path = "C:/Users/ge54vec/.qupyt/temp"
         self.file_path = file_path
         self.file_name = file_name
         self.params = None
         self.experiment_type = None
         
         try:
-            for i in range(100):
-                time.sleep(self.qupyt_param_creation_time/100)
-                if os.path.isfile(f"{self.file_path}/{self.file_name}.yaml"):
-                    self.params = self.write_params_from_yaml(f"{self.file_path}/{self.file_name}.yaml")
-                    print("params found")
-                    break
-                else:
-                    print(f"Try [{i}/100] to find params")
+            yaml_path = os.path.join(self.file_path, f"{self.file_name}.yaml")
+            if os.path.isfile(yaml_path):
+                self.params = self.write_params_from_yaml(yaml_path)
+                print("params found")
         except Exception as e:
             raise FileNotFoundError(f"{self.file_path}/{self.file_name}.yaml has not been found: {e}")
         if self.params is None:
-            raise FileNotFoundError(
-                f"{self.file_path}/{self.file_name}.yaml has not been found after waiting "
-                f"{self.qupyt_param_creation_time:.1f} s"
-            )
+            raise FileNotFoundError(f"{self.file_path}/{self.file_name}.yaml has not been found")
         try:    
             self.experiment_type = str(self.params["experiment_type"])
             self.averaging_mode = self.params["data"]["averaging_mode"]
@@ -91,7 +78,7 @@ class QS_data_reader():
             params = yaml.safe_load(f)
         return params
 
-#replicate the data file, that qupyt will output if temp is activated, only works if tempp is activated
+#replicate the data file shape produced by Qupyt
     def build_data_file_dimension(self: str) -> np.shape:
         
         mmap_width = 2+self.number_measurements
@@ -99,56 +86,14 @@ class QS_data_reader():
         data_array_dim = (mmap_length, mmap_width)
         print(f"data_array_dim = {data_array_dim}")
         return data_array_dim
-     #checks for the file in the qupyt temp folder and the measurement folder and returns the status   
+     #checks for the finished data file in the measurement folder and returns the status   
    
     def scan_data_files(self):
-        try:
-            final_dat_file = os.path.join(self.file_path, f"{self.file_name}_temp.dat")
-            temp_dat_file = os.path.join(self.temp_path, f"{self.file_name}_temp.dat")
-            if os.path.isfile(final_dat_file):
-                print("temp.dat exists in file folder - measurement finished")
-                return final_dat_file, self.count_filled_rows(final_dat_file), True
-    
-            elif os.path.isfile(temp_dat_file):
-                dat_file = temp_dat_file
-                current_rows = self.count_filled_rows(dat_file)
-    
-                if current_rows != self._processed_rows:
-                    return dat_file, current_rows, False
-    
-                for i in range(10):
-                    print(f"No new data points - waiting for qupyt [{i}/10]")
-                    time.sleep(self.qupyt_is_dead_time / 10)
-                    try:
-                        new_rows = self.count_filled_rows(dat_file)
-                    except OSError:
-                        time.sleep(0.5)  # back off on network or file-move races
-                        if os.path.isfile(final_dat_file):
-                            return final_dat_file, self.count_filled_rows(final_dat_file), True
-                        if os.path.isfile(dat_file):
-                            new_rows = self.count_filled_rows(dat_file)
-                        else:
-                            return self._active_dat_file or dat_file, current_rows, False
-                    if new_rows != current_rows:
-                        return dat_file, new_rows, False
-                    current_rows = new_rows
-    
-                print("Assuming measurement interruption. Moving file to measurement folder.")
-                time.sleep(0.1)
-                if os.path.isfile(temp_dat_file):
-                    shutil.move(temp_dat_file, final_dat_file)
-                elif os.path.isfile(final_dat_file):
-                    pass
-                else:
-                    return self._active_dat_file or temp_dat_file, current_rows, False
-               
-                return final_dat_file, current_rows, True
-    
-            else:
-                raise FileNotFoundError(f"Error: {self.file_name}_temp.dat not found")
-    
-        except Exception as e:
-            raise
+        final_dat_file = os.path.join(self.file_path, f"{self.file_name}_temp.dat")
+        if not os.path.isfile(final_dat_file):
+            raise FileNotFoundError(f"Error: {self.file_name}_temp.dat not found")
+        print("temp.dat exists in file folder - measurement finished")
+        return final_dat_file, self.count_filled_rows(final_dat_file), True
 
     
     
@@ -440,38 +385,20 @@ class QS_data_reader():
                 f"{self.x_type}": x_values,
             }
         )
-    # this is the main loop to be activated that will then build the DF. It works with threading, so in parallel to the main script
+    #Build finished data once. The viewer does not poll Qupyt temp folders.
     def start_data_building(self):
-        data_loop = threading.Thread(target= self.data_building_loop, daemon=True)
-        data_loop.start()
-    #this is the actual loop
+        self.data_building_loop()
+
     def data_building_loop(self ) -> None:
         self.dataframe_loop_stop.clear()
-        while not self.dataframe_loop_stop.is_set(): 
-            try:
-                dat_file, filled_rows, status = self.scan_data_files()
-                self.build_dataframe(dat_file, filled_rows)
-                #print(f"[{len(self.raw_dataframe)}/{self.data_array_dim[0]}] - Data points done!")
-                with self._progress_lock:
-                    self.raw_dataframe_progress = self._processed_rows / self.data_array_dim[0]
-                if status:
-                    self.dataframe_loop_stop.set()
-                    print("Finished building raw dataloop!!")
-            except FileNotFoundError as e:
-                print(e)
-            except OSError as e:
-                print(e)
-            time.sleep(self.scanning_interval)
         try:
-            time.sleep(0.1)
-            shutil.move(
-                os.path.join(self.temp_path, f"{self.file_name}_temp.dat"),
-                os.path.join(self.file_path, f"{self.file_name}_temp.dat")
-            )
-            final_path = os.path.join(self.file_path, f"{self.file_name}_temp.dat")
-            self._active_dat_file = final_path
-        except:
-            pass
+            dat_file, filled_rows, _ = self.scan_data_files()
+            self.build_dataframe(dat_file, filled_rows)
+            with self._progress_lock:
+                self.raw_dataframe_progress = self._processed_rows / self.data_array_dim[0]
+            print("Finished building raw data")
+        finally:
+            self.dataframe_loop_stop.set()
 
     def get_raw_dataframe_progress(self) -> float:
         with self._progress_lock:

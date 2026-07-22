@@ -47,7 +47,7 @@ def parse_file_folder(folder_name: str) -> list:
            full_dat_path = os.path.join(folder_name, dat_file)
            full_csv_path = os.path.join(folder_name,csv_file)
            full_psssession_path=os.path.join(folder_name, pssession_file)
-           if (os.path.isfile(full_dat_path) and os.path.isfile(full_yaml_path)) or (os.path.isfile(full_csv_path) and os.path.isfile(full_psssession_path)):
+           if (os.path.isfile(full_dat_path) and os.path.isfile(full_yaml_path)) or os.path.isfile(full_csv_path):
                file_name_list.add(file)
        file_name_list = sorted(file_name_list)
        for file in file_name_list:
