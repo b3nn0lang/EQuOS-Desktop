@@ -336,7 +336,7 @@ def plot_line_with_missing_fit_markers(ax, x_values, y_values, color, label):
     missing = ~valid
 
     if np.any(valid):
-        ax.plot(x_values[valid], y_values[valid], color=color, label=label)
+        ax.plot(x_values[valid], y_values[valid],marker="x", color=color, label=label)
     if np.any(missing) and np.any(valid):
         sort_idx = np.argsort(x_values[valid])
         marker_y = np.interp(
