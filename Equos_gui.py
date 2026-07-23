@@ -700,8 +700,8 @@ class App(tk.Tk):
         self.lsv_fitting_button = tk.Button(lsv_fitting_frame,text="Fit Data",command=self.lsv_fitting)
         self.lsv_fitting_button.pack()
         
-        ECQS_labels = ["Fitting:","Prominence:","Distance:","Cutoff Rate","Use Bounds:","Max. Tries:","Use R^2 Threshold:","Min. R^2:"]
-        ECQS_standards = [True, 1e-6,10,0.5,False,5000,False,0.95]
+        ECQS_labels = ["Fitting:","Prominence:","Distance:","Cutoff Rate","Use Bounds:","Max. Tries:","Use R^2 Threshold:","Min. R^2:","From measurement N:","To measurement N (0 = last):"]
+        ECQS_standards = [True, 1e-6,10,0.5,False,5000,False,0.95,1,0]
         
         #CV-T1 Fitting
         cv_t1_fitting_frame = tk.Frame(self.fitting_params_frame)
@@ -1832,7 +1832,9 @@ class App(tk.Tk):
                     "prominence":values[1],
                     "distance":values[2],
                     "use_r_square_threshold":values[6],
-                    "r_square_threshold":values[7]}
+                    "r_square_threshold":values[7],
+                    "measurement_from":values[8],
+                    "measurement_to":values[9]}
         print(values)
         self.eval_ecqs_figure(fit_dict)
     def swv_t1_fitting(self):
@@ -1845,7 +1847,9 @@ class App(tk.Tk):
                     "prominence":values[1],
                     "distance":values[2],
                     "use_r_square_threshold":values[6],
-                    "r_square_threshold":values[7]}
+                    "r_square_threshold":values[7],
+                    "measurement_from":values[8],
+                    "measurement_to":values[9]}
         print(values)
         self.eval_ecqs_figure(fit_dict)
     def lsv_t1_fitting(self):
@@ -1858,7 +1862,9 @@ class App(tk.Tk):
                     "prominence":values[1],
                     "distance":values[2],
                     "use_r_square_threshold":values[6],
-                    "r_square_threshold":values[7]}
+                    "r_square_threshold":values[7],
+                    "measurement_from":values[8],
+                    "measurement_to":values[9]}
         print(values)
         self.eval_ecqs_figure(fit_dict)
     def reset_live_canvas(self):
