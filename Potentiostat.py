@@ -96,9 +96,37 @@ class Potentiostat():
     def get_measurement_count(self) -> int:
         with self.result_lock:
             return len(self.measurement_results[0])
-    def get_measurement_integrals(self) -> list[float]:
+    def normalize_measurement_range(self, measurement_from=1, measurement_to=None) -> tuple[int, int]:
+        """Return a clamped, 1-based inclusive measurement range."""
+        count = self.get_measurement_count()
+        start = max(1, int(measurement_from or 1))
+        end = count if measurement_to in (None, 0, "") else min(count, int(measurement_to))
+        if count == 0 or start > count or end < start:
+            raise ValueError(f"Measurement range {start}-{end} is outside 1-{count}")
+        return start, end
+
+    def get_measurement_dataframe(self, measurement_from=1, measurement_to=None) -> pd.DataFrame:
+        """Select the contiguous CSV rows belonging to a range of finished scans."""
+        with self.result_lock:
+            raw_df = self.measurement_results[1]
+            count = len(self.measurement_results[0])
+        if raw_df.empty or count == 0:
+            return raw_df.copy()
+        start, end = self.normalize_measurement_range(measurement_from, measurement_to)
+        # Finished scans are appended to the CSV in measurement order. PalmSens
+        # scans normally have equal lengths; array_split also handles a remainder.
+        scan_indices = np.array_split(np.arange(len(raw_df)), count)
+        selected = np.concatenate(scan_indices[start - 1:end])
+        return raw_df.iloc[selected].copy()
+
+    def get_measurement_integrals(self, measurement_from=1, measurement_to=None) -> list[float]:
         with self.result_lock:
             measurements = self.measurement_results[0]
+        if not measurements:
+            return []
+        start, end = self.normalize_measurement_range(measurement_from, measurement_to)
+        measurements = measurements[start - 1:end]
+        with self.result_lock:
             integrals = []
             print("Get EC Integrals")
             for measurement in tqdm(measurements):
@@ -107,9 +135,12 @@ class Potentiostat():
                 elif isinstance(measurement, dict) and "current_integral" in measurement:
                     integrals.append(float(measurement["current_integral"]))
             return integrals
-    def get_measurement_plots(self) ->list:
+    def get_measurement_plots(self, measurement_from=1, measurement_to=None) ->list:
         with self.result_lock:
             measurements = self.measurement_results[0]
+        if measurements:
+            start, end = self.normalize_measurement_range(measurement_from, measurement_to)
+            measurements = measurements[start - 1:end]
         plots = []
         print("Get EC Plots")
         for measurement in tqdm(measurements):
@@ -141,9 +172,8 @@ class Potentiostat():
         self.set_callback_data(data_dict)
         
         #this method takes
-    def evaluated_data(self) -> pd.DataFrame:
-        raw_data = self.get_measurement_results()
-        raw_df = raw_data[1]
+    def evaluated_data(self, measurement_from=1, measurement_to=None) -> pd.DataFrame:
+        raw_df = self.get_measurement_dataframe(measurement_from, measurement_to)
         if raw_df.empty:
             return None
         else:
@@ -353,5 +383,4 @@ class Potentiostat():
         raise RuntimeError("Starting EC measurements is disabled in the EQuOS viewer.")
     
   
-
 

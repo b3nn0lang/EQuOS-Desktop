@@ -5,15 +5,12 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="7f911216-e681-405e-8252-ad6017b9785b" name="Changes" comment="R2 fit improvement by adding cutoff for ecqs measureemnts">
-      <change afterPath="$PROJECT_DIR$/Equos_viewer.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/EQuOS.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/EQuOS.iml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Data_evaluator.py" beforeDir="false" afterPath="$PROJECT_DIR$/Data_evaluator.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Equos_gui.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Equos_logic.py" beforeDir="false" afterPath="$PROJECT_DIR$/Equos_logic.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Equos_viewer.py" beforeDir="false" afterPath="$PROJECT_DIR$/Equos_viewer.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Potentiostat.py" beforeDir="false" afterPath="$PROJECT_DIR$/Potentiostat.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/QS_data_reader.py" beforeDir="false" afterPath="$PROJECT_DIR$/QS_data_reader.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/QS_data_sender.py" beforeDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -37,35 +34,35 @@
     &quot;assignee&quot;: &quot;b3nn0lang&quot;
   }
 }</component>
-  <component name="GithubPullRequestsUISettings"><![CDATA[{
-  "selectedUrlAndAccountId": {
-    "url": "https://github.com/b3nn0lang/EQuOS-Desktop.git",
-    "accountId": "5286e233-5bf6-474d-aaf9-d67acebd9808"
+  <component name="GithubPullRequestsUISettings">{
+  &quot;selectedUrlAndAccountId&quot;: {
+    &quot;url&quot;: &quot;https://github.com/b3nn0lang/EQuOS-Desktop.git&quot;,
+    &quot;accountId&quot;: &quot;1372265f-5290-4699-bc32-d3223ab00d1c&quot;
   }
-}]]></component>
+}</component>
   <component name="McpProjectServerCommands">
     <commands />
     <urls />
   </component>
   <component name="NextEditCompletionFeaturesState">
     <decayedCancelled>
-      <entry key="MS100" value="1.237730327331487" />
-      <entry key="MS500" value="3.81091561755095" />
-      <entry key="S2" value="11.991961042772532" />
-      <entry key="S5" value="25.505452093419557" />
-      <entry key="S10" value="39.97218676921529" />
-      <entry key="S30" value="59.03428804032634" />
-      <entry key="S60" value="66.37884221593285" />
-      <entry key="M2" value="83.09333437251557" />
-      <entry key="M5" value="199.26426471214495" />
-      <entry key="M10" value="360.1136144103562" />
-      <entry key="M15" value="457.56684629710696" />
-      <entry key="M30" value="598.1236730062582" />
-      <entry key="H1" value="693.0886879588899" />
-      <entry key="H2" value="749.4238799137402" />
-      <entry key="H4" value="788.518827619261" />
-      <entry key="D1" value="1579.9755154816896" />
-      <entry key="W1" value="4893.335481050134" />
+      <entry key="MS100" value="1.016115932947291" />
+      <entry key="MS500" value="2.401112621820782" />
+      <entry key="S2" value="10.692001867078222" />
+      <entry key="S5" value="26.30184897269106" />
+      <entry key="S10" value="50.130792863166135" />
+      <entry key="S30" value="124.08801698725776" />
+      <entry key="S60" value="177.31350027956856" />
+      <entry key="M2" value="217.8406925120251" />
+      <entry key="M5" value="273.5598559575715" />
+      <entry key="M10" value="389.41577128953344" />
+      <entry key="M15" value="496.43709947551343" />
+      <entry key="M30" value="697.4330568167338" />
+      <entry key="H1" value="861.5871572109601" />
+      <entry key="H2" value="968.46454073892" />
+      <entry key="H4" value="1037.6637987822091" />
+      <entry key="D1" value="1852.3059661535015" />
+      <entry key="W1" value="5172.210398464488" />
     </decayedCancelled>
     <decayedSelected>
       <entry key="MS100" value="0.0" />
@@ -78,32 +75,32 @@
       <entry key="M2" value="0.0" />
       <entry key="M5" value="0.0" />
       <entry key="M10" value="0.0" />
-      <entry key="M15" value="1.0694266539472755E-227" />
-      <entry key="M30" value="3.270208944314439E-114" />
-      <entry key="H1" value="1.808371904314593E-57" />
-      <entry key="H2" value="4.2524956252940067E-29" />
-      <entry key="H4" value="6.521116181523648E-15" />
-      <entry key="D1" value="0.004322353903627539" />
-      <entry key="W1" value="0.45945793931371787" />
+      <entry key="M15" value="5.307164216350344E-228" />
+      <entry key="M30" value="2.303728329545608E-114" />
+      <entry key="H1" value="1.5178037849292557E-57" />
+      <entry key="H2" value="3.8959001333827057E-29" />
+      <entry key="H4" value="6.241714614896898E-15" />
+      <entry key="D1" value="0.00429092230899513" />
+      <entry key="W1" value="0.4589791424480403" />
     </decayedSelected>
     <decayedShown>
-      <entry key="MS100" value="0.4412980447621578" />
-      <entry key="MS500" value="3.5231136657250395" />
-      <entry key="S2" value="11.895562242110723" />
-      <entry key="S5" value="25.45499062096472" />
-      <entry key="S10" value="39.94072509591068" />
-      <entry key="S30" value="59.02105865096879" />
-      <entry key="S60" value="66.37167035895176" />
-      <entry key="M2" value="83.08883157349906" />
-      <entry key="M5" value="199.25989755874863" />
-      <entry key="M10" value="360.10966978700486" />
-      <entry key="M15" value="457.5634900913081" />
-      <entry key="M30" value="598.1214564552968" />
-      <entry key="H1" value="693.0873928171925" />
-      <entry key="H2" value="749.42317605633" />
-      <entry key="H4" value="788.5184555062651" />
-      <entry key="D1" value="1579.9797085664648" />
-      <entry key="W1" value="4893.794865825972" />
+      <entry key="MS100" value="0.9951955171423877" />
+      <entry key="MS500" value="2.3910536681168977" />
+      <entry key="S2" value="10.6815086336432" />
+      <entry key="S5" value="26.291320741646725" />
+      <entry key="S10" value="50.12029427801433" />
+      <entry key="S30" value="124.07875725522092" />
+      <entry key="S60" value="177.30674888878136" />
+      <entry key="M2" value="217.83647258596102" />
+      <entry key="M5" value="273.5572456603519" />
+      <entry key="M10" value="389.4131588257823" />
+      <entry key="M15" value="496.434536866787" />
+      <entry key="M30" value="697.4309959017301" />
+      <entry key="H1" value="861.5858043415079" />
+      <entry key="H2" value="968.4637584469048" />
+      <entry key="H4" value="1037.663372677535" />
+      <entry key="D1" value="1852.3101169168908" />
+      <entry key="W1" value="5172.66930282538" />
     </decayedShown>
   </component>
   <component name="ProjectColorInfo">{
@@ -115,38 +112,38 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "Python.Data_evaluator.executor": "Run",
-    "Python.Equos_gui.executor": "Run",
-    "Python.Equos_viewer.executor": "Run",
-    "Python.Potentiostat.executor": "Run",
-    "RunOnceActivity.MCP Project settings loaded": "true",
-    "RunOnceActivity.OpenProjectViewOnStart": "true",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
-    "RunOnceActivity.git.unshallow": "true",
-    "RunOnceActivity.typescript.service.memoryLimit.init": "true",
-    "codeWithMe.voiceChat.enabledByDefault": "false",
-    "com.intellij.ml.llm.matterhorn.ej.ui.settings.DefaultModelSelectionForGA.v1": "true",
-    "git-widget-placeholder": "viewer",
-    "git.auto.fetch.suggestion.counter": "1",
-    "junie.onboarding.icon.badge.shown": "true",
-    "last_opened_file_path": "G:/Bucherlab/Surface_Electrochemistry_EPR/Code/EQuOS_viewer",
-    "node.js.detected.package.eslint": "true",
-    "node.js.detected.package.tslint": "true",
-    "node.js.selected.package.eslint": "(autodetect)",
-    "node.js.selected.package.tslint": "(autodetect)",
-    "nodejs_package_manager_path": "npm",
-    "settings.editor.selected.configurable": "preferences.pluginManager",
-    "to.speed.mode.migration.done": "true",
-    "vue.rearranger.settings.migration": "true"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;Python.Data_evaluator.executor&quot;: &quot;Run&quot;,
+    &quot;Python.Equos_gui.executor&quot;: &quot;Run&quot;,
+    &quot;Python.Equos_viewer.executor&quot;: &quot;Run&quot;,
+    &quot;Python.Potentiostat.executor&quot;: &quot;Run&quot;,
+    &quot;RunOnceActivity.MCP Project settings loaded&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.OpenProjectViewOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.typescript.service.memoryLimit.init&quot;: &quot;true&quot;,
+    &quot;codeWithMe.voiceChat.enabledByDefault&quot;: &quot;false&quot;,
+    &quot;com.intellij.ml.llm.matterhorn.ej.ui.settings.DefaultModelSelectionForGA.v1&quot;: &quot;true&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;viewer&quot;,
+    &quot;git.auto.fetch.suggestion.counter&quot;: &quot;1&quot;,
+    &quot;junie.onboarding.icon.badge.shown&quot;: &quot;true&quot;,
+    &quot;last_opened_file_path&quot;: &quot;G:/Bucherlab/Surface_Electrochemistry_EPR/Code/EQuOS_viewer&quot;,
+    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
+    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
+    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
+    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
+    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;preferences.pluginManager&quot;,
+    &quot;to.speed.mode.migration.done&quot;: &quot;true&quot;,
+    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
   }
-}]]></component>
+}</component>
   <component name="SharedIndexes">
     <attachedChunks>
       <set>
-        <option value="bundled-python-sdk-50341a9f1f9c-c2ffad84badb-com.jetbrains.pycharm.pro.sharedIndexes.bundled-PY-261.26222.68" />
+        <option value="bundled-python-sdk-c6d794e1806d-5bd6d13a2a75-com.jetbrains.pycharm.pro.sharedIndexes.bundled-PY-262.8665.309" />
       </set>
     </attachedChunks>
   </component>

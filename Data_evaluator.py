@@ -658,6 +658,11 @@ def ec_data_displayer(potentiostat:object, fitting_dic:dict, fig: Figure | None 
     return fig, axes, measurement_done, measurement_progress, info_dic
     
 def ecqs_data_displayer(qs_data_reader, potentiostat, fitting_dic: dict, cache, fig: Figure | None = None):
+    measurement_from = fitting_dic.get("measurement_from", 1)
+    measurement_to = fitting_dic.get("measurement_to", 0)
+    measurement_from, measurement_to = potentiostat.normalize_measurement_range(
+        measurement_from, measurement_to
+    )
     if "cutoff_rate" in fitting_dic.keys():
         cutoff_rate = fitting_dic["cutoff_rate"]
     else:
@@ -673,6 +678,7 @@ def ecqs_data_displayer(qs_data_reader, potentiostat, fitting_dic: dict, cache, 
         r_square_threshold = 0.95
         
     info_dic ={}
+    info_dic["Included measurements"] = f"{measurement_from}-{measurement_to} of {potentiostat.get_measurement_count()}"
     if use_r_square_threshold:
         info_dic["T1 R^2 threshold"] = f"{r_square_threshold:.3f}"
     measurement_done = False
@@ -720,7 +726,7 @@ def ecqs_data_displayer(qs_data_reader, potentiostat, fitting_dic: dict, cache, 
     all_down_fig = Figure(figsize=(12,8), constrained_layout=True)
     all_down_ax = all_down_fig.subplots()
     
-    ec_data = potentiostat.evaluated_data()
+    ec_data = potentiostat.evaluated_data(measurement_from, measurement_to)
     #print(f"EC data: {ec_data}")
     ec_figure_title = potentiostat.measurement_name
     qs_figure_title = qs_data["experiment"] if qs_data["experiment"] else "QS data"
@@ -1121,14 +1127,15 @@ def ecqs_data_displayer(qs_data_reader, potentiostat, fitting_dic: dict, cache, 
                 markersize=8,
                 label=f"Cathodic: {np.round(x[neg_peaks], 3)} V")
                 
-        integral = potentiostat.get_measurement_integrals()
-        axes[1,0].plot(range(1, len(integral) + 1), integral, color="tab:orange", label="Current sum")    
+        integral = potentiostat.get_measurement_integrals(measurement_from, measurement_to)
+        measurement_numbers = range(measurement_from, measurement_to + 1)
+        axes[1,0].plot(measurement_numbers, integral, color="tab:orange", label="Current sum")
         
         #Get all EC figures
         if save_detail_plots:
             try:
                 print("Saving EC plots")
-                for i,figure in tqdm(enumerate(potentiostat.get_measurement_plots())):
+                for i,figure in tqdm(enumerate(potentiostat.get_measurement_plots(measurement_from, measurement_to), start=measurement_from)):
                     fig_path = os.path.join(sub_path,f"EC_{i}.png")
                     if os.path.exists(fig_path):
                         pass
@@ -1149,11 +1156,12 @@ def ecqs_data_displayer(qs_data_reader, potentiostat, fitting_dic: dict, cache, 
         plt.close(all_up_fig)
         plt.close(all_down_fig)
         #Code lightlevel over time here
-        raw_ec_data = potentiostat.get_measurement_results()[1]
+        raw_ec_data = potentiostat.get_measurement_dataframe(measurement_from, measurement_to)
         time_min = np.min(raw_ec_data["Time_begin"])
         time_max = np.max(raw_ec_data["Time_end"])
-        time_lists = np.linspace(time_min, time_max, current_measurement*2)
-        x_list = np.linspace(1, current_measurement,current_measurement*2)
+        selected_measurement_count = measurement_to - measurement_from + 1
+        time_lists = np.linspace(time_min, time_max, selected_measurement_count*2)
+        x_list = np.linspace(measurement_from, measurement_to, selected_measurement_count*2)
         ax_ll = axes[1,0].twinx()
         ax_ll.set_ylabel("Lightlevel [mV]")
         print("Evaluating Light-level")

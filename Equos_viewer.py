@@ -155,8 +155,8 @@ class App(tk.Tk):
             setattr(self, f"{method.lower()}_fitting_entries", entries)
             tk.Button(frame, text="Fit Data", command=getattr(self, f"{method.lower()}_fitting")).pack()
 
-        ecqs_labels = ["Fitting:", "Prominence:", "Distance:", "Cutoff Rate", "Use Bounds:", "Max. Tries:", "Use R^2 Threshold:", "Min. R^2:"]
-        ecqs_defaults = [True, 1e-6, 10, 0.5, False, 5000, False, 0.95]
+        ecqs_labels = ["Fitting:", "Prominence:", "Distance:", "Cutoff Rate", "Use Bounds:", "Max. Tries:", "Use R^2 Threshold:", "Min. R^2:", "From measurement N:", "To measurement N (0 = last):"]
+        ecqs_defaults = [True, 1e-6, 10, 0.5, False, 5000, False, 0.95, 1, 0]
         for method in ("CV-T1", "SWV-T1", "LSV-T1"):
             frame = self.add_fitting_frame(method, f"{method} fitting")
             attr = method.lower().replace("-", "_") + "_fitting_entries"
@@ -553,6 +553,8 @@ class App(tk.Tk):
             "distance": values[2],
             "use_r_square_threshold": values[6],
             "r_square_threshold": values[7],
+            "measurement_from": values[8],
+            "measurement_to": values[9],
         }
 
     def cv_t1_fitting(self):
