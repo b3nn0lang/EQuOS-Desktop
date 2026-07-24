@@ -579,7 +579,7 @@ def ec_data_displayer(potentiostat:object, fitting_dic:dict, fig: Figure | None 
     except:
         pass
     
-    axes[0].set_xlabel("Potential [V]")
+    axes[0].set_xlabel("Potential [V] vs SSC")
     axes[0].set_ylabel("Current [uA]")
     if data is not None:
         plot_up = data[data["direction"] == 1]
@@ -1078,7 +1078,7 @@ def ecqs_data_displayer(qs_data_reader, potentiostat, fitting_dic: dict, cache, 
             print(f"Something in plot_down failed {e}")
         axes[1,1].set_ylim(0, 1.1)  # R² is always 0-1
         axes[1,1].set_ylabel("R² / [V:100]")
-        axes[1,1].set_xlabel("Potential [V]")
+        axes[1,1].set_xlabel("Potential [V] vs SSC")
         
         # For the twin axis, set its own scale separately:
         ax_bar = axes[1,1].twinx()
@@ -1224,9 +1224,9 @@ def ecqs_data_displayer(qs_data_reader, potentiostat, fitting_dic: dict, cache, 
         cache.callback_artist = callback_artists[0] if callback_artists else None
     except Exception:
         cache.callback_artist = None
-    axes[0,0].set_xlabel("Potential [V]")
+    axes[0,0].set_xlabel("Potential [V] vs SSC")
     axes[0,0].set_ylabel("Current [uA]")
-    axes[0,1].set_xlabel("Potential [V]")
+    axes[0,1].set_xlabel("Potential [V] vs SSC")
     axes[0,1].set_ylabel("T1 Time")
     set_t1_axis_from_zero(axes[0,1])
     axes[0,0].grid(True, alpha=0.3)
