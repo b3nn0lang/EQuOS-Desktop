@@ -12,7 +12,7 @@ import matplotlib.collections as mcollections
 import matplotlib.patches as mpatches
 from QS_data_sender import Send_esr_measurement, Send_rabi_measurement, Send_t1_measurement, Send_laser_off, Send_laser_on, User_ESR_input, Qupyt_controller, User_Rabi_input, User_T1_input
 from QS_data_reader import QS_data_reader
-from Equos_logic import create_file_name, parse_file_folder, calculate_t1_averages, ECQS_cache
+from Equos_logic import create_file_name, parse_file_folder, calculate_t1_averages, calculate_t1_averages_for_total_time, ECQS_cache
 from Data_evaluator import qs_data_displayer, ec_data_displayer, ecqs_data_displayer
 import os
 import matplotlib.pyplot as plt
@@ -119,10 +119,14 @@ class App(tk.Tk):
         swv_t1_method_button.grid(row=2,column=1,sticky="w")
         lsv_t1_method_button = tk.Radiobutton(self.method_choice_frame,text="LSV-T1",variable=self.measurement_choice,value="LSV-T1",command=self.change_method)
         lsv_t1_method_button.grid(row=2,column=2,sticky="w")
+        ca_method_button = tk.Radiobutton(self.method_choice_frame,text="CA",variable=self.measurement_choice,value="CA",command=self.change_method)
+        ca_method_button.grid(row=3,column=0,sticky="w")
+        ca_t1_method_button = tk.Radiobutton(self.method_choice_frame,text="CA-T1",variable=self.measurement_choice,value="CA-T1",command=self.change_method)
+        ca_t1_method_button.grid(row=3,column=1,sticky="w")
         laser_off_method_button = tk.Radiobutton(self.method_choice_frame,text="Laser Off",variable=self.measurement_choice,value="LaserOff",command=self.change_method)
-        laser_off_method_button.grid(row=3,column=0,sticky="w")
+        laser_off_method_button.grid(row=4,column=0,sticky="w")
         laser_on_method_button = tk.Radiobutton(self.method_choice_frame,text="Laser On",variable=self.measurement_choice,value="LaserOn",command=self.change_method)
-        laser_on_method_button.grid(row=3,column=1,sticky="w")
+        laser_on_method_button.grid(row=4,column=1,sticky="w")
         #Laser spot buttons
         self.laser_spot = tk.IntVar(value=270)
         
@@ -338,6 +342,23 @@ class App(tk.Tk):
             entry.grid(row=i + 1, column=1, padx=5, pady=5)
             self.lsv_entries.append(entry)
         self.layout_measurement_actions(lsv_frame, len(lsv_labels) + 1, 2, "Start LSV Experiment", self.on_lsv_send)
+
+        #CA
+        ca_labels = ["Potential [V]:","Run time [s]:","Annotation:"]
+        ca_defaults= [0,60,""]
+        self.ca_entries=[]
+        ca_frame = tk.Frame(self.measurement_frame)
+        self.measurement_methods["CA"] = ca_frame
+        ca_title = tk.Label(ca_frame,text="CA Measurement",font=("Arial", 12, "bold"))
+        ca_title.grid(row=0, column=0, columnspan=20, pady=10)
+        for i, (label_text, default) in enumerate(zip(ca_labels,ca_defaults)):
+            label = tk.Label(ca_frame,text=label_text)
+            label.grid(row=i + 1, column=0, sticky="w", padx=5, pady=5)
+            entry = tk.Entry(ca_frame)
+            entry.insert(0,default)
+            entry.grid(row=i + 1, column=1, padx=5, pady=5)
+            self.ca_entries.append(entry)
+        self.layout_measurement_actions(ca_frame, len(ca_labels) + 1, 2, "Start CA Experiment", self.on_ca_send)
         
         #CV-T1
         cv_t1_labels = [
@@ -516,6 +537,58 @@ class App(tk.Tk):
                 entry.grid(row=i + 1, column=3, padx=5, pady=5)
             self.lsv_t1_entries.append(entry)
         self.layout_measurement_actions(lsv_t1_frame, len(lsv_t1_labels) + 2, 4, "Start LSV-T1 Experiment", self.on_lsv_t1_send)
+
+        #CA-T1
+        ca_t1_labels = [
+            "Points:",
+            "Spacing:",
+            "Max. \u03C4 [ms]:",
+            "\u03C0-pulse Length [ns]:",
+            "MW Frequency [Ghz]:",
+            f"MW Ampltude [dB] (max. {max_db}):",
+            "Potential [V]:",
+            "Run time [s]:",
+            "T1 averages / datapoint:",
+            "Annotation:"
+            ]
+        ca_t1_defaults= [
+            self.t1.points,
+            self.t1.spacing,
+            self.t1.tau_max,
+            self.t1.pi_pulse_length,
+            self.t1.mw_frequency,
+            self.t1.mw_amplitude,
+            0,
+            60,
+            300,
+            ""]
+        self.ca_t1_entries = []
+        ca_t1_frame = tk.Frame(self.measurement_frame)
+        self.measurement_methods["CA-T1"] = ca_t1_frame
+        ca_t1_title = tk.Label(ca_t1_frame,text="CA-T1 measurement",font=("Arial", 12, "bold"))
+        ca_t1_title.grid(row=0, column=0, columnspan=20, pady=10)
+
+        ca_t1_spot_frame = tk.Frame(ca_t1_frame)
+        ca_t1_spot_frame.grid(row=1,column=0,columnspan=4)
+        ca_t1_spot_title = tk.Label(ca_t1_spot_frame, text="Laser position [Mhz]:")
+        ca_t1_spot_title.grid(row=0,column=0,columnspan=3)
+
+        tk.Radiobutton(ca_t1_spot_frame, text="230",variable=self.laser_spot,value=230).grid(row=1,column=0)
+        tk.Radiobutton(ca_t1_spot_frame, text="250",variable=self.laser_spot,value=250).grid(row=1,column=1)
+        tk.Radiobutton(ca_t1_spot_frame, text="270",variable=self.laser_spot,value=270).grid(row=1,column=2)
+
+        for i, (label_text,default) in enumerate(zip(ca_t1_labels, ca_t1_defaults)):
+            label = tk.Label(ca_t1_frame, text=label_text)
+            entry = tk.Entry(ca_t1_frame)
+            entry.insert(0, default)
+            if i%2 ==0:
+                label.grid(row=i + 2, column=0, sticky="w", padx=5, pady=5)
+                entry.grid(row=i + 2, column=1, padx=5, pady=5)
+            else:
+                label.grid(row=i + 1, column=2, sticky="w", padx=5, pady=5)
+                entry.grid(row=i + 1, column=3, padx=5, pady=5)
+            self.ca_t1_entries.append(entry)
+        self.layout_measurement_actions(ca_t1_frame, len(ca_t1_labels) + 2, 4, "Start CA-T1 Experiment", self.on_ca_t1_send)
         
         self.queue_frame = tk.Frame(self.measurement_frame, bd=1, relief="groove")
         self.queue_frame.pack(fill=tk.BOTH, expand=True, padx=5, pady=8)
@@ -699,9 +772,24 @@ class App(tk.Tk):
         self.lsv_fitting_entries = self.layout_fitting_params(lsv_fit_param_frame, lsv_fitting_labels, lsv_fitting_defaults)
         self.lsv_fitting_button = tk.Button(lsv_fitting_frame,text="Fit Data",command=self.lsv_fitting)
         self.lsv_fitting_button.pack()
+
+        #CA-fitting
+        ca_fitting_frame = tk.Frame(self.fitting_params_frame)
+        self.fitting_frames["CA"] = ca_fitting_frame
+        ca_fitting_title = tk.Label(ca_fitting_frame, text="CA data")
+        ca_fitting_title.pack()
+        ca_fit_param_frame = tk.Frame(ca_fitting_frame)
+        ca_fit_param_frame.pack()
+        ca_fitting_labels = ["Fitting:"]
+        ca_fitting_defaults = [False]
+        self.ca_fitting_entries = self.layout_fitting_params(ca_fit_param_frame, ca_fitting_labels, ca_fitting_defaults)
+        self.ca_fitting_button = tk.Button(ca_fitting_frame,text="Fit Data",command=self.ca_fitting)
+        self.ca_fitting_button.pack()
         
         ECQS_labels = ["Fitting:","Prominence:","Distance:","Cutoff Rate","Use Bounds:","Max. Tries:","Use R^2 Threshold:","Min. R^2:","From measurement N:","To measurement N (0 = last):"]
         ECQS_standards = [True, 1e-6,10,0.5,False,5000,False,0.95,1,0]
+        CA_T1_labels = ["Fitting:","Prominence:","Distance:","Cutoff Rate","Use Bounds:","Max. Tries:","Use R^2 Threshold:","Min. R^2:","T1 averages / datapoint:","Time bin size [s] (0 = by averages):"]
+        CA_T1_standards = [True, 1e-6,10,0.5,False,5000,False,0.95,300,0]
         
         #CV-T1 Fitting
         cv_t1_fitting_frame = tk.Frame(self.fitting_params_frame)
@@ -742,6 +830,20 @@ class App(tk.Tk):
         self.lsv_t1_fitting_entries = self.layout_fitting_params(lsv_t1_fit_param_frame, lsv_t1_fitting_labels, lsv_t1_fitting_defaults)
         self.lsv_t1_fitting_button = tk.Button(lsv_t1_fitting_frame, text="Fit Data",command=self.lsv_t1_fitting)
         self.lsv_t1_fitting_button.pack()
+
+        #CA-T1
+        ca_t1_fitting_frame = tk.Frame(self.fitting_params_frame)
+        self.fitting_frames["CA-T1"] = ca_t1_fitting_frame
+        ca_t1_fitting_title = tk.Label(ca_t1_fitting_frame, text="CA-T1 fitting")
+        ca_t1_fitting_title.pack()
+
+        ca_t1_fit_param_frame = tk.Frame(ca_t1_fitting_frame)
+        ca_t1_fit_param_frame.pack()
+        ca_t1_fitting_labels = CA_T1_labels
+        ca_t1_fitting_defaults = CA_T1_standards
+        self.ca_t1_fitting_entries = self.layout_fitting_params(ca_t1_fit_param_frame, ca_t1_fitting_labels, ca_t1_fitting_defaults)
+        self.ca_t1_fitting_button = tk.Button(ca_t1_fitting_frame, text="Fit Data",command=self.ca_t1_fitting)
+        self.ca_t1_fitting_button.pack()
         
         
         self.save_figure_button = tk.Button(self.fitting_params_frame,text="Save Figure",command=self.save_figure)
@@ -769,9 +871,11 @@ class App(tk.Tk):
             "CV": self.cv_entries,
             "SWV": self.swv_entries,
             "LSV": self.lsv_entries,
+            "CA": self.ca_entries,
             "CV-T1": self.cv_t1_entries,
             "SWV-T1": self.swv_t1_entries,
             "LSV-T1": self.lsv_t1_entries,
+            "CA-T1": self.ca_t1_entries,
         }
         return method, entry_map[method]
     def get_current_measurement_snapshot(self) -> dict:
@@ -926,9 +1030,11 @@ class App(tk.Tk):
             "CV": self.on_cv_send,
             "SWV": self.on_swv_send,
             "LSV": self.on_lsv_send,
+            "CA": self.on_ca_send,
             "CV-T1": self.on_cv_t1_send,
             "SWV-T1": self.on_swv_t1_send,
             "LSV-T1": self.on_lsv_t1_send,
+            "CA-T1": self.on_ca_t1_send,
         }
         self.apply_measurement_snapshot(item)
         command_map[item["method"]]()
@@ -1007,9 +1113,9 @@ class App(tk.Tk):
     def get_evaluation_plot_folder(self) -> str | None:
         if not getattr(self, "data_folder", None):
             return None
-        if self.current_measurement_method in ("CV", "SWV", "LSV"):
+        if self.current_measurement_method in ("CV", "SWV", "LSV", "CA"):
             measurement_name = getattr(self, "ec_file_name", "")
-        elif self.current_measurement_method in ("CV-T1", "SWV-T1", "LSV-T1"):
+        elif self.current_measurement_method in ("CV-T1", "SWV-T1", "LSV-T1", "CA-T1"):
             measurement_name = getattr(self, "qs_file_name", "") or getattr(self, "ec_file_name", "")
         else:
             measurement_name = getattr(self, "qs_file_name", "")
@@ -1257,9 +1363,11 @@ class App(tk.Tk):
                 self.current_measurement_method = "SWV-T1"
             elif "LSV" in used_methods and "T1" in used_methods:
                 self.current_measurement_method = "LSV-T1"
+            elif "CA" in used_methods and "T1" in used_methods:
+                self.current_measurement_method = "CA-T1"
             for entry in ecqs_files:
                 splitted = entry.split("_")
-                if splitted[1] == "CV" or splitted[1] == "SWV" or splitted[1] == "LSV":
+                if splitted[1] == "CV" or splitted[1] == "SWV" or splitted[1] == "LSV" or splitted[1] == "CA":
                     self.ec_file_name = entry
                 elif splitted[1] == "T1":
                     self.qs_file_name=entry
@@ -1317,6 +1425,17 @@ class App(tk.Tk):
             except Exception:
                 pass
         self.live_status_label.config(text="Stopping measurement...")
+    def stop_qs_measurement(self):
+        if getattr(self, "qs_data_reader", None) is not None:
+            try:
+                self.qs_data_reader.dataframe_loop_stop.set()
+            except Exception:
+                pass
+        if getattr(self, "qupyt", None) is not None:
+            try:
+                self.qupyt.exit()
+            except Exception:
+                pass
     def on_esr_send(self):
         if self.measurement_busy:
             return
@@ -1456,6 +1575,21 @@ class App(tk.Tk):
         self.current_measurement_method="LSV"
         _,self.ec_file_name = create_file_name(ec_type="LSV",annotation=values[5])
         self.potentiostat.start_n_measurements(self.ec_file_name, method, int(values[4]))
+        self.show_frame("live")
+        self.update_ec_live_figure()
+
+    def on_ca_send(self):
+        if self.measurement_busy:
+            return
+        self.set_measurement_busy(True)
+        self.cleanup_measurement_state()
+        self.potentiostat = Potentiostat(self.data_folder)
+        self.ecqs_cache = ECQS_cache()
+        values = [e.get() for e in self.ca_entries]
+        method = self.potentiostat.ca_measurement(float(values[0]), float(values[1]))
+        self.current_measurement_method="CA"
+        _,self.ec_file_name = create_file_name(ec_type="CA",annotation=values[2])
+        self.potentiostat.start_n_measurements(self.ec_file_name, method, 1)
         self.show_frame("live")
         self.update_ec_live_figure()
             
@@ -1603,6 +1737,38 @@ class App(tk.Tk):
         self.qs_data_reader.start_data_building()
         self.show_frame("live")
         self.update_ecqs_live_figure()
+
+    def on_ca_t1_send(self):
+        if self.measurement_busy:
+            return
+        self.set_measurement_busy(True)
+        self.t1 = User_T1_input()
+        self.cleanup_measurement_state()
+        self.potentiostat = Potentiostat(self.data_folder)
+        self.ecqs_cache = ECQS_cache()
+        values = [e.get() for e in self.ca_t1_entries]
+        self.t1.points = values[0]
+        self.t1.spacing = values[1]
+        self.t1.tau_max = values[2]
+        self.t1.pi_pulse_length = values[3]
+        self.t1.mw_frequency = values[4]
+        self.t1.mw_amplitude = values[5]
+        self.t1.laser_spot_position = float(self.laser_spot.get())
+        potential = float(values[6])
+        run_time = float(values[7])
+        avg_per_datapoint = int(values[8])
+        method = self.potentiostat.ca_measurement(potential, run_time)
+        self.potentiostat.avg_per_point = avg_per_datapoint
+        self.t1.averages = calculate_t1_averages_for_total_time(run_time, int(values[0]), float(values[2]))
+        user_params = self.t1.export_params()
+        self.qs_file_name, self.ec_file_name = create_file_name(qs_type="T1",ec_type="CA",annotation=values[9])
+        self.current_measurement_method = "CA-T1"
+        Send_t1_measurement(self.qs_file_name, user_params)
+        self.potentiostat.start_n_measurements(self.ec_file_name, method, 1)
+        self.qs_data_reader = QS_data_reader(self.data_folder, self.qs_file_name)
+        self.qs_data_reader.start_data_building()
+        self.show_frame("live")
+        self.update_ecqs_live_figure()
  
     def update_qs_live_figure(self):
         current_fig = self.live_canvas.figure if self.live_canvas is not None else None
@@ -1712,7 +1878,11 @@ class App(tk.Tk):
             self.live_canvas.get_tk_widget().pack(fill="both", expand=True)
         # Update status
         if kill_measurement ==True and not self.potentiostat.stop_measurement.is_set():
-            self.cancel_measurement()
+            if self.current_measurement_method == "CA-T1":
+                if not self.qs_data_reader.dataframe_loop_stop.is_set():
+                    self.stop_qs_measurement()
+            else:
+                self.cancel_measurement()
         if not measurement_done:
             self.live_status_label.config(text=f"Running measurement: {self.ec_file_name}")
         else:
@@ -1821,6 +1991,11 @@ class App(tk.Tk):
             }
         print(values)
         self.eval_ec_figure(fit_dict)
+    def ca_fitting(self):
+        values = [self.get_fitting_value(item) for item in self.ca_fitting_entries]
+        fit_dict = {"fitting":values[0]}
+        print(values)
+        self.eval_ec_figure(fit_dict)
     
     def cv_t1_fitting(self):
         #["Fitting:","Prominence:","Distance:","Cutoff Rate","Use Bounds:","Max. Tries:","Use R^2 Threshold:","Min. R^2:"]
@@ -1865,6 +2040,21 @@ class App(tk.Tk):
                     "r_square_threshold":values[7],
                     "measurement_from":values[8],
                     "measurement_to":values[9]}
+        print(values)
+        self.eval_ecqs_figure(fit_dict)
+    def ca_t1_fitting(self):
+        values = [self.get_fitting_value(item) for item in self.ca_t1_fitting_entries]
+        fit_dict = {"ec_fitting":values[0],
+                    "cutoff_rate":values[3],
+                    "max_tries":values[5],
+                    "use_bounds":values[4],
+                    "prominence":values[1],
+                    "distance":values[2],
+                    "use_r_square_threshold":values[6],
+                    "r_square_threshold":values[7],
+                    "t1_averages_per_datapoint":values[8],
+                    "time_bin_size":values[9],
+                    "save_detail_plots": True}
         print(values)
         self.eval_ecqs_figure(fit_dict)
     def reset_live_canvas(self):
