@@ -35,6 +35,7 @@ class Potentiostat():
         self.max_points=0
         self.measurement_name = ""
         self.method=None
+        self.t1_potential_step = 0.01
         self.stop_measurement = threading.Event()
         self.potentiostat_disconnected = threading.Event()
         self.potentiostat_disconnected.set()
@@ -336,6 +337,7 @@ class Potentiostat():
         self.n_scans = 0
         self.max_points = 0
         self.avg_per_point = 0
+        self.t1_potential_step = 0.01
         self.set_measurement_results([[], pd.DataFrame()])
     def start_n_measurements(self,file_name,method,n_scans):
         self.stop_measurement.clear()

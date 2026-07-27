@@ -23,6 +23,8 @@ from datetime import datetime, date, timedelta
 import uuid
 
 max_db = 8 
+EC_T1_MEASUREMENT_STEP = 0.01
+
 class App(tk.Tk):
     def __init__(self):
         super().__init__()
@@ -371,7 +373,7 @@ class App(tk.Tk):
             f"MW Ampltude [dB] (max. {max_db}):",
             "Start Potential [V]:",
             "End Potential [V]:",
-            "Potential Step [mV]:",
+            "T1 Potential Step [mV]:",
             "Sweeping Rate [mV/s]:",
             "T1-averages / CV-point:",
             "Annotation:"
@@ -432,7 +434,7 @@ class App(tk.Tk):
             f"MW Ampltude [dB] (max. {max_db}):",
             "Start Potential [V]:",
             "End Potential [V]:",
-            "Potential Step [mV]:",
+            "T1 Potential Step [mV]:",
             "Frequency [Hz]:",
             "Amplitude [mV]",
             "T1-averages / SWV-point:",
@@ -492,7 +494,7 @@ class App(tk.Tk):
          "\u03C0-pulse Length [ns]:",
          "MW Frequency [Ghz]:",
          f"MW Ampltude [dB] (max. {max_db}):",
-         "Start Potential [V]:","End Potential [V]:","Potential Step [mV]:","Scanrate [mV/s]:","T1-averages / LSV-point:","Annotation:"]
+         "Start Potential [V]:","End Potential [V]:","T1 Potential Step [mV]:","Scanrate [mV/s]:","T1-averages / LSV-point:","Annotation:"]
         lsv_t1_defaults= [
             self.t1.points,
             self.t1.spacing,
@@ -787,8 +789,8 @@ class App(tk.Tk):
         self.ca_fitting_button = tk.Button(ca_fitting_frame,text="Fit Data",command=self.ca_fitting)
         self.ca_fitting_button.pack()
         
-        ECQS_labels = ["Fitting:","Prominence:","Distance:","Cutoff Rate","Use Bounds:","Max. Tries:","Use R^2 Threshold:","Min. R^2:","From measurement N:","To measurement N (0 = last):"]
-        ECQS_standards = [True, 1e-6,10,0.5,False,5000,False,0.95,1,0]
+        ECQS_labels = ["Fitting:","Prominence:","Distance:","Cutoff Rate","Use Bounds:","Max. Tries:","Use R^2 Threshold:","Min. R^2:","From measurement N:","To measurement N (0 = last):","T1 Potential Step [mV]:"]
+        ECQS_standards = [True, 1e-6,10,0.5,False,5000,False,0.95,1,0,10]
         CA_T1_labels = ["Fitting:","Prominence:","Distance:","Cutoff Rate","Use Bounds:","Max. Tries:","Use R^2 Threshold:","Min. R^2:","T1 averages / datapoint:","Time bin size [s] (0 = by averages):"]
         CA_T1_standards = [True, 1e-6,10,0.5,False,5000,False,0.95,300,0]
         
@@ -1638,11 +1640,12 @@ class App(tk.Tk):
         self.t1.laser_spot_position = float(self.laser_spot.get())
         begin_potential = float(values[6])
         end_potential = float(values[7])
-        step_potential = float(values[8])/1000
+        t1_potential_step = float(values[8])/1000
         scanrate = float(values[9])/1000
-        method = self.potentiostat.cv_measurement(begin_potential, end_potential, step_potential, scanrate)
-        ec_points = (abs(begin_potential-end_potential)/step_potential)*2
-        ec_time = step_potential/scanrate
+        self.potentiostat.t1_potential_step = t1_potential_step
+        method = self.potentiostat.cv_measurement(begin_potential, end_potential, EC_T1_MEASUREMENT_STEP, scanrate)
+        ec_points = (abs(begin_potential-end_potential)/t1_potential_step)*2
+        ec_time = t1_potential_step/scanrate
         avg_p_p = int(values[10])
         self.t1.averages = calculate_t1_averages(ec_points, avg_p_p, ec_time, int(values[0]), float(values[2]))
         user_params = self.t1.export_params()
@@ -1687,16 +1690,17 @@ class App(tk.Tk):
         self.t1.laser_spot_position = float(self.laser_spot.get())
         begin_potential = float(values[6])
         end_potential = float(values[7])
-        step_potential = float(values[8])/1000
+        t1_potential_step = float(values[8])/1000
         frequency = float(values[9])
         amplitude = float(values[10])/1000
-        method = self.potentiostat.swv_measurement(begin_potential, end_potential, step_potential, frequency, amplitude)
+        self.potentiostat.t1_potential_step = t1_potential_step
+        method = self.potentiostat.swv_measurement(begin_potential, end_potential, EC_T1_MEASUREMENT_STEP, frequency, amplitude)
         avg_p_p = int(values[11])
-        ec_points = (abs(begin_potential-end_potential)/step_potential)
-        ec_time = 1/frequency
+        ec_points = (abs(begin_potential-end_potential)/t1_potential_step)
+        ec_time = max(t1_potential_step / EC_T1_MEASUREMENT_STEP, 1) / frequency
         self.t1.averages = calculate_t1_averages(ec_points, avg_p_p, ec_time, int(values[0]), float(values[2]))
         user_params = self.t1.export_params()
-        self.qs_file_name, self.ec_file_name = create_file_name(qs_type="T1",ec_type="SWV",annotation=values[11])
+        self.qs_file_name, self.ec_file_name = create_file_name(qs_type="T1",ec_type="SWV",annotation=values[12])
         self.current_measurement_method = "SWV-T1"
         
         Send_t1_measurement(self.qs_file_name, user_params)
@@ -1732,12 +1736,13 @@ class App(tk.Tk):
         self.t1.laser_spot_position = float(self.laser_spot.get())
         begin_potential = float(values[6])
         end_potential = float(values[7])
-        step_potential = float(values[8])/1000
+        t1_potential_step = float(values[8])/1000
         scanrate = float(values[9])/1000
-        method = self.potentiostat.lsv_measurement(begin_potential, end_potential, step_potential, scanrate)
+        self.potentiostat.t1_potential_step = t1_potential_step
+        method = self.potentiostat.lsv_measurement(begin_potential, end_potential, EC_T1_MEASUREMENT_STEP, scanrate)
         avg_p_p = int(values[10])
-        ec_points = (abs(begin_potential-end_potential)/step_potential)
-        ec_time = step_potential/scanrate
+        ec_points = (abs(begin_potential-end_potential)/t1_potential_step)
+        ec_time = t1_potential_step/scanrate
         self.t1.averages = calculate_t1_averages(ec_points, avg_p_p, ec_time, int(values[0]), float(values[2]))
         user_params = self.t1.export_params()
         self.qs_file_name, self.ec_file_name = create_file_name(qs_type="T1",ec_type="LSV",annotation=values[11])
@@ -2021,7 +2026,8 @@ class App(tk.Tk):
                     "use_r_square_threshold":values[6],
                     "r_square_threshold":values[7],
                     "measurement_from":values[8],
-                    "measurement_to":values[9]}
+                    "measurement_to":values[9],
+                    "t1_potential_step":values[10]/1000}
         print(values)
         self.eval_ecqs_figure(fit_dict)
     def swv_t1_fitting(self):
@@ -2036,7 +2042,8 @@ class App(tk.Tk):
                     "use_r_square_threshold":values[6],
                     "r_square_threshold":values[7],
                     "measurement_from":values[8],
-                    "measurement_to":values[9]}
+                    "measurement_to":values[9],
+                    "t1_potential_step":values[10]/1000}
         print(values)
         self.eval_ecqs_figure(fit_dict)
     def lsv_t1_fitting(self):
@@ -2051,7 +2058,8 @@ class App(tk.Tk):
                     "use_r_square_threshold":values[6],
                     "r_square_threshold":values[7],
                     "measurement_from":values[8],
-                    "measurement_to":values[9]}
+                    "measurement_to":values[9],
+                    "t1_potential_step":values[10]/1000}
         print(values)
         self.eval_ecqs_figure(fit_dict)
     def ca_t1_fitting(self):

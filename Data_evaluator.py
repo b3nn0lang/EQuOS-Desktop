@@ -448,6 +448,66 @@ def save_ca_t1_detail_plot(point_number, qs_tau, qs_contrast, sub_path, y_fit=No
     fig.savefig(fig_path, dpi=300)
     plt.close(fig)
 
+def ecqs_t1_selected_points(plot_data, t1_potential_step: float) -> list[dict]:
+    if plot_data is None or plot_data.empty:
+        return []
+    try:
+        t1_potential_step = abs(float(t1_potential_step))
+    except (TypeError, ValueError):
+        t1_potential_step = 0.01
+    if not np.isfinite(t1_potential_step) or t1_potential_step <= 0:
+        t1_potential_step = 0.01
+
+    ordered = plot_data.copy()
+    ordered["_time_mid"] = ordered.apply(
+        lambda row: float(
+            np.mean(
+                np.concatenate((
+                    np.atleast_1d(row["Time_begin"]).astype(float),
+                    np.atleast_1d(row["Time_end"]).astype(float),
+                ))
+            )
+        ),
+        axis=1,
+    )
+    ordered = ordered.sort_values("_time_mid").reset_index(drop=True)
+    potentials = ordered["Potential"].to_numpy(dtype=float)
+    if len(potentials) == 0:
+        return []
+
+    sweep_sign = 1 if potentials[-1] >= potentials[0] else -1
+    scan_step = max(float(np.nanmedian(np.abs(np.diff(potentials)))) if len(potentials) > 1 else 0.01, 1e-9)
+    target_count = int(np.floor(abs(potentials[-1] - potentials[0]) / t1_potential_step)) + 1
+    targets = potentials[0] + sweep_sign * t1_potential_step * np.arange(target_count + 1)
+    end_guard = potentials[-1] + sweep_sign * scan_step * 0.5
+    targets = targets[targets <= end_guard] if sweep_sign > 0 else targets[targets >= end_guard]
+    if len(targets) == 0:
+        targets = np.array([potentials[0]])
+
+    selected_indices = []
+    for target in targets:
+        nearest = int(np.argmin(np.abs(potentials - target)))
+        if nearest not in selected_indices:
+            selected_indices.append(nearest)
+    if selected_indices[-1] != len(ordered) - 1 and abs(potentials[-1] - potentials[selected_indices[-1]]) >= t1_potential_step * 0.5:
+        selected_indices.append(len(ordered) - 1)
+
+    selected = []
+    for pos, idx in enumerate(selected_indices):
+        prev_idx = selected_indices[pos - 1] if pos > 0 else None
+        next_idx = selected_indices[pos + 1] if pos + 1 < len(selected_indices) else None
+        start_idx = 0 if prev_idx is None else int(np.floor((prev_idx + idx) / 2)) + 1
+        end_idx = len(ordered) - 1 if next_idx is None else int(np.floor((idx + next_idx) / 2))
+        window = ordered.iloc[start_idx:end_idx + 1]
+        time_begin = np.concatenate([np.atleast_1d(v).astype(float) for v in window["Time_begin"]])
+        time_end = np.concatenate([np.atleast_1d(v).astype(float) for v in window["Time_end"]])
+        selected.append({
+            "Potential": float(potentials[idx]),
+            "Time_begin": time_begin,
+            "Time_end": time_end,
+        })
+    return selected
+
 def ca_t1_detail_plot_data(detail):
     if detail.get("fit_error") and len(detail.get("raw_qs_tau", [])) and len(detail.get("raw_qs_contrast", [])):
         return detail["raw_qs_tau"], detail["raw_qs_contrast"]
@@ -1192,9 +1252,16 @@ def ecqs_data_displayer(qs_data_reader, potentiostat, fitting_dic: dict, cache, 
         r_square_threshold = float(fitting_dic.get("r_square_threshold", 0.95))
     except (TypeError, ValueError):
         r_square_threshold = 0.95
+    try:
+        t1_potential_step = abs(float(fitting_dic.get("t1_potential_step", getattr(potentiostat, "t1_potential_step", 0.01))))
+    except (TypeError, ValueError):
+        t1_potential_step = 0.01
+    if not np.isfinite(t1_potential_step) or t1_potential_step <= 0:
+        t1_potential_step = 0.01
         
     info_dic ={}
     info_dic["Included measurements"] = f"{measurement_from}-{measurement_to} of {measurement_count}"
+    info_dic["T1 Potential Step"] = f"{t1_potential_step * 1000:.0f} mV"
     if use_r_square_threshold:
         info_dic["T1 R^2 threshold"] = f"{r_square_threshold:.3f}"
     measurement_done = False
@@ -1287,13 +1354,14 @@ def ecqs_data_displayer(qs_data_reader, potentiostat, fitting_dic: dict, cache, 
             
                 tau_values_up = []
                 r_square_up = []
-                x_values_up = plot_up["Potential"]
+                t1_points_up = ecqs_t1_selected_points(plot_up, t1_potential_step)
+                x_values_up = np.asarray([point["Potential"] for point in t1_points_up], dtype=float)
                 qs_light_up = []
                 contrast_scale_up = []
                 print(f"v_values_up length: {len(x_values_up)}")
-                all_up_ax.set_prop_cycle(color=mpl.colormaps['viridis'](np.linspace(0.2, 1.0, len(plot_up))))
+                all_up_ax.set_prop_cycle(color=mpl.colormaps['viridis'](np.linspace(0.2, 1.0, max(len(t1_points_up), 1))))
                 print("Processing plot up")
-                for i,row in tqdm(plot_up.iterrows()):
+                for row in tqdm(t1_points_up):
                     time_begin = np.atleast_1d(row["Time_begin"])
                     time_end   = np.atleast_1d(row["Time_end"])
                     time_frames_up = np.column_stack((time_begin,time_end))
@@ -1445,13 +1513,14 @@ def ecqs_data_displayer(qs_data_reader, potentiostat, fitting_dic: dict, cache, 
                 )
                 tau_values_down = []
                 r_square_down = []
-                x_values_down = plot_down["Potential"]
+                t1_points_down = ecqs_t1_selected_points(plot_down, t1_potential_step)
+                x_values_down = np.asarray([point["Potential"] for point in t1_points_down], dtype=float)
                 qs_light_down = []
                 contrast_scale_down = []
                 print(f"v_values_down length: {len(x_values_down)}")
-                all_down_ax.set_prop_cycle(color=mpl.colormaps['viridis'](np.linspace(0.2, 1.0, len(plot_down))))
+                all_down_ax.set_prop_cycle(color=mpl.colormaps['viridis'](np.linspace(0.2, 1.0, max(len(t1_points_down), 1))))
                 print("Processing plot down")
-                for i,row in tqdm(plot_down.iterrows()):
+                for row in tqdm(t1_points_down):
                     time_begin = np.atleast_1d(row["Time_begin"])
                     time_end   = np.atleast_1d(row["Time_end"])
                     time_frames_down = np.column_stack((time_begin,time_end))
@@ -1593,10 +1662,10 @@ def ecqs_data_displayer(qs_data_reader, potentiostat, fitting_dic: dict, cache, 
         ax_bar = axes[1,1].twinx()
         ax_bar.set_ylabel("Averages")
         try:
-            ax_bar.bar(x_values_up - float(method["step_potential"])/4, points_up, float(method["step_potential"])/2, label="Upwards Averages",color="blue",alpha=0.3)
+            ax_bar.bar(x_values_up - t1_potential_step/4, points_up, t1_potential_step/2, label="Upwards Averages",color="blue",alpha=0.3)
         finally:
             try:
-                ax_bar.bar(x_values_down + float(method["step_potential"])/4, points_down, float(method["step_potential"])/2, label="Downwards Averages",color="red",alpha=0.3)
+                ax_bar.bar(x_values_down + t1_potential_step/4, points_down, t1_potential_step/2, label="Downwards Averages",color="red",alpha=0.3)
             except:
                 pass
         # Let bar axis autoscale independently, don't let it affect R² axis
