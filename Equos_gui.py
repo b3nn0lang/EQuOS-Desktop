@@ -38,6 +38,7 @@ class App(tk.Tk):
         self.current_queue_item = None
         self.queue_start_pending = False
         self.start_measurement_buttons = []
+        self.qupyt_reboot_requested = False
         self.protocol("WM_DELETE_WINDOW", self.on_close)
         self.bind("<Configure>", self.on_resize)
         self.focus_force()
@@ -1407,6 +1408,15 @@ class App(tk.Tk):
                 self.qupyt.start()
             except Exception:
                 pass
+    def finalize_qupyt_reboot(self):
+        if not self.qupyt_reboot_requested:
+            return
+        self.qupyt_reboot_requested = False
+        if getattr(self, "qupyt", None) is not None:
+            try:
+                self.qupyt.start()
+            except Exception:
+                pass
     def cancel_measurement(self):
         self.cancel_requested = True
         if getattr(self, "qs_data_reader", None) is not None:
@@ -1434,6 +1444,7 @@ class App(tk.Tk):
         if getattr(self, "qupyt", None) is not None:
             try:
                 self.qupyt.exit()
+                self.qupyt_reboot_requested = True
             except Exception:
                 pass
     def on_esr_send(self):
@@ -1900,6 +1911,7 @@ class App(tk.Tk):
             self.show_frame(["evaluator","measure"])
             self.update_file_loader()
             self.finalize_cancelled_measurement()
+            self.finalize_qupyt_reboot()
             self.eval_ecqs_figure()
             self.finish_measurement_run()
     def eval_ecqs_figure(self,fitting_params:dict = None):
