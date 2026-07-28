@@ -83,6 +83,15 @@ def calculate_t1_averages(ec_points:int,avg_p_p:int, ec_time:float, qs_points:in
    qs_final = qs_averages*safety_factor
    print("ec_run_time,qs_avg_time,ec_runs,total_time,qs_averages,qs_final: ",ec_run_time,qs_avg_time,ec_runs,total_time,qs_averages,qs_final)
    return qs_final
+
+def calculate_t1_averages_for_total_time(total_time: float, qs_points: int, qs_max_tau: float) -> float:
+   safety_factor = 5 #this is tunable
+
+   qs_avg_time = (np.sum(np.logspace(np.log10(0.2/1000), np.log10(qs_max_tau), num=qs_points)+25/1000 + 5))/1000
+   qs_averages = float(total_time) / qs_avg_time
+   qs_final = qs_averages * safety_factor
+   print("total_time,qs_avg_time,qs_averages,qs_final: ", total_time, qs_avg_time, qs_averages, qs_final)
+   return qs_final
     
            
 class ECQS_cache():
@@ -92,12 +101,18 @@ class ECQS_cache():
         self.measurement_progress = 0
         self.kill_qupyt = False
         self.fig = None
+        self.callback_artist = None
+        self.ca_t1_artists = {}
+        self.ca_t1_axes = {}
     def clear(self):
         self.last_measurement = 0
         self.axes = None
         self.measurement_progress = 0
         self.kill_qupyt = False
         self.fig = None
+        self.callback_artist = None
+        self.ca_t1_artists = {}
+        self.ca_t1_axes = {}
         
 
         

@@ -149,19 +149,25 @@ class App(tk.Tk):
         self.fitting_frames["LaserOff"] = self.add_fitting_frame("LaserOff", "Laser Off data")
         self.fitting_frames["LaserOn"] = self.add_fitting_frame("LaserOn", "Laser On data")
 
-        for method in ("CV", "SWV", "LSV"):
+        for method in ("CV", "SWV", "LSV", "CA"):
             frame = self.add_fitting_frame(method, f"{method} peak finding")
             entries = self.layout_fitting_params(frame, ["Fitting:", "Prominence:", "Distance:"], [True, 1e-6, 10])
             setattr(self, f"{method.lower()}_fitting_entries", entries)
             tk.Button(frame, text="Fit Data", command=getattr(self, f"{method.lower()}_fitting")).pack()
 
-        ecqs_labels = ["Fitting:", "Prominence:", "Distance:", "Cutoff Rate", "Use Bounds:", "Max. Tries:", "Use R^2 Threshold:", "Min. R^2:", "From measurement N:", "To measurement N (0 = last):"]
-        ecqs_defaults = [True, 1e-6, 10, 0.5, False, 5000, False, 0.95, 1, 0]
+        ecqs_labels = ["Fitting:", "Prominence:", "Distance:", "Cutoff Rate", "Use Bounds:", "Max. Tries:", "Use R^2 Threshold:", "Min. R^2:", "From measurement N:", "To measurement N (0 = last):", "T1 Potential Step [mV]:"]
+        ecqs_defaults = [True, 1e-6, 10, 0.5, False, 5000, False, 0.95, 1, 0, 10]
         for method in ("CV-T1", "SWV-T1", "LSV-T1"):
             frame = self.add_fitting_frame(method, f"{method} fitting")
             attr = method.lower().replace("-", "_") + "_fitting_entries"
             setattr(self, attr, self.layout_fitting_params(frame, ecqs_labels, ecqs_defaults))
             tk.Button(frame, text="Fit Data", command=getattr(self, method.lower().replace("-", "_") + "_fitting")).pack()
+
+        ca_t1_labels = ["Fitting:", "Cutoff Rate", "Use Bounds:", "Max. Tries:", "Use R^2 Threshold:", "Min. R^2:", "T1 averages/datapoint:", "Time bin size [s]:", "Save individual T1 plots:"]
+        ca_t1_defaults = [True, 0.5, False, 5000, False, 0.95, 300, 0, True]
+        ca_t1_frame = self.add_fitting_frame("CA-T1", "CA-T1 fitting")
+        self.ca_t1_fitting_entries = self.layout_fitting_params(ca_t1_frame, ca_t1_labels, ca_t1_defaults)
+        tk.Button(ca_t1_frame, text="Fit Data", command=self.ca_t1_fitting).pack()
 
     def add_fitting_frame(self, key: str, title: str) -> tk.Frame:
         frame = tk.Frame(self.fitting_params_frame)
@@ -266,11 +272,13 @@ class App(tk.Tk):
             self.current_measurement_method = "SWV-T1"
         elif "LSV" in used_methods and "T1" in used_methods:
             self.current_measurement_method = "LSV-T1"
+        elif "CA" in used_methods and "T1" in used_methods:
+            self.current_measurement_method = "CA-T1"
         else:
             return
         for file_name in ecqs_files:
             method = file_name.split("_")[1]
-            if method in ("CV", "SWV", "LSV"):
+            if method in ("CV", "SWV", "LSV", "CA"):
                 self.ec_file_name = file_name
             elif method == "T1":
                 self.qs_file_name = file_name
@@ -327,9 +335,9 @@ class App(tk.Tk):
     def get_evaluation_plot_folder(self) -> str | None:
         if not self.data_folder:
             return None
-        if self.current_measurement_method in ("CV", "SWV", "LSV"):
+        if self.current_measurement_method in ("CV", "SWV", "LSV", "CA"):
             measurement_name = self.ec_file_name
-        elif self.current_measurement_method in ("CV-T1", "SWV-T1", "LSV-T1"):
+        elif self.current_measurement_method in ("CV-T1", "SWV-T1", "LSV-T1", "CA-T1"):
             measurement_name = self.qs_file_name or self.ec_file_name
         else:
             measurement_name = self.qs_file_name
@@ -542,6 +550,10 @@ class App(tk.Tk):
         values = [self.get_fitting_value(item) for item in self.lsv_fitting_entries]
         self.eval_ec_figure({"fitting": values[0], "prominence": values[1], "distance": values[2]})
 
+    def ca_fitting(self):
+        values = [self.get_fitting_value(item) for item in self.ca_fitting_entries]
+        self.eval_ec_figure({"fitting": values[0], "prominence": values[1], "distance": values[2]})
+
     def ecqs_fitting_dict(self, entries):
         values = [self.get_fitting_value(item) for item in entries]
         return {
@@ -555,6 +567,7 @@ class App(tk.Tk):
             "r_square_threshold": values[7],
             "measurement_from": values[8],
             "measurement_to": values[9],
+            "t1_potential_step": values[10] / 1000,
         }
 
     def cv_t1_fitting(self):
@@ -565,6 +578,22 @@ class App(tk.Tk):
 
     def lsv_t1_fitting(self):
         self.eval_ecqs_figure(self.ecqs_fitting_dict(self.lsv_t1_fitting_entries))
+
+    def ca_t1_fitting(self):
+        values = [self.get_fitting_value(item) for item in self.ca_t1_fitting_entries]
+        self.eval_ecqs_figure(
+            {
+                "fitting": values[0],
+                "cutoff_rate": values[1],
+                "use_bounds": values[2],
+                "max_tries": values[3],
+                "use_r_square_threshold": values[4],
+                "r_square_threshold": values[5],
+                "t1_averages_per_datapoint": values[6],
+                "time_bin_size": values[7],
+                "save_detail_plots": values[8],
+            }
+        )
 
     def on_resize(self, event):
         pass

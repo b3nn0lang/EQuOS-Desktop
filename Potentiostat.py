@@ -42,13 +42,14 @@ class Potentiostat():
         self.callback_data_lock = threading.RLock()
         self.result_lock = threading.RLock()
         self.measurement_start_time = []
-        self.callback_data = { "Potential": [], "Current": []}
+        self.callback_data = { "Potential": [], "Current": [], "Time": []}
         self.measurement_results = [[], pd.DataFrame()]
         self.avg_per_point= 0
         self.n_scans = 0
         self.max_points=0
         self.measurement_name = ""
         self.method=None
+        self.t1_potential_step = 0.01
         self.stop_measurement = threading.Event()
         self.potentiostat_disconnected = threading.Event()
         self.potentiostat_disconnected.set()
@@ -74,6 +75,12 @@ class Potentiostat():
         self.max_points = (abs(begin_potential-end_potential)/step_potential)
         self.measurement_name = "Linear Sweep Voltammetry"
         self.method=method
+        return method
+    def ca_measurement(self, potential: float, run_time: float) -> ps.ChronoAmperometry:
+        method = ps.ChronoAmperometry(potential=potential, run_time=run_time, interval_time=0.5)
+        self.max_points = max(int(np.ceil(run_time / 0.5)), 1)
+        self.measurement_name = "Chronoamperometry"
+        self.method = method
         return method
     def get_callback_data(self) -> dict:
         with self.callback_data_lock:
@@ -158,16 +165,23 @@ class Potentiostat():
             self.set_measurement_start_time([start_time, data.index])
         data_dict = self.get_callback_data()
         start = data.start  # index where new data begins
-        if not data_dict:
-            data_dict = {
-                "Potential": [],
-                "Current": []
-            }
+        data_dict.setdefault("Potential", [])
+        data_dict.setdefault("Current", [])
+        data_dict.setdefault("Time", [])
 
         # append new data
         n = min(len(data.x_array[start:]), len(data.y_array[start:]))
-        data_dict["Potential"].extend(data.x_array[start:start+n])
-        data_dict["Current"].extend(data.y_array[start:start+n])
+        x_values = list(data.x_array[start:start+n])
+        y_values = list(data.y_array[start:start+n])
+        if self.method is not None and getattr(self.method, "id", "") == "ad":
+            interval_time = float(getattr(self.method, "interval_time", 0.5))
+            existing_points = len(data_dict["Current"])
+            time_values = np.arange(existing_points, existing_points + n, dtype=float) * interval_time
+            data_dict["Time"].extend(time_values.tolist())
+            data_dict["Potential"].extend([self.method.potential] * n)
+        else:
+            data_dict["Potential"].extend(x_values)
+        data_dict["Current"].extend(y_values)
     
         self.set_callback_data(data_dict)
         
@@ -176,6 +190,10 @@ class Potentiostat():
         raw_df = self.get_measurement_dataframe(measurement_from, measurement_to)
         if raw_df.empty:
             return None
+        elif self.method is not None and getattr(self.method, "id", "") == "ad":
+            eval_data = raw_df.copy()
+            eval_data["Relative_time"] = eval_data["Time"] - float(eval_data["Time"].iloc[0])
+            return eval_data
         else:
             rounded_potential = raw_df["Potential"].round(5)
             eval_data = raw_df.assign(Potential=rounded_potential).groupby(["direction","Potential"],as_index=False).agg(list)
@@ -199,7 +217,8 @@ class Potentiostat():
                             break
                         self.set_measurement_start_time([])
                         self.set_callback_data( {"Potential": [],
-                         "Current": []})
+                         "Current": [],
+                         "Time": []})
                         print("Starting EC measurement")
                         measurement = manager.measure(method, callback=self.callback)
                         print("EC measurement finished")
@@ -208,6 +227,8 @@ class Potentiostat():
                             "current_integral": float(np.sum(np.abs(measurement.dataset.arrays(type='Current'))))
                         })
                         new_df = pd.DataFrame(measurement.dataset.to_dict())
+                        if getattr(method, "id", "") == "ad" and "Potential" not in new_df.columns:
+                            new_df["Potential"] = method.potential
                         corrected_df = self.correct_time_stamps(self.get_measurement_start_time(), new_df)
                         results_df = self.append_measurement_frame(results_df, corrected_df)
                         self.set_measurement_results([measurement_results, results_df])
@@ -217,7 +238,8 @@ class Potentiostat():
                 self.potentiostat_disconnected.set()
         print("Potentiostat disonnected")
         self.set_callback_data( {"Potential": [],
-         "Current": []})    
+         "Current": [],
+         "Time": []})    
         self.set_measurement_start_time([])        
         ctypes.windll.winmm.timeEndPeriod(1)
         print("EC Experiment finished")
@@ -234,7 +256,8 @@ class Potentiostat():
             while not self.stop_measurement.is_set():
                 self.set_measurement_start_time([])
                 self.set_callback_data( {"Potential": [],
-                 "Current": []})
+                 "Current": [],
+                 "Time": []})
                 print("Starting EC measurement")
                 measurement = manager.measure(method, callback=self.callback)
                 print("EC measurement finished")
@@ -243,6 +266,8 @@ class Potentiostat():
                     "current_integral": float(np.sum(np.abs(measurement.dataset.arrays(type='Current'))))
                 })
                 new_df = pd.DataFrame(measurement.dataset.to_dict())
+                if getattr(method, "id", "") == "ad" and "Potential" not in new_df.columns:
+                    new_df["Potential"] = method.potential
                 corrected_df = self.correct_time_stamps(self.get_measurement_start_time(), new_df)
                 results_df = self.append_measurement_frame(results_df, corrected_df)
                 self.set_measurement_results([measurement_results, results_df])
@@ -252,7 +277,8 @@ class Potentiostat():
             self.potentiostat_disconnected.set()
         print("Potentiostat disonnected")
         self.set_callback_data( {"Potential": [],
-         "Current": []})    
+         "Current": [],
+         "Time": []})    
         self.set_measurement_start_time([])        
         ctypes.windll.winmm.timeEndPeriod(1)
         print("EC Experiment finished")
@@ -265,10 +291,15 @@ class Potentiostat():
         for i in range(1, len(df["Time"]))
         ]
         df["Time_end"] = [(df["Time"].iloc[i]+df["Time"].iloc[i+1])/2 for i in range(len(df["Time"])-1)] + [df["Time"].iloc[-1]]
-        df["direction"] = [1 if df["Potential"].iloc[1] > df["Potential"].iloc[0] else -1] + [
-            1 if df["Potential"].iloc[i+1] > df["Potential"].iloc[i-1] else -1
-            for i in range(1, len(df["Potential"]) - 1)
-        ] + [1 if df["Potential"].iloc[-1] > df["Potential"].iloc[-2] else -1]
+        if len(df["Potential"]) < 2:
+            df["direction"] = 1
+        elif self.method is not None and getattr(self.method, "id", "") == "ad":
+            df["direction"] = 1
+        else:
+            df["direction"] = [1 if df["Potential"].iloc[1] > df["Potential"].iloc[0] else -1] + [
+                1 if df["Potential"].iloc[i+1] > df["Potential"].iloc[i-1] else -1
+                for i in range(1, len(df["Potential"]) - 1)
+            ] + [1 if df["Potential"].iloc[-1] > df["Potential"].iloc[-2] else -1]
         return df
         pass
     def save_measurement_to_file(self,measurements,file_name):
@@ -311,6 +342,10 @@ class Potentiostat():
             self.max_points = int(abs(
                 settings.begin_potential - settings.end_potential
             ) / settings.step_potential)
+        elif self.method.id == "ad":
+            self.measurement_name = "Chronoamperometry"
+            self.max_points = max(int(np.ceil(settings.run_time / settings.interval_time)), 1)
+            self.avg_per_point = 300
         self.potentiostat_disconnected.set()
 
     def build_finished_measurement_summaries(self, df: pd.DataFrame) -> list[dict]:
@@ -321,7 +356,7 @@ class Potentiostat():
     def build_method_from_csv(self, file_name: str, df: pd.DataFrame) -> FinishedECMethod:
         parts = file_name.split("_")
         method_name = parts[1].lower() if len(parts) > 1 else ""
-        method_id = {"cv": "cv", "swv": "swv", "lsv": "lsv"}.get(method_name, method_name)
+        method_id = {"cv": "cv", "swv": "swv", "lsv": "lsv", "ca": "ad"}.get(method_name, method_name)
         if "Potential" in df and not df.empty:
             potentials = df["Potential"].dropna().astype(float)
             begin = float(potentials.iloc[0])
@@ -357,6 +392,16 @@ class Potentiostat():
             settings.update({"frequency": 1 / time_per_point if time_per_point else 1.0, "amplitude": 0.0})
         elif method_id == "lsv":
             settings.update({"scanrate": step / time_per_point if time_per_point else 1.0})
+        elif method_id == "ad":
+            run_time = float(df["Time"].max() - df["Time"].min()) if "Time" in df and not df.empty else 0.0
+            potential = float(df["Potential"].dropna().astype(float).iloc[0]) if "Potential" in df and not df.empty else begin
+            settings.update(
+                {
+                    "potential": potential,
+                    "run_time": run_time,
+                    "interval_time": time_per_point,
+                }
+            )
         return FinishedECMethod(method_id, settings)
     def discover_devices(self):
         raise RuntimeError("Device discovery is disabled in the EQuOS viewer.")
@@ -369,7 +414,7 @@ class Potentiostat():
     def release_resources(self):
         self.stop_measurement.set()
         self.potentiostat_disconnected.set()
-        self.set_callback_data({"Potential": [], "Current": []})
+        self.set_callback_data({"Potential": [], "Current": [], "Time": []})
         self.set_measurement_start_time([])
         self.method = None
         self.measurement_name = ""
