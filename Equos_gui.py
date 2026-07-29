@@ -783,16 +783,16 @@ class App(tk.Tk):
         ca_fitting_title.pack()
         ca_fit_param_frame = tk.Frame(ca_fitting_frame)
         ca_fit_param_frame.pack()
-        ca_fitting_labels = ["Fitting:"]
-        ca_fitting_defaults = [False]
+        ca_fitting_labels = ["Fitting:","From time [s]:","To time [s] (0 = last):"]
+        ca_fitting_defaults = [False,0,0]
         self.ca_fitting_entries = self.layout_fitting_params(ca_fit_param_frame, ca_fitting_labels, ca_fitting_defaults)
         self.ca_fitting_button = tk.Button(ca_fitting_frame,text="Fit Data",command=self.ca_fitting)
         self.ca_fitting_button.pack()
         
         ECQS_labels = ["Fitting:","Prominence:","Distance:","Cutoff Rate","Use Bounds:","Max. Tries:","Use R^2 Threshold:","Min. R^2:","From measurement N:","To measurement N (0 = last):","T1 Potential Step [mV]:"]
-        ECQS_standards = [True, 1e-6,10,0.5,False,5000,False,0.95,1,0,10]
-        CA_T1_labels = ["Fitting:","Prominence:","Distance:","Cutoff Rate","Use Bounds:","Max. Tries:","Use R^2 Threshold:","Min. R^2:","T1 averages / datapoint:","Time bin size [s] (0 = by averages):"]
-        CA_T1_standards = [True, 1e-6,10,0.5,False,5000,False,0.95,300,0]
+        ECQS_standards = [True, 1e-6,10,0.5,False,5000,False,0.95,1,0,50]
+        CA_T1_labels = ["Fitting:","Prominence:","Distance:","Cutoff Rate","Use Bounds:","Max. Tries:","Use R^2 Threshold:","Min. R^2:","T1 averages / datapoint:","Time bin size [s] (0 = by averages):","From time [s]:","To time [s] (0 = last):"]
+        CA_T1_standards = [True, 1e-6,10,0.5,False,5000,False,0.95,300,0,0,0]
         
         #CV-T1 Fitting
         cv_t1_fitting_frame = tk.Frame(self.fitting_params_frame)
@@ -2010,7 +2010,9 @@ class App(tk.Tk):
         self.eval_ec_figure(fit_dict)
     def ca_fitting(self):
         values = [self.get_fitting_value(item) for item in self.ca_fitting_entries]
-        fit_dict = {"fitting":values[0]}
+        fit_dict = {"fitting":values[0],
+                    "time_from":values[1],
+                    "time_to":values[2]}
         print(values)
         self.eval_ec_figure(fit_dict)
     
@@ -2074,6 +2076,8 @@ class App(tk.Tk):
                     "r_square_threshold":values[7],
                     "t1_averages_per_datapoint":values[8],
                     "time_bin_size":values[9],
+                    "time_from":values[10],
+                    "time_to":values[11],
                     "save_detail_plots": True}
         print(values)
         self.eval_ecqs_figure(fit_dict)
