@@ -45,12 +45,12 @@ FITTING_DIC = {
 
 
 # --- Evaluation sweep --------------------------------------------------------
-# Every combination of these three lists is evaluated.  A cycle difference is
-# added to a selected start cycle: e.g. start 10 and difference 5 -> cycles
-# 10 through 15 (inclusive).  The script does *not* iterate all recorded
-# cycles automatically.
-CYCLE_STARTS = [1]
-CYCLE_DIFFERENCES = [500]
+# The cycle difference is the number of cycles in each consecutive evaluation
+# block.  For example, 50 evaluates cycles 1-50, 51-100, 101-150, and so on
+# until the measurement ends. The final block can be shorter.
+CYCLE_DIFFERENCE = 500
+
+# Each cycle block is evaluated once for every T1 potential step below.
 T1_POTENTIAL_STEPS = [0.010, 0.02, 0.050, 0.100, 0.2]  # V; 0.010 V = 10 mV
 
 # Opening every generated figure is impractical for a sweep.  When enabled,
@@ -98,32 +98,33 @@ def run_evaluation_sweep(
     potentiostat: Potentiostat,
     evaluation_folder: Path,
 ) -> Path | None:
-    """Evaluate exactly the configured starts, cycle differences, and T1 steps."""
-    if not CYCLE_STARTS or not CYCLE_DIFFERENCES or not T1_POTENTIAL_STEPS:
-        raise ValueError("CYCLE_STARTS, CYCLE_DIFFERENCES, and T1_POTENTIAL_STEPS must not be empty.")
+    """Evaluate consecutive cycle blocks for each configured T1 potential step."""
+    if CYCLE_DIFFERENCE < 1 or not T1_POTENTIAL_STEPS:
+        raise ValueError("CYCLE_DIFFERENCE must be positive and T1_POTENTIAL_STEPS must not be empty.")
 
     measurement_count = potentiostat.get_measurement_count()
+    cycle_blocks = [
+        (cycle_start, min(cycle_start + CYCLE_DIFFERENCE - 1, measurement_count))
+        for cycle_start in range(1, measurement_count + 1, CYCLE_DIFFERENCE)
+    ]
     last_image_path = None
-    requested_runs = len(CYCLE_STARTS) * len(CYCLE_DIFFERENCES) * len(T1_POTENTIAL_STEPS)
-    print(f"Starting {requested_runs} configured evaluations; measurement has {measurement_count} cycles.")
+    requested_runs = len(cycle_blocks) * len(T1_POTENTIAL_STEPS)
+    print(
+        f"Starting {requested_runs} evaluations in {len(cycle_blocks)} consecutive "
+        f"cycle blocks of {CYCLE_DIFFERENCE}; measurement has {measurement_count} cycles."
+    )
 
-    selections = product(CYCLE_STARTS, CYCLE_DIFFERENCES, T1_POTENTIAL_STEPS)
-    for cycle_start, cycle_difference, t1_step in tqdm(
+    selections = product(cycle_blocks, T1_POTENTIAL_STEPS)
+    for (cycle_start, cycle_end), t1_step in tqdm(
         selections,
         total=requested_runs,
         desc="Evaluating CV-T1 selections",
         unit="image",
     ):
-        cycle_start = int(cycle_start)
-        cycle_difference = int(cycle_difference)
         t1_step = float(t1_step)
-        cycle_end = cycle_start + cycle_difference
 
-        if cycle_start < 1 or cycle_difference < 0 or t1_step <= 0:
-            print(f"Skipping invalid selection: start={cycle_start}, difference={cycle_difference}, step={t1_step} V")
-            continue
-        if cycle_end > measurement_count:
-            print(f"Skipping cycles {cycle_start}-{cycle_end}: measurement has only {measurement_count} cycles.")
+        if t1_step <= 0:
+            print(f"Skipping invalid T1 potential step: {t1_step} V")
             continue
 
         fitting_dic = FITTING_DIC | {
@@ -139,12 +140,12 @@ def run_evaluation_sweep(
         image_path = evaluation_folder / selection_image_name(
             cycle_start,
             cycle_end,
-            cycle_difference,
+            CYCLE_DIFFERENCE,
             t1_step,
         )
         print(
             f"Evaluating cycles {cycle_start}-{cycle_end}, "
-            f"difference {cycle_difference}, T1 step {t1_step * 1000:g} mV"
+            f"cycle difference {CYCLE_DIFFERENCE}, T1 step {t1_step * 1000:g} mV"
         )
         output_figure = Figure(figsize=(12, 8), constrained_layout=True)
         fig, _, _, _, info, _ = ecqs_data_displayer(
