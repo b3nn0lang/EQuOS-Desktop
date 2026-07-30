@@ -49,9 +49,9 @@ FITTING_DIC = {
 # added to a selected start cycle: e.g. start 10 and difference 5 -> cycles
 # 10 through 15 (inclusive).  The script does *not* iterate all recorded
 # cycles automatically.
-CYCLE_STARTS = [1, 10]
-CYCLE_DIFFERENCES = [4, 9]
-T1_POTENTIAL_STEPS = [0.010, 0.050, 0.100]  # V; 0.010 V = 10 mV
+CYCLE_STARTS = [1]
+CYCLE_DIFFERENCES = [500]
+T1_POTENTIAL_STEPS = [0.010, 0.02, 0.050, 0.100, 0.2]  # V; 0.010 V = 10 mV
 
 # Opening every generated figure is impractical for a sweep.  When enabled,
 # only the last successfully generated image is opened in Preview.
