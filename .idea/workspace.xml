@@ -4,12 +4,10 @@
     <option name="autoReloadType" value="ALL" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="7f911216-e681-405e-8252-ad6017b9785b" name="Changes" comment="R2 fit improvement by adding cutoff for ecqs measureemnts">
+    <list default="true" id="7f911216-e681-405e-8252-ad6017b9785b" name="Changes" comment="CA and CA-T1 untested">
+      <change afterPath="$PROJECT_DIR$/Evaluation loop.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/EQuOS.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/EQuOS.iml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Data_evaluator.py" beforeDir="false" afterPath="$PROJECT_DIR$/Data_evaluator.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Equos_logic.py" beforeDir="false" afterPath="$PROJECT_DIR$/Equos_logic.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Equos_viewer.py" beforeDir="false" afterPath="$PROJECT_DIR$/Equos_viewer.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Potentiostat.py" beforeDir="false" afterPath="$PROJECT_DIR$/Potentiostat.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -17,13 +15,19 @@
     <option name="LAST_RESOLUTION" value="IGNORE" />
   </component>
   <component name="EmbeddingIndexingInfo">
-    <option name="cachedIndexableFilesCount" value="19" />
+    <option name="cachedIndexableFilesCount" value="20" />
+  </component>
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="Python Script" />
+      </list>
+    </option>
   </component>
   <component name="Git.Settings">
-    <option name="INCOMING_COMMITS_CHECK_STRATEGY" value="FETCH" />
     <option name="RECENT_BRANCH_BY_REPOSITORY">
       <map>
-        <entry key="$PROJECT_DIR$" value="main" />
+        <entry key="$PROJECT_DIR$" value="viewer" />
       </map>
     </option>
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
@@ -37,7 +41,7 @@
   <component name="GithubPullRequestsUISettings">{
   &quot;selectedUrlAndAccountId&quot;: {
     &quot;url&quot;: &quot;https://github.com/b3nn0lang/EQuOS-Desktop.git&quot;,
-    &quot;accountId&quot;: &quot;5286e233-5bf6-474d-aaf9-d67acebd9808&quot;
+    &quot;accountId&quot;: &quot;1372265f-5290-4699-bc32-d3223ab00d1c&quot;
   }
 }</component>
   <component name="McpProjectServerCommands">
@@ -46,61 +50,61 @@
   </component>
   <component name="NextEditCompletionFeaturesState">
     <decayedCancelled>
-      <entry key="MS100" value="1.237730327331487" />
-      <entry key="MS500" value="3.81091561755095" />
-      <entry key="S2" value="11.991961042772532" />
-      <entry key="S5" value="25.505452093419557" />
-      <entry key="S10" value="39.97218676921529" />
-      <entry key="S30" value="59.03428804032634" />
-      <entry key="S60" value="66.37884221593285" />
-      <entry key="M2" value="83.09333437251557" />
-      <entry key="M5" value="199.26426471214495" />
-      <entry key="M10" value="360.1136144103562" />
-      <entry key="M15" value="457.56684629710696" />
-      <entry key="M30" value="598.1236730062582" />
-      <entry key="H1" value="693.0886879588899" />
-      <entry key="H2" value="749.4238799137402" />
-      <entry key="H4" value="788.518827619261" />
-      <entry key="D1" value="1579.9755154816896" />
-      <entry key="W1" value="4893.335481050134" />
+      <entry key="MS100" value="1.6848655209579324" />
+      <entry key="MS500" value="4.590522963064862" />
+      <entry key="S2" value="11.790602896291444" />
+      <entry key="S5" value="19.93334471167462" />
+      <entry key="S10" value="30.76771233177621" />
+      <entry key="S30" value="87.57026204461127" />
+      <entry key="S60" value="147.81562707405706" />
+      <entry key="M2" value="202.8951406731816" />
+      <entry key="M5" value="262.1108359184783" />
+      <entry key="M10" value="321.60171133378077" />
+      <entry key="M15" value="396.89789038882964" />
+      <entry key="M30" value="670.3947924504974" />
+      <entry key="H1" value="1071.0932763389187" />
+      <entry key="H2" value="1436.316745861947" />
+      <entry key="H4" value="1693.614617571818" />
+      <entry key="D1" value="2687.315045366478" />
+      <entry key="W1" value="6050.922342138409" />
     </decayedCancelled>
     <decayedSelected>
       <entry key="MS100" value="0.0" />
       <entry key="MS500" value="0.0" />
       <entry key="S2" value="0.0" />
-      <entry key="S5" value="0.0" />
-      <entry key="S10" value="0.0" />
-      <entry key="S30" value="0.0" />
-      <entry key="S60" value="0.0" />
-      <entry key="M2" value="0.0" />
-      <entry key="M5" value="0.0" />
-      <entry key="M10" value="0.0" />
-      <entry key="M15" value="1.0694266539472755E-227" />
-      <entry key="M30" value="3.270208944314439E-114" />
-      <entry key="H1" value="1.808371904314593E-57" />
-      <entry key="H2" value="4.2524956252940067E-29" />
-      <entry key="H4" value="6.521116181523648E-15" />
-      <entry key="D1" value="0.004322353903627539" />
-      <entry key="W1" value="0.45945793931371787" />
+      <entry key="S5" value="5.3735238738902106E-216" />
+      <entry key="S10" value="2.3180862524699105E-108" />
+      <entry key="S30" value="1.323457086665507E-36" />
+      <entry key="S60" value="1.1504160493775525E-18" />
+      <entry key="M2" value="1.0725744959570602E-9" />
+      <entry key="M5" value="2.583277054230521E-4" />
+      <entry key="M10" value="0.016072576191234627" />
+      <entry key="M15" value="0.06368790974593404" />
+      <entry key="M30" value="0.25236463648049484" />
+      <entry key="H1" value="0.5023590712632702" />
+      <entry key="H2" value="0.7087729335007522" />
+      <entry key="H4" value="0.8418865324381724" />
+      <entry key="D1" value="0.9758918648979844" />
+      <entry key="W1" value="1.4530091732953818" />
     </decayedSelected>
     <decayedShown>
-      <entry key="MS100" value="0.4412980447621578" />
-      <entry key="MS500" value="3.5231136657250395" />
-      <entry key="S2" value="11.895562242110723" />
-      <entry key="S5" value="25.45499062096472" />
-      <entry key="S10" value="39.94072509591068" />
-      <entry key="S30" value="59.02105865096879" />
-      <entry key="S60" value="66.37167035895176" />
-      <entry key="M2" value="83.08883157349906" />
-      <entry key="M5" value="199.25989755874863" />
-      <entry key="M10" value="360.10966978700486" />
-      <entry key="M15" value="457.5634900913081" />
-      <entry key="M30" value="598.1214564552968" />
-      <entry key="H1" value="693.0873928171925" />
-      <entry key="H2" value="749.42317605633" />
-      <entry key="H4" value="788.5184555062651" />
-      <entry key="D1" value="1579.9797085664648" />
-      <entry key="W1" value="4893.794865825972" />
+      <entry key="MS100" value="1.648167922809051" />
+      <entry key="MS500" value="4.568955232347207" />
+      <entry key="S2" value="11.7759039197813" />
+      <entry key="S5" value="19.923073429089868" />
+      <entry key="S10" value="30.759788621640347" />
+      <entry key="S30" value="87.56291634621493" />
+      <entry key="S60" value="147.8094036393667" />
+      <entry key="M2" value="202.89072732654046" />
+      <entry key="M5" value="262.10804853401424" />
+      <entry key="M10" value="321.61509805398526" />
+      <entry key="M15" value="396.9589252276553" />
+      <entry key="M30" value="670.6445251484282" />
+      <entry key="H1" value="1071.5934453993586" />
+      <entry key="H2" value="1437.0240375838937" />
+      <entry key="H4" value="1694.455628774332" />
+      <entry key="D1" value="2688.290706472241" />
+      <entry key="W1" value="6052.37526310398" />
     </decayedShown>
   </component>
   <component name="ProjectColorInfo">{
@@ -112,66 +116,47 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent">{
-  &quot;keyToString&quot;: {
-    &quot;Python.Data_evaluator.executor&quot;: &quot;Run&quot;,
-    &quot;Python.Equos_gui.executor&quot;: &quot;Run&quot;,
-    &quot;Python.Equos_viewer.executor&quot;: &quot;Run&quot;,
-    &quot;Python.Potentiostat.executor&quot;: &quot;Run&quot;,
-    &quot;RunOnceActivity.MCP Project settings loaded&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.OpenProjectViewOnStart&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.typescript.service.memoryLimit.init&quot;: &quot;true&quot;,
-    &quot;codeWithMe.voiceChat.enabledByDefault&quot;: &quot;false&quot;,
-    &quot;com.intellij.ml.llm.matterhorn.ej.ui.settings.DefaultModelSelectionForGA.v1&quot;: &quot;true&quot;,
-    &quot;git-widget-placeholder&quot;: &quot;viewer&quot;,
-    &quot;git.auto.fetch.suggestion.counter&quot;: &quot;1&quot;,
-    &quot;junie.onboarding.icon.badge.shown&quot;: &quot;true&quot;,
-    &quot;last_opened_file_path&quot;: &quot;G:/Bucherlab/Surface_Electrochemistry_EPR/Code/EQuOS_viewer&quot;,
-    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
-    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
-    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
-    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
-    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
-    &quot;settings.editor.selected.configurable&quot;: &quot;preferences.pluginManager&quot;,
-    &quot;to.speed.mode.migration.done&quot;: &quot;true&quot;,
-    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "Python.Data_evaluator.executor": "Run",
+    "Python.Equos_gui.executor": "Run",
+    "Python.Equos_viewer.executor": "Run",
+    "Python.Evaluation loop.executor": "Run",
+    "Python.Potentiostat.executor": "Run",
+    "RunOnceActivity.MCP Project settings loaded": "true",
+    "RunOnceActivity.OpenProjectViewOnStart": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "RunOnceActivity.typescript.service.memoryLimit.init": "true",
+    "codeWithMe.voiceChat.enabledByDefault": "false",
+    "com.intellij.ml.llm.matterhorn.ej.ui.settings.DefaultModelSelectionForGA.v1": "true",
+    "git-widget-placeholder": "viewer",
+    "git.auto.fetch.suggestion.counter": "1",
+    "junie.onboarding.icon.badge.shown": "true",
+    "last_opened_file_path": "G:/Bucherlab/Surface_Electrochemistry_EPR/Code/EQuOS_viewer",
+    "node.js.detected.package.eslint": "true",
+    "node.js.detected.package.tslint": "true",
+    "node.js.selected.package.eslint": "(autodetect)",
+    "node.js.selected.package.tslint": "(autodetect)",
+    "nodejs_package_manager_path": "npm",
+    "settings.editor.selected.configurable": "python.external.tools.group.settings",
+    "to.speed.mode.migration.done": "true",
+    "vue.rearranger.settings.migration": "true"
   }
-}</component>
-  <component name="RunManager">
-    <configuration name="Equos_viewer" type="PythonConfigurationType" factoryName="Python" nameIsGenerated="true">
-      <module name="EQuOS" />
-      <option name="ENV_FILES" value="" />
-      <option name="INTERPRETER_OPTIONS" value="" />
-      <option name="PARENT_ENVS" value="true" />
-      <envs>
-        <env name="PYTHONUNBUFFERED" value="1" />
-      </envs>
-      <option name="SDK_HOME" value="" />
-      <option name="SDK_NAME" value="Python 3.11 (EQuOS_viewer)" />
-      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
-      <option name="IS_MODULE_SDK" value="false" />
-      <option name="ADD_CONTENT_ROOTS" value="true" />
-      <option name="ADD_SOURCE_ROOTS" value="true" />
-      <option name="DEBUG_JUST_MY_CODE" value="false" />
-      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
-      <option name="RUN_TOOL" value="" />
-      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/Equos_viewer.py" />
-      <option name="PARAMETERS" value="" />
-      <option name="SHOW_COMMAND_LINE" value="false" />
-      <option name="EMULATE_TERMINAL" value="false" />
-      <option name="MODULE_MODE" value="false" />
-      <option name="REDIRECT_INPUT" value="false" />
-      <option name="INPUT_FILE" value="" />
-      <method v="2" />
-    </configuration>
+}]]></component>
+  <component name="PyConsoleOptionsProvider">
+    <option name="myPythonConsoleState">
+      <console-settings module-name="EQuOS" is-module-sdk="true">
+        <option name="myUseModuleSdk" value="true" />
+        <option name="myModuleName" value="EQuOS" />
+      </console-settings>
+    </option>
   </component>
   <component name="SharedIndexes">
     <attachedChunks>
       <set>
-        <option value="bundled-python-sdk-50341a9f1f9c-c2ffad84badb-com.jetbrains.pycharm.pro.sharedIndexes.bundled-PY-261.26222.68" />
+        <option value="bundled-python-sdk-c6d794e1806d-5bd6d13a2a75-com.jetbrains.pycharm.pro.sharedIndexes.bundled-PY-262.8665.309" />
       </set>
     </attachedChunks>
   </component>
@@ -195,7 +180,6 @@
       <workItem from="1784550178329" duration="1289000" />
       <workItem from="1784618997734" duration="4000" />
       <workItem from="1784629938587" duration="2431000" />
-      <workItem from="1785239178350" duration="1841000" />
     </task>
     <task id="LOCAL-00001" summary="Changed the voltage to mV for LL.&#10;Also made the ECQS t1 UI better by showing missing fits">
       <option name="closed" value="true" />
@@ -235,12 +219,22 @@
     <MESSAGE value="R2 fit improvement by adding cutoff for ecqs measureemnts" />
     <option name="LAST_COMMIT_MESSAGE" value="R2 fit improvement by adding cutoff for ecqs measureemnts" />
   </component>
+  <component name="XDebuggerManager">
+    <breakpoint-manager>
+      <breakpoints>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/Data_evaluator.py</url>
+          <line>6</line>
+          <option name="timeStamp" value="1" />
+        </line-breakpoint>
+      </breakpoints>
+    </breakpoint-manager>
+  </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
     <SUITE FILE_PATH="coverage/EQuOS$Potentiostat.coverage" NAME="Potentiostat Coverage Results" MODIFIED="1782304189652" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/EQuOS$Equos_gui.coverage" NAME="Equos_gui Coverage Results" MODIFIED="1784537631926" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/EQuOS$Data_evaluator.coverage" NAME="Data_evaluator Coverage Results" MODIFIED="1784100232697" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
-    <SUITE FILE_PATH="coverage/EQuOS_viewer$Data_evaluator.coverage" NAME="Data_evaluator Coverage Results" MODIFIED="1784825910100" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
-    <SUITE FILE_PATH="coverage/EQuOS_viewer$Equos_viewer.coverage" NAME="Equos_viewer Coverage Results" MODIFIED="1785254518548" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/EQuOS_viewer$Equos_viewer.coverage" NAME="Equos_viewer Coverage Results" MODIFIED="1784630066138" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/EQuOS_viewer$Equos_gui.coverage" NAME="Equos_gui Coverage Results" MODIFIED="1784550182822" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
   </component>
 </project>
