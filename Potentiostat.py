@@ -121,8 +121,7 @@ class Potentiostat():
         measurements = measurements[start - 1:end]
         with self.result_lock:
             integrals = []
-            print("Get EC Integrals")
-            for measurement in tqdm(measurements):
+            for measurement in measurements:
                 if hasattr(measurement, "dataset"):
                     integrals.append(float(np.sum(np.abs(measurement.dataset.arrays(type='Current')))))
                 elif isinstance(measurement, dict) and "current_integral" in measurement:
@@ -158,7 +157,7 @@ class Potentiostat():
     def append_measurement_frame(self, results_df: pd.DataFrame, new_rows: pd.DataFrame) -> pd.DataFrame:
         if results_df.empty:
             return new_rows.reset_index(drop=True)
-        return pd.concat([results_df, new_rows], ignore_index=True, copy=False)
+        return pd.concat([results_df, new_rows], ignore_index=True)
         #callback plots the data points not saved and calculates the time of the first index point
     def ca_callback_time_values(self, existing_points: int, n: int) -> list:
         interval_time = float(getattr(self.method, "interval_time", 0.5))

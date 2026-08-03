@@ -454,9 +454,9 @@ def ecqs_t1_selected_points(plot_data, t1_potential_step: float) -> list[dict]:
     try:
         t1_potential_step = abs(float(t1_potential_step))
     except (TypeError, ValueError):
-        t1_potential_step = 0.01
+        t1_potential_step = 0.05
     if not np.isfinite(t1_potential_step) or t1_potential_step <= 0:
-        t1_potential_step = 0.01
+        t1_potential_step = 0.05
 
     ordered = plot_data.copy()
     ordered["_time_mid"] = ordered.apply(
@@ -1265,7 +1265,283 @@ def ca_t1_data_displayer(qs_data_reader, potentiostat, fitting_dic: dict, cache,
         if scaled_to > scaled_from:
             ax.set_xlim(scaled_from, scaled_to)
     return fig, axes, measurement_done, measurement_progress, info_dic, kill_qupyt
-    
+
+def ecqs_progress_from_live_summary(qs_data: dict, t1_point_count: int, avg_per_point: int) -> float:
+    try:
+        t1_point_count = int(t1_point_count)
+    except (TypeError, ValueError):
+        t1_point_count = 0
+    if t1_point_count <= 0:
+        return 0
+    try:
+        avg_per_point = max(1, int(avg_per_point))
+    except (TypeError, ValueError):
+        avg_per_point = 1
+    counts = qs_data.get("contrast_length", [])
+    if isinstance(counts, (list, np.ndarray)) and len(counts) > 0:
+        completed_qs_loops = float(np.nanmin(np.asarray(counts, dtype=float)))
+    else:
+        completed_qs_loops = float(qs_data.get("length", 0) or 0)
+    if not np.isfinite(completed_qs_loops):
+        completed_qs_loops = 0
+    return max(0, min(completed_qs_loops / (avg_per_point * t1_point_count), 1))
+
+def ecqs_qs_averages_from_indices(qs_data_reader, filtered_indices) -> int:
+    if len(filtered_indices) == 0:
+        return 0
+
+    if getattr(qs_data_reader, "averaging_mode", None) == "sum":
+        x_values = getattr(qs_data_reader, "_x_values_array", np.array([]))
+        if len(x_values) == 0:
+            return 0
+        row_x_values = x_values[np.asarray(filtered_indices, dtype=int) % len(x_values)]
+        _, counts = np.unique(row_x_values, return_counts=True)
+        return int(np.min(counts)) if len(counts) else 0
+
+    return int(len(filtered_indices))
+
+def ecqs_qs_averages_in_window(qs_data_reader, time_begin, time_end, cutoff_rate, qs_t_begin=None, qs_t_end=None) -> int:
+    time_begin = np.atleast_1d(time_begin).astype(float)
+    time_end = np.atleast_1d(time_end).astype(float)
+    if len(time_begin) == 0 or len(time_end) == 0:
+        return 0
+
+    time_frames = np.column_stack((time_begin, time_end))
+    if qs_t_begin is None or qs_t_end is None:
+        try:
+            filtered_indices = qs_data_reader.filter_by_time_stamps(cutoff_rate=cutoff_rate, t_lim=time_frames)
+        except Exception:
+            return 0
+        return ecqs_qs_averages_from_indices(qs_data_reader, filtered_indices)
+
+    measurement_time = qs_t_end - qs_t_begin
+    mask = np.zeros(len(qs_t_begin), dtype=bool)
+    for t_min, t_max in time_frames:
+        outside = (qs_t_end < t_min) | (qs_t_begin > t_max)
+        overlap = np.minimum(qs_t_end, t_max) - np.maximum(qs_t_begin, t_min)
+        overlap = np.where(outside, 0.0, overlap)
+        cutoff = np.divide(overlap, measurement_time, out=np.zeros_like(overlap), where=measurement_time > 0)
+        mask |= cutoff >= cutoff_rate
+    return ecqs_qs_averages_from_indices(qs_data_reader, np.flatnonzero(mask))
+
+def ecqs_live_average_data(qs_data_reader, ec_data, t1_potential_step, cutoff_rate):
+    data = {
+        "up_x": np.array([], dtype=float),
+        "up_counts": [],
+        "down_x": np.array([], dtype=float),
+        "down_counts": [],
+    }
+    if ec_data is None:
+        return data
+    try:
+        qs_t_begin, qs_t_end, _ = qs_data_reader._load_raw_data()
+    except Exception:
+        qs_t_begin, qs_t_end = None, None
+
+    for direction, key in ((1, "up"), (-1, "down")):
+        plot_data = ec_data[ec_data["direction"] == direction]
+        t1_points = ecqs_t1_selected_points(plot_data, t1_potential_step)
+        data[f"{key}_x"] = np.asarray([point["Potential"] for point in t1_points], dtype=float)
+        data[f"{key}_counts"] = [
+            ecqs_qs_averages_in_window(
+                qs_data_reader,
+                point["Time_begin"],
+                point["Time_end"],
+                cutoff_rate,
+                qs_t_begin,
+                qs_t_end,
+            )
+            for point in t1_points
+        ]
+    return data
+
+def empty_ecqs_live_average_data():
+    return {
+        "up_x": np.array([], dtype=float),
+        "up_counts": [],
+        "down_x": np.array([], dtype=float),
+        "down_counts": [],
+    }
+
+def cached_ecqs_live_average_data(cache):
+    counts = getattr(cache, "live_average_counts", None)
+    potentials = getattr(cache, "live_average_potentials", None)
+    if not counts or not potentials:
+        return empty_ecqs_live_average_data()
+
+    data = empty_ecqs_live_average_data()
+    for key in ("up", "down"):
+        sorted_items = sorted(potentials[key].items(), key=lambda item: item[1])
+        data[f"{key}_x"] = np.asarray([potential for _, potential in sorted_items], dtype=float)
+        data[f"{key}_counts"] = [counts[key].get(rounded, 0) for rounded, _ in sorted_items]
+    return data
+
+def update_ecqs_live_average_cache(qs_data_reader, potentiostat, cache, current_measurement, t1_potential_step, cutoff_rate):
+    if not hasattr(cache, "live_average_counts"):
+        cache.live_average_counts = {"up": {}, "down": {}}
+        cache.live_average_potentials = {"up": {}, "down": {}}
+        cache.live_average_measurement_count = 0
+
+    if current_measurement <= cache.live_average_measurement_count:
+        return cached_ecqs_live_average_data(cache)
+
+    for measurement_number in range(cache.live_average_measurement_count + 1, current_measurement + 1):
+        scan_ec_data = potentiostat.evaluated_data(measurement_number, measurement_number)
+        scan_average_data = ecqs_live_average_data(qs_data_reader, scan_ec_data, t1_potential_step, cutoff_rate)
+        for key in ("up", "down"):
+            for potential, count in zip(scan_average_data[f"{key}_x"], scan_average_data[f"{key}_counts"]):
+                rounded_potential = round(float(potential), 8)
+                cache.live_average_potentials[key][rounded_potential] = float(potential)
+                cache.live_average_counts[key][rounded_potential] = (
+                    cache.live_average_counts[key].get(rounded_potential, 0) + int(count)
+                )
+        cache.live_average_measurement_count = measurement_number
+
+    return cached_ecqs_live_average_data(cache)
+
+def update_ecqs_live_average_bars(cache, ax, average_data, t1_potential_step):
+    for bar in cache.ca_t1_artists.get("live_average_bars", []):
+        try:
+            bar.remove()
+        except ValueError:
+            pass
+
+    ax_bar = cache.ca_t1_axes.get("live_average_bar")
+    if ax_bar is None or ax_bar.figure is not ax.figure:
+        ax_bar = ax.twinx()
+        ax_bar.set_ylabel("Averages")
+        ax_bar.set_zorder(ax.get_zorder() - 1)
+        ax.patch.set_visible(False)
+        cache.ca_t1_axes["live_average_bar"] = ax_bar
+
+    bar_width = t1_potential_step / 2
+    bars = []
+    up_x = average_data["up_x"]
+    if len(up_x):
+        bars.extend(ax_bar.bar(
+            up_x - t1_potential_step / 4,
+            average_data["up_counts"],
+            bar_width,
+            label="Upwards Averages",
+            color="blue",
+            alpha=0.3,
+        ))
+    down_x = average_data["down_x"]
+    if len(down_x):
+        bars.extend(ax_bar.bar(
+            down_x + t1_potential_step / 4,
+            average_data["down_counts"],
+            bar_width,
+            label="Downwards Averages",
+            color="red",
+            alpha=0.3,
+        ))
+
+    cache.ca_t1_artists["live_average_bars"] = list(bars)
+    ax_bar.relim()
+    ax_bar.autoscale_view()
+
+def ecqs_live_preview(
+    qs_data_reader,
+    potentiostat,
+    method,
+    qs_data,
+    callback_data,
+    cache,
+    fig,
+    info_dic,
+    measurement_from,
+    measurement_to,
+    current_measurement,
+    t1_potential_step,
+):
+    ec_data = None
+    if current_measurement > 0 and (cache.axes is None or current_measurement > cache.last_measurement):
+        ec_data = potentiostat.evaluated_data(current_measurement, current_measurement)
+    average_data = update_ecqs_live_average_cache(
+        qs_data_reader,
+        potentiostat,
+        cache,
+        current_measurement,
+        t1_potential_step,
+        1,
+    )
+    t1_point_count = len(average_data["up_x"]) + len(average_data["down_x"])
+    measurement_progress = ecqs_progress_from_live_summary(qs_data, t1_point_count, potentiostat.avg_per_point)
+    qs_finished = qs_data_reader.dataframe_loop_stop.is_set()
+    kill_qupyt = qs_finished or measurement_progress >= 1
+    measurement_done = potentiostat.potentiostat_disconnected.is_set() and qs_finished
+    info_dic["ECQS live points"] = t1_point_count
+    if current_measurement:
+        info_dic["Live EC preview"] = f"measurement {current_measurement}"
+    info_dic["Live progress mode"] = "QS counts, no T1 fitting"
+    live_counts = average_data["up_counts"] + average_data["down_counts"]
+    if live_counts:
+        info_dic["Live QS averages/datapoint"] = f"{min(live_counts)}-{max(live_counts)}"
+
+    if fig is None:
+        fig = Figure(figsize=(12,8), constrained_layout=True)
+    if ec_data is not None and (cache.axes is None or current_measurement > cache.last_measurement):
+        fig.clear()
+        cache.ca_t1_axes["live_average_bar"] = None
+        cache.ca_t1_artists["live_average_bars"] = []
+        axes = fig.subplots(2, 2)
+        cache.last_measurement = current_measurement
+        plot_up = ec_data[ec_data["direction"] == 1]
+        if not plot_up.empty:
+            axes[0,0].plot(plot_up["Potential"], plot_up["Current_mean"], color="tab:blue", label="Upwards Current")
+        plot_down = ec_data[ec_data["direction"] == -1]
+        if not plot_down.empty:
+            axes[0,0].plot(plot_down["Potential"], plot_down["Current_mean"], color="tab:red", label="Downwards Current")
+        try:
+            integral = potentiostat.get_measurement_integrals(measurement_from, measurement_to)
+            measurement_numbers = range(measurement_from, measurement_to + 1)
+            axes[1,0].plot(measurement_numbers, integral, color="tab:orange", label="Current sum")
+        except Exception:
+            pass
+        cache.axes = axes
+        cache.fig = fig
+    elif cache.axes is not None:
+        axes = cache.axes
+        fig = cache.fig
+    else:
+        fig.clear()
+        cache.ca_t1_axes["live_average_bar"] = None
+        cache.ca_t1_artists["live_average_bars"] = []
+        axes = fig.subplots(2, 2)
+        cache.axes = axes
+        cache.fig = fig
+
+    update_ecqs_live_average_bars(cache, axes[1,1], average_data, t1_potential_step)
+
+    try:
+        old_callback_artist = getattr(cache, "callback_artist", None)
+        if old_callback_artist is not None:
+            try:
+                old_callback_artist.remove()
+            except ValueError:
+                pass
+        callback_artists = axes[0,0].plot(callback_data['Potential'], callback_data["Current"], "gx")
+        cache.callback_artist = callback_artists[0] if callback_artists else None
+    except Exception:
+        cache.callback_artist = None
+
+    fig.suptitle(f"{potentiostat.measurement_name} / {qs_data['experiment'] if qs_data['experiment'] else 'QS data'}")
+    axes[0,0].set_xlabel("Potential [V] vs SSC")
+    axes[0,0].set_ylabel("Current [uA]")
+    axes[0,1].set_xlabel("Potential [V] vs SSC")
+    axes[0,1].set_ylabel("T1 Time")
+    axes[1,1].set_ylabel("R2 / [V:100]")
+    axes[1,1].set_xlabel("Potential [V] vs SSC")
+    axes[1,0].set_xlabel("N Measurement")
+    axes[1,0].set_ylabel("Abs Current Sum [uA]")
+    for ax in axes.flat:
+        ax.grid(True, alpha=0.3)
+        combined_legend(ax, loc="upper left")
+    cache.measurement_progress = measurement_progress
+    cache.kill_qupyt = kill_qupyt
+    return fig, axes, measurement_done, measurement_progress, info_dic, kill_qupyt
+     
 def ecqs_data_displayer(qs_data_reader, potentiostat, fitting_dic: dict, cache, fig: Figure | None = None):
     measurement_count = potentiostat.get_measurement_count()
     if measurement_count:
@@ -1339,6 +1615,23 @@ def ecqs_data_displayer(qs_data_reader, potentiostat, fitting_dic: dict, cache, 
     except:
         pass
     
+    live_preview = not bool(fitting_dic.get("fitting", False)) and "ec_fitting" not in fitting_dic
+    if live_preview:
+        return ecqs_live_preview(
+            qs_data_reader,
+            potentiostat,
+            method,
+            qs_data,
+            callback_data,
+            cache,
+            fig,
+            info_dic,
+            measurement_from,
+            measurement_to,
+            current_measurement,
+            t1_potential_step,
+        )
+
     save_detail_plots = bool(fitting_dic.get("fitting", False)) or "ec_fitting" in fitting_dic
     sub_path = os.path.join(qs_data_reader.file_path, qs_data_reader.file_name)
     if save_detail_plots:

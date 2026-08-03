@@ -104,6 +104,9 @@ class ECQS_cache():
         self.callback_artist = None
         self.ca_t1_artists = {}
         self.ca_t1_axes = {}
+        self.live_average_counts = {"up": {}, "down": {}}
+        self.live_average_potentials = {"up": {}, "down": {}}
+        self.live_average_measurement_count = 0
     def clear(self):
         self.last_measurement = 0
         self.axes = None
@@ -113,6 +116,9 @@ class ECQS_cache():
         self.callback_artist = None
         self.ca_t1_artists = {}
         self.ca_t1_axes = {}
+        self.live_average_counts = {"up": {}, "down": {}}
+        self.live_average_potentials = {"up": {}, "down": {}}
+        self.live_average_measurement_count = 0
         
 
         

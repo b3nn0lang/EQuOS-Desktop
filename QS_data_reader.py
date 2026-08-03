@@ -320,12 +320,7 @@ class QS_data_reader():
                 result["x_data"] = self._x_values_array.tolist()
                 reference_mean = summary["sum_ref"] / denom
                 value_mean = summary["sum_val"] / denom
-                contrast_mean = np.divide(
-                    value_mean,
-                    reference_mean,
-                    out=np.zeros_like(value_mean, dtype=float),
-                    where=reference_mean != 0,
-                )
+                contrast_mean = summary["sum_contr"] / denom
                 result["reference_mean"] = reference_mean.tolist()
                 result["value_mean"] = value_mean.tolist()
                 result["contrast_mean"] = contrast_mean.tolist()
@@ -362,12 +357,7 @@ class QS_data_reader():
             result["x_data"] = self._x_values_array[valid].tolist()
             reference_mean = summary["sum_ref"][valid] / elem_counts
             value_mean = summary["sum_val"][valid] / elem_counts
-            contrast_mean = np.divide(
-                value_mean,
-                reference_mean,
-                out=np.zeros_like(value_mean, dtype=float),
-                where=reference_mean != 0,
-            )
+            contrast_mean = summary["sum_contr"][valid] / elem_counts
             result["reference_mean"] = reference_mean.tolist()
             result["value_mean"] = value_mean.tolist()
             result["contrast_mean"] = contrast_mean.tolist()
@@ -618,7 +608,12 @@ class QS_data_reader():
         row_x_values = self._x_values_array[np.asarray(filtered_indices) % len(self._x_values_array)]
         channel_0 = signal_rows[:, :, 0]
         channel_1 = signal_rows[:, :, 1]
-        contrast_rows = np.divide(channel_1, channel_0)
+        contrast_rows = np.divide(
+            channel_1,
+            channel_0,
+            out=np.zeros_like(channel_1, dtype=float),
+            where=channel_0 != 0,
+        )
         unique_keys = list(dict.fromkeys(row_x_values.tolist()))
 
         for key in unique_keys:
@@ -635,7 +630,7 @@ class QS_data_reader():
             x_data.append(float(key))
             reference_mean.append(ref_mean)
             value_mean.append(val_mean)
-            contrast_mean.append(val_mean / ref_mean if ref_mean != 0 else 0.0)
+            contrast_mean.append(float(np.mean(contrast_group)))
             reference_std.append(float(np.std(ch0_group) / np.sqrt(n_group)))
             value_std.append(float(np.std(ch1_group) / np.sqrt(n_group)))
             contrast_std.append(float(np.std(contrast_group) / np.sqrt(n_group)))
@@ -713,12 +708,7 @@ class QS_data_reader():
         )
         reference_mean = np.mean(channel_0, axis=0)
         value_mean = np.mean(channel_1, axis=0)
-        contrast_mean = np.divide(
-            value_mean,
-            reference_mean,
-            out=np.zeros_like(value_mean, dtype=float),
-            where=reference_mean != 0,
-        )
+        contrast_mean = np.mean(contrast, axis=0)
         return {
             "x_data": self._x_values_array[:n_points].tolist(),
             "reference_mean": reference_mean.tolist(),
