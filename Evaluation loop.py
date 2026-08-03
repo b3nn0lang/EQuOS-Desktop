@@ -21,11 +21,11 @@ from tqdm import tqdm
 
 # --- Measurement to evaluate -------------------------------------------------
 # The folder that contains the saved ECQS_CV_* and ECQS_T1_* files.
-DATA_FOLDER = Path(r"/Volumes/tus3/001/Bucherlab/Surface_Electrochemistry_EPR/Data/NV/2026_07_29_K3K4FeCN6-250uM-1v1-KCl5mM")
+DATA_FOLDER = Path(r"G:\Bucherlab\Surface_Electrochemistry_EPR\Data\NV\2026_07_31_2J_K4FeCN6_500uM_KCl_5mM")
 
 # The shared part after ``ECQS_CV_`` / ``ECQS_T1_``, including an annotation
 # if there is one.  Example: "20260730143000_my_sample".
-MEASUREMENT_NAME = "20260729115303"
+MEASUREMENT_NAME = "20260731111708_measurement_2"
 
 
 # --- Hardcoded fit settings --------------------------------------------------
@@ -47,10 +47,10 @@ FITTING_DIC = {
 # Each cycle difference is the number of cycles in one consecutive evaluation
 # block.  For example, 50 evaluates cycles 1-50, 51-100, 101-150, and so on
 # until the measurement ends. The final block can be shorter.
-CYCLE_DIFFERENCES = [500]
+CYCLE_DIFFERENCES = [20,50,100,200]
 
 # Each cycle block is evaluated once for every T1 potential step below.
-T1_POTENTIAL_STEPS = [0.010, 0.02, 0.050, 0.100, 0.2]  # V; 0.010 V = 10 mV
+T1_POTENTIAL_STEPS = [0.02, 0.050, 0.100, 0.2]  # V; 0.010 V = 10 mV
 
 # Opening every generated figure is impractical for a sweep.  When enabled,
 # only the last successfully generated image is opened in Preview.

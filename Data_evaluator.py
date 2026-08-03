@@ -642,6 +642,22 @@ def ca_time_scale(seconds):
         return seconds / 1000, "Time [ks]"
     return seconds, "Time [s]"
 
+def ca_time_region(fitting_dic, available_end):
+    """Return a validated elapsed-time range; a zero end means all remaining data."""
+    available_end = max(0.0, float(available_end))
+    try:
+        time_from = min(max(0.0, float(fitting_dic.get("time_from", 0) or 0)), available_end)
+    except (TypeError, ValueError):
+        time_from = 0.0
+    try:
+        requested_to = float(fitting_dic.get("time_to", 0) or 0)
+    except (TypeError, ValueError):
+        requested_to = 0.0
+    time_to = available_end if requested_to <= 0 else min(max(0.0, requested_to), available_end)
+    if time_to < time_from:
+        time_from, time_to = time_to, time_from
+    return time_from, time_to
+
 def ca_callback_time(method, callback_data):
     current = callback_data.get("Current", [])
     callback_time = np.asarray(callback_data.get("Time", []), dtype=float)
@@ -969,6 +985,16 @@ def ec_data_displayer(potentiostat:object, fitting_dic:dict, fig: Figure | None 
             pass
         if data is not None:
             axes.plot(data["Relative_time"], data["Current"], color="tab:blue", label="Current")
+        available_end = 0.0
+        if data is not None and len(data):
+            available_end = max(available_end, float(np.nanmax(data["Relative_time"])))
+        callback_time, _ = ca_callback_xy(method, callback_data)
+        if len(callback_time):
+            available_end = max(available_end, float(np.nanmax(callback_time)))
+        time_from, time_to = ca_time_region(fitting_dic, available_end)
+        if time_to > time_from:
+            axes.set_xlim(time_from, time_to)
+        info_dic["Displayed time region"] = f"{time_from:g} - {time_to:g} s"
         axes.set_xlabel("Time [s]")
         axes.set_ylabel("Current [uA]")
         axes.grid(True, alpha=0.3)
@@ -1125,6 +1151,13 @@ def ca_t1_data_displayer(qs_data_reader, potentiostat, fitting_dic: dict, cache,
         time_bin_size,
         measurement_done,
     )
+    available_end = float(np.nanmax(ec_time)) if len(ec_time) else float(method.get("run_time", 0) or 0)
+    time_from, time_to = ca_time_region(fitting_dic, available_end)
+    selected = [i for i, value in enumerate(median_times) if time_from <= value <= time_to]
+    windows = [windows[i] for i in selected]
+    median_times = [median_times[i] for i in selected]
+    qs_counts = [qs_counts[i] for i in selected]
+    info_dic["Displayed time region"] = f"{time_from:g} - {time_to:g} s"
     completed_points = len(windows)
     measurement_progress = ca_t1_progress(method, ec_time, measurement_done)
     if cache.axes is None or cache.fig is None:
@@ -1227,6 +1260,10 @@ def ca_t1_data_displayer(qs_data_reader, potentiostat, fitting_dic: dict, cache,
         ax.autoscale_view()
         ax.grid(True, alpha=0.3)
         combined_legend(ax, loc="upper left")
+        scaled_from, _ = ca_time_scale(time_from)
+        scaled_to, _ = ca_time_scale(time_to)
+        if scaled_to > scaled_from:
+            ax.set_xlim(scaled_from, scaled_to)
     return fig, axes, measurement_done, measurement_progress, info_dic, kill_qupyt
     
 def ecqs_data_displayer(qs_data_reader, potentiostat, fitting_dic: dict, cache, fig: Figure | None = None):
@@ -1255,9 +1292,9 @@ def ecqs_data_displayer(qs_data_reader, potentiostat, fitting_dic: dict, cache, 
     try:
         t1_potential_step = abs(float(fitting_dic.get("t1_potential_step", getattr(potentiostat, "t1_potential_step", 0.01))))
     except (TypeError, ValueError):
-        t1_potential_step = 0.01
+        t1_potential_step = 0.05
     if not np.isfinite(t1_potential_step) or t1_potential_step <= 0:
-        t1_potential_step = 0.01
+        t1_potential_step = 0.05
         
     info_dic ={}
     info_dic["Included measurements"] = f"{measurement_from}-{measurement_to} of {measurement_count}"
@@ -1726,12 +1763,12 @@ def ecqs_data_displayer(qs_data_reader, potentiostat, fitting_dic: dict, cache, 
                     potentiostat.get_measurement_plots(measurement_from, measurement_to),
                     start=measurement_from,
                 )):
-                    fig_path = os.path.join(sub_path,f"EC_{i}.png")
-                    if os.path.exists(fig_path):
-                        pass
-                    else:
-                        figure.savefig(fig_path, dpi=300)
-                    plt.close(figure)
+                    try:
+                        fig_path = os.path.join(sub_path,f"EC_{i}.png")
+                        if not os.path.exists(fig_path):
+                            figure.savefig(fig_path, dpi=300)
+                    finally:
+                        plt.close(figure)
             except:
                 pass
             

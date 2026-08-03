@@ -11,6 +11,7 @@ import os
 import threading
 import pandas as pd
 from tqdm import tqdm
+from matplotlib.figure import Figure
 try:
     import zstandard  # force early load before pythonnet
 except ImportError:
@@ -142,18 +143,33 @@ class Potentiostat():
                 elif isinstance(measurement, dict) and "current_integral" in measurement:
                     integrals.append(float(measurement["current_integral"]))
             return integrals
-    def get_measurement_plots(self, measurement_from=1, measurement_to=None) ->list:
+    def get_measurement_plots(self, measurement_from=1, measurement_to=None):
         with self.result_lock:
-            measurements = self.measurement_results[0]
-        if measurements:
-            start, end = self.normalize_measurement_range(measurement_from, measurement_to)
-            measurements = measurements[start - 1:end]
-        plots = []
+            raw_df = self.measurement_results[1].copy()
+            count = len(self.measurement_results[0])
+        if raw_df.empty or count == 0:
+            return
+        start, end = self.normalize_measurement_range(measurement_from, measurement_to)
+        scan_indices = np.array_split(np.arange(len(raw_df)), count)
         print("Get EC Plots")
-        for measurement in tqdm(measurements):
-            figure = measurement.curves[0].plot()
-            plots.append(figure)
-        return plots
+        for measurement_number, indices in tqdm(
+            zip(range(start, end + 1), scan_indices[start - 1:end]),
+            total=end - start + 1,
+        ):
+            measurement_df = raw_df.iloc[indices]
+            figure = Figure(figsize=(6, 4), constrained_layout=True)
+            ax = figure.subplots()
+            if getattr(self.method, "id", "") == "ad" and "Time" in measurement_df.columns:
+                x_data = measurement_df["Time"] - float(measurement_df["Time"].iloc[0])
+                ax.set_xlabel("Time [s]")
+            else:
+                x_data = measurement_df["Potential"]
+                ax.set_xlabel("Potential [V]")
+            ax.plot(x_data, measurement_df["Current"], color="tab:blue")
+            ax.set_title(f"{self.measurement_name} {measurement_number}")
+            ax.set_ylabel("Current [uA]")
+            ax.grid(True, alpha=0.3)
+            yield figure
     def append_measurement_frame(self, results_df: pd.DataFrame, new_rows: pd.DataFrame) -> pd.DataFrame:
         if results_df.empty:
             return new_rows.reset_index(drop=True)

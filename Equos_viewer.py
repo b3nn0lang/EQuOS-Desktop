@@ -151,20 +151,26 @@ class App(tk.Tk):
 
         for method in ("CV", "SWV", "LSV", "CA"):
             frame = self.add_fitting_frame(method, f"{method} peak finding")
-            entries = self.layout_fitting_params(frame, ["Fitting:", "Prominence:", "Distance:"], [True, 1e-6, 10])
+            if method == "CA":
+                labels = ["Fitting:", "From time [s]:", "To time [s] (0 = last):"]
+                defaults = [False, 0, 0]
+            else:
+                labels = ["Fitting:", "Prominence:", "Distance:"]
+                defaults = [True, 1e-6, 10]
+            entries = self.layout_fitting_params(frame, labels, defaults)
             setattr(self, f"{method.lower()}_fitting_entries", entries)
             tk.Button(frame, text="Fit Data", command=getattr(self, f"{method.lower()}_fitting")).pack()
 
         ecqs_labels = ["Fitting:", "Prominence:", "Distance:", "Cutoff Rate", "Use Bounds:", "Max. Tries:", "Use R^2 Threshold:", "Min. R^2:", "From measurement N:", "To measurement N (0 = last):", "T1 Potential Step [mV]:"]
-        ecqs_defaults = [True, 1e-6, 10, 0.5, False, 5000, False, 0.95, 1, 0, 10]
+        ecqs_defaults = [True, 1e-6, 10, 0.5, False, 5000, False, 0.95, 1, 0, 50]
         for method in ("CV-T1", "SWV-T1", "LSV-T1"):
             frame = self.add_fitting_frame(method, f"{method} fitting")
             attr = method.lower().replace("-", "_") + "_fitting_entries"
             setattr(self, attr, self.layout_fitting_params(frame, ecqs_labels, ecqs_defaults))
             tk.Button(frame, text="Fit Data", command=getattr(self, method.lower().replace("-", "_") + "_fitting")).pack()
 
-        ca_t1_labels = ["Fitting:", "Cutoff Rate", "Use Bounds:", "Max. Tries:", "Use R^2 Threshold:", "Min. R^2:", "T1 averages/datapoint:", "Time bin size [s]:", "Save individual T1 plots:"]
-        ca_t1_defaults = [True, 0.5, False, 5000, False, 0.95, 300, 0, True]
+        ca_t1_labels = ["Fitting:", "Cutoff Rate", "Use Bounds:", "Max. Tries:", "Use R^2 Threshold:", "Min. R^2:", "T1 averages/datapoint:", "Time bin size [s]:", "Save individual T1 plots:", "From time [s]:", "To time [s] (0 = last):"]
+        ca_t1_defaults = [True, 0.5, False, 5000, False, 0.95, 300, 0, True, 0, 0]
         ca_t1_frame = self.add_fitting_frame("CA-T1", "CA-T1 fitting")
         self.ca_t1_fitting_entries = self.layout_fitting_params(ca_t1_frame, ca_t1_labels, ca_t1_defaults)
         tk.Button(ca_t1_frame, text="Fit Data", command=self.ca_t1_fitting).pack()
@@ -552,7 +558,7 @@ class App(tk.Tk):
 
     def ca_fitting(self):
         values = [self.get_fitting_value(item) for item in self.ca_fitting_entries]
-        self.eval_ec_figure({"fitting": values[0], "prominence": values[1], "distance": values[2]})
+        self.eval_ec_figure({"fitting": values[0], "time_from": values[1], "time_to": values[2]})
 
     def ecqs_fitting_dict(self, entries):
         values = [self.get_fitting_value(item) for item in entries]
@@ -592,6 +598,8 @@ class App(tk.Tk):
                 "t1_averages_per_datapoint": values[6],
                 "time_bin_size": values[7],
                 "save_detail_plots": values[8],
+                "time_from": values[9],
+                "time_to": values[10],
             }
         )
 
