@@ -454,9 +454,9 @@ def ecqs_t1_selected_points(plot_data, t1_potential_step: float) -> list[dict]:
     try:
         t1_potential_step = abs(float(t1_potential_step))
     except (TypeError, ValueError):
-        t1_potential_step = 0.01
+        t1_potential_step = 0.05
     if not np.isfinite(t1_potential_step) or t1_potential_step <= 0:
-        t1_potential_step = 0.01
+        t1_potential_step = 0.05
 
     ordered = plot_data.copy()
     ordered["_time_mid"] = ordered.apply(
@@ -1290,7 +1290,7 @@ def ecqs_data_displayer(qs_data_reader, potentiostat, fitting_dic: dict, cache, 
     except (TypeError, ValueError):
         r_square_threshold = 0.95
     try:
-        t1_potential_step = abs(float(fitting_dic.get("t1_potential_step", getattr(potentiostat, "t1_potential_step", 0.01))))
+        t1_potential_step = abs(float(fitting_dic.get("t1_potential_step", 0.05)))
     except (TypeError, ValueError):
         t1_potential_step = 0.05
     if not np.isfinite(t1_potential_step) or t1_potential_step <= 0:
