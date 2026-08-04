@@ -21,11 +21,11 @@ from tqdm import tqdm
 
 # --- Measurement to evaluate -------------------------------------------------
 # The folder that contains the saved ECQS_CV_* and ECQS_T1_* files.
-DATA_FOLDER = Path(r"G:\Bucherlab\Surface_Electrochemistry_EPR\Data\NV\2026_08_03_2J_K3K4FeCN6-500uM-KCl-5mM")
+DATA_FOLDER = Path(r"G:\Bucherlab\Surface_Electrochemistry_EPR\Data\NV\2026_08_04_2J_Ru3-1mM-KCl-50mM")
 
 # The shared part after ``ECQS_CV_`` / ``ECQS_T1_``, including an annotation
 # if there is one.  Example: "20260730143000_my_sample".
-MEASUREMENT_NAME = "20260803111254_500uM-each-KCL-5mM"
+MEASUREMENT_NAME = "20260804112312_Ru3-KCl"
 
 
 # --- Hardcoded fit settings --------------------------------------------------
