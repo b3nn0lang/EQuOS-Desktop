@@ -21,6 +21,9 @@ import numpy as np
 import gc
 from datetime import datetime, date, timedelta
 import uuid
+import sys
+import traceback
+import faulthandler
 
 max_db = 8 
 EC_T1_MEASUREMENT_STEP = 0.01
@@ -28,6 +31,10 @@ EC_T1_MEASUREMENT_STEP = 0.01
 class App(tk.Tk):
     def __init__(self):
         super().__init__()
+        self.error_log_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "Equos_gui_error.log")
+        self.fault_log_file = None
+        self.enable_fault_logging()
+        self.data_folder = None
         self.current_measurement_method = None
         self.esr = User_ESR_input()
         self.rabi = User_Rabi_input()
@@ -45,6 +52,59 @@ class App(tk.Tk):
         self.bind("<Configure>", self.on_resize)
         self.focus_force()
         self.after(0,self.layout)
+
+    def enable_fault_logging(self) -> None:
+        try:
+            self.fault_log_file = open(self.error_log_path, "a", encoding="utf-8")
+            faulthandler.enable(file=self.fault_log_file, all_threads=True)
+        except Exception:
+            self.fault_log_file = None
+
+    def log_exception(self, context: str, exc_type, exc_value, exc_traceback) -> None:
+        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        formatted = "".join(traceback.format_exception(exc_type, exc_value, exc_traceback))
+        try:
+            with open(self.error_log_path, "a", encoding="utf-8") as log_file:
+                log_file.write(f"\n[{timestamp}] {context}\n{formatted}\n")
+        except Exception:
+            print(f"[{timestamp}] Failed to write GUI error log.", file=sys.stderr)
+        print(formatted, file=sys.stderr)
+
+    def report_callback_exception(self, exc_type, exc_value, exc_traceback) -> None:
+        self.log_exception("Unhandled Tk callback exception", exc_type, exc_value, exc_traceback)
+        try:
+            if hasattr(self, "live_status_label"):
+                self.live_status_label.config(text=f"Error: {exc_value}. See Equos_gui_error.log.")
+        except Exception:
+            pass
+
+    def run_gui_action(self, action) -> None:
+        try:
+            action()
+        except Exception:
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            self.log_exception(f"GUI action failed: {getattr(action, '__name__', action)}", exc_type, exc_value, exc_traceback)
+            try:
+                if hasattr(self, "live_status_label"):
+                    self.live_status_label.config(text=f"Action failed: {exc_value}. See Equos_gui_error.log.")
+                self.set_measurement_busy(False)
+            except Exception:
+                pass
+
+    def run_measurement_action(self, action) -> None:
+        if not self.ensure_data_folder_selected():
+            return
+        self.run_gui_action(action)
+
+    def ensure_data_folder_selected(self) -> bool:
+        if self.data_folder and os.path.isdir(self.data_folder):
+            return True
+        try:
+            if hasattr(self, "live_status_label"):
+                self.live_status_label.config(text="Choose a data directory before starting a measurement.")
+        except Exception:
+            pass
+        return False
         
     def layout(self):
         self.title("EQuOS")
@@ -859,10 +919,10 @@ class App(tk.Tk):
     def layout_measurement_actions(self, frame, row: int, columnspan: int, start_text: str, start_command) -> None:
         action_frame = tk.Frame(frame)
         action_frame.grid(row=row, column=0, columnspan=columnspan, pady=10)
-        start_button = tk.Button(action_frame, text=start_text, command=start_command)
+        start_button = tk.Button(action_frame, text=start_text, command=lambda command=start_command: self.run_measurement_action(command))
         start_button.pack(side=tk.LEFT, padx=4)
         self.start_measurement_buttons.append(start_button)
-        tk.Button(action_frame, text="Add to Queue", command=self.add_current_measurement_to_queue).pack(side=tk.LEFT, padx=4)
+        tk.Button(action_frame, text="Add to Queue", command=lambda: self.run_gui_action(self.add_current_measurement_to_queue)).pack(side=tk.LEFT, padx=4)
     def get_current_measurement_entries(self):
         method = str(self.measurement_choice.get())
         entry_map = {
@@ -1308,7 +1368,12 @@ class App(tk.Tk):
         except:
             print("Qupyt never started")
         finally:
-            
+            try:
+                faulthandler.disable()
+                if self.fault_log_file is not None:
+                    self.fault_log_file.close()
+            except Exception:
+                pass
             self.destroy()
             
     def update_file_loader(self):
@@ -2089,4 +2154,16 @@ class App(tk.Tk):
             self.live_canvas = None
             if old_fig:
                 plt.close(old_fig)
-App().mainloop()
+
+def main() -> None:
+    app = App()
+    try:
+        app.mainloop()
+    except Exception:
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        app.log_exception("Fatal GUI exception", exc_type, exc_value, exc_traceback)
+        raise
+
+
+if __name__ == "__main__":
+    main()

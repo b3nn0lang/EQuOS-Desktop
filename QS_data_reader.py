@@ -154,11 +154,18 @@ class QS_data_reader():
     
     
     #reads the memmap .dat file   
+    def close_memmap(self, mm) -> None:
+        try:
+            mm._mmap.close()
+        except Exception:
+            pass
+
     def count_filled_rows(self, dat_file: str) -> int:
         mm = np.memmap(dat_file, dtype=float, mode="r", shape=self.data_array_dim)
         try:
             return int(np.count_nonzero(np.any(mm[:, :2] != 0, axis=1)))
         finally:
+            self.close_memmap(mm)
             del mm
 
     def build_dataframe(self, dat_file: str, filled_rows: int) -> None:
@@ -205,10 +212,8 @@ class QS_data_reader():
                 "count": 0,
                 "sum_ref": np.zeros(n_x, dtype=float),
                 "sum_val": np.zeros(n_x, dtype=float),
-                "sum_contr": np.zeros(n_x, dtype=float),
                 "sumsq_ref": np.zeros(n_x, dtype=float),
                 "sumsq_val": np.zeros(n_x, dtype=float),
-                "sumsq_contr": np.zeros(n_x, dtype=float),
                 "time_measure_sum": 0.0,
                 "time_measure_sumsq": 0.0,
                 "time_measure_count": 0,
@@ -221,10 +226,8 @@ class QS_data_reader():
             "count": np.zeros(n_x, dtype=int),
             "sum_ref": np.zeros(n_x, dtype=float),
             "sum_val": np.zeros(n_x, dtype=float),
-            "sum_contr": np.zeros(n_x, dtype=float),
             "sumsq_ref": np.zeros(n_x, dtype=float),
             "sumsq_val": np.zeros(n_x, dtype=float),
-            "sumsq_contr": np.zeros(n_x, dtype=float),
             "time_measure_sum": np.zeros(n_x, dtype=float),
             "time_measure_sumsq": np.zeros(n_x, dtype=float),
             "time_measure_count": np.zeros(n_x, dtype=int),
@@ -234,11 +237,36 @@ class QS_data_reader():
             "last_end": np.full(n_x, np.nan, dtype=float),
         }
 
+    def _contrast_from_means(self, value_mean, reference_mean):
+        return np.divide(
+            value_mean,
+            reference_mean,
+            out=np.zeros_like(value_mean, dtype=float),
+            where=reference_mean != 0,
+        )
+
+    def _contrast_std_from_means(self, value_mean, value_std, reference_mean, reference_std):
+        contrast_mean = self._contrast_from_means(value_mean, reference_mean)
+        rel_val = np.divide(
+            value_std,
+            value_mean,
+            out=np.zeros_like(value_std, dtype=float),
+            where=value_mean != 0,
+        )
+        rel_ref = np.divide(
+            reference_std,
+            reference_mean,
+            out=np.zeros_like(reference_std, dtype=float),
+            where=reference_mean != 0,
+        )
+        return np.abs(contrast_mean) * np.sqrt(rel_val ** 2 + rel_ref ** 2)
+
     def _update_live_summary(self, dat_file: str, row_start: int, row_stop: int) -> None:
         mm = np.memmap(dat_file, dtype=float, mode="r", shape=self.data_array_dim)
         try:
-            raw_rows = np.asarray(mm[row_start:row_stop])
+            raw_rows = np.array(mm[row_start:row_stop], copy=True)
         finally:
+            self.close_memmap(mm)
             del mm
 
         if len(raw_rows) == 0:
@@ -249,12 +277,6 @@ class QS_data_reader():
         signal_rows = raw_rows[:, 2:].reshape(-1, self.points_per_row, self.reference_channels)
         raw_channel_0 = signal_rows[:, :, 0]
         raw_channel_1 = signal_rows[:, :, 1]
-        contrast = np.divide(
-            raw_channel_1,
-            raw_channel_0,
-            out=np.zeros_like(raw_channel_1, dtype=float),
-            where=raw_channel_0 != 0,
-        )
         channel_0 = raw_channel_0 * LIGHT_LEVEL_TO_MV
         channel_1 = raw_channel_1 * LIGHT_LEVEL_TO_MV
         with self._summary_lock:
@@ -263,10 +285,8 @@ class QS_data_reader():
                 summary["count"] += len(raw_rows)
                 summary["sum_ref"] += np.sum(channel_0, axis=0)
                 summary["sum_val"] += np.sum(channel_1, axis=0)
-                summary["sum_contr"] += np.sum(contrast, axis=0)
                 summary["sumsq_ref"] += np.sum(channel_0 ** 2, axis=0)
                 summary["sumsq_val"] += np.sum(channel_1 ** 2, axis=0)
-                summary["sumsq_contr"] += np.sum(contrast ** 2, axis=0)
                 durations = t_end - t_begin
                 summary["time_measure_sum"] += float(np.sum(durations))
                 summary["time_measure_sumsq"] += float(np.sum(durations ** 2))
@@ -290,13 +310,10 @@ class QS_data_reader():
                     summary["count"][x_idx] += 1
                     ch0 = channel_0[local_i]
                     ch1 = channel_1[local_i]
-                    contr = contrast[local_i]
                     summary["sum_ref"][x_idx] += float(np.sum(ch0))
                     summary["sum_val"][x_idx] += float(np.sum(ch1))
-                    summary["sum_contr"][x_idx] += float(np.sum(contr))
                     summary["sumsq_ref"][x_idx] += float(np.sum(ch0 ** 2))
                     summary["sumsq_val"][x_idx] += float(np.sum(ch1 ** 2))
-                    summary["sumsq_contr"][x_idx] += float(np.sum(contr ** 2))
                     summary["time_measure_sum"][x_idx] += float(durations[local_i])
                     summary["time_measure_sumsq"][x_idx] += float(durations[local_i] ** 2)
                     summary["time_measure_count"][x_idx] += 1
@@ -320,16 +337,20 @@ class QS_data_reader():
                 result["x_data"] = self._x_values_array.tolist()
                 reference_mean = summary["sum_ref"] / denom
                 value_mean = summary["sum_val"] / denom
-                contrast_mean = summary["sum_contr"] / denom
+                contrast_mean = self._contrast_from_means(value_mean, reference_mean)
                 result["reference_mean"] = reference_mean.tolist()
                 result["value_mean"] = value_mean.tolist()
                 result["contrast_mean"] = contrast_mean.tolist()
                 result["reference_std"] = np.sqrt(np.maximum(summary["sumsq_ref"] / denom - (summary["sum_ref"] / denom) ** 2, 0.0)).tolist()
                 result["value_std"] = np.sqrt(np.maximum(summary["sumsq_val"] / denom - (summary["sum_val"] / denom) ** 2, 0.0)).tolist()
-                result["contrast_std"] = np.sqrt(np.maximum(summary["sumsq_contr"] / denom - (summary["sum_contr"] / denom) ** 2, 0.0)).tolist()
                 result["reference_std"] = (np.asarray(result["reference_std"]) / np.sqrt(denom)).tolist()
                 result["value_std"] = (np.asarray(result["value_std"]) / np.sqrt(denom)).tolist()
-                result["contrast_std"] = (np.asarray(result["contrast_std"]) / np.sqrt(denom)).tolist()
+                result["contrast_std"] = self._contrast_std_from_means(
+                    value_mean,
+                    np.asarray(result["value_std"], dtype=float),
+                    reference_mean,
+                    np.asarray(result["reference_std"], dtype=float),
+                ).tolist()
                 tm_count = int(summary["time_measure_count"])
                 ts_count = int(summary["time_save_count"])
                 tm_mean = summary["time_measure_sum"] / tm_count if tm_count else 0.0
@@ -357,16 +378,20 @@ class QS_data_reader():
             result["x_data"] = self._x_values_array[valid].tolist()
             reference_mean = summary["sum_ref"][valid] / elem_counts
             value_mean = summary["sum_val"][valid] / elem_counts
-            contrast_mean = summary["sum_contr"][valid] / elem_counts
+            contrast_mean = self._contrast_from_means(value_mean, reference_mean)
             result["reference_mean"] = reference_mean.tolist()
             result["value_mean"] = value_mean.tolist()
             result["contrast_mean"] = contrast_mean.tolist()
             ref_var = np.maximum(summary["sumsq_ref"][valid] / elem_counts - (summary["sum_ref"][valid] / elem_counts) ** 2, 0.0)
             val_var = np.maximum(summary["sumsq_val"][valid] / elem_counts - (summary["sum_val"][valid] / elem_counts) ** 2, 0.0)
-            contr_var = np.maximum(summary["sumsq_contr"][valid] / elem_counts - (summary["sum_contr"][valid] / elem_counts) ** 2, 0.0)
             result["reference_std"] = (np.sqrt(ref_var) / np.sqrt(counts[valid])).tolist()
             result["value_std"] = (np.sqrt(val_var) / np.sqrt(counts[valid])).tolist()
-            result["contrast_std"] = (np.sqrt(contr_var) / np.sqrt(counts[valid])).tolist()
+            result["contrast_std"] = self._contrast_std_from_means(
+                value_mean,
+                np.asarray(result["value_std"], dtype=float),
+                reference_mean,
+                np.asarray(result["reference_std"], dtype=float),
+            ).tolist()
             tm_count = summary["time_measure_count"][valid]
             ts_count = summary["time_save_count"][valid]
             tm_mean = np.divide(summary["time_measure_sum"][valid], tm_count, out=np.zeros_like(summary["time_measure_sum"][valid]), where=tm_count > 0)
@@ -401,6 +426,7 @@ class QS_data_reader():
             signal_rows = np.array(raw_rows[:, 2:], copy=True).reshape(-1, self.points_per_row, self.reference_channels)
             signal_rows *= LIGHT_LEVEL_TO_MV
         finally:
+            self.close_memmap(mm)
             del mm
         return t_begin, t_end, signal_rows
 
@@ -608,32 +634,32 @@ class QS_data_reader():
         row_x_values = self._x_values_array[np.asarray(filtered_indices) % len(self._x_values_array)]
         channel_0 = signal_rows[:, :, 0]
         channel_1 = signal_rows[:, :, 1]
-        contrast_rows = np.divide(
-            channel_1,
-            channel_0,
-            out=np.zeros_like(channel_1, dtype=float),
-            where=channel_0 != 0,
-        )
         unique_keys = list(dict.fromkeys(row_x_values.tolist()))
 
         for key in unique_keys:
             mask = row_x_values == key
             ch0_group = channel_0[mask]
             ch1_group = channel_1[mask]
-            contrast_group = contrast_rows[mask]
             t_begin_group = t_begin_rows[mask]
             t_end_group = t_end_rows[mask]
             n_group = int(np.count_nonzero(mask))
 
             ref_mean = float(np.mean(ch0_group))
             val_mean = float(np.mean(ch1_group))
+            ref_std = float(np.std(ch0_group) / np.sqrt(n_group))
+            val_std = float(np.std(ch1_group) / np.sqrt(n_group))
             x_data.append(float(key))
             reference_mean.append(ref_mean)
             value_mean.append(val_mean)
-            contrast_mean.append(float(np.mean(contrast_group)))
-            reference_std.append(float(np.std(ch0_group) / np.sqrt(n_group)))
-            value_std.append(float(np.std(ch1_group) / np.sqrt(n_group)))
-            contrast_std.append(float(np.std(contrast_group) / np.sqrt(n_group)))
+            contrast_mean.append(float(self._contrast_from_means(np.asarray(val_mean), np.asarray(ref_mean))))
+            reference_std.append(ref_std)
+            value_std.append(val_std)
+            contrast_std.append(float(self._contrast_std_from_means(
+                np.asarray(val_mean),
+                np.asarray(val_std),
+                np.asarray(ref_mean),
+                np.asarray(ref_std),
+            )))
             reference_length.append(n_group)
             value_length.append(n_group)
             contrast_length.append(n_group)
@@ -694,12 +720,6 @@ class QS_data_reader():
 
         channel_0 = signal_rows[:, :n_points, 0]
         channel_1 = signal_rows[:, :n_points, 1]
-        contrast = np.divide(
-            channel_1,
-            channel_0,
-            out=np.zeros_like(channel_1, dtype=float),
-            where=channel_0 != 0,
-        )
 
         n_rows = signal_rows.shape[0]
         t_measure_mean_i, t_measure_std_i, t_measure_len_i, t_save_mean_i, t_save_std_i, t_save_len_i = self._time_stats(
@@ -708,7 +728,10 @@ class QS_data_reader():
         )
         reference_mean = np.mean(channel_0, axis=0)
         value_mean = np.mean(channel_1, axis=0)
-        contrast_mean = np.mean(contrast, axis=0)
+        contrast_mean = self._contrast_from_means(value_mean, reference_mean)
+        reference_std = np.std(channel_0, axis=0) / np.sqrt(n_rows)
+        value_std = np.std(channel_1, axis=0) / np.sqrt(n_rows)
+        contrast_std = self._contrast_std_from_means(value_mean, value_std, reference_mean, reference_std)
         return {
             "x_data": self._x_values_array[:n_points].tolist(),
             "reference_mean": reference_mean.tolist(),
@@ -716,9 +739,9 @@ class QS_data_reader():
             "contrast_mean": contrast_mean.tolist(),
             "time_measure_mean": [t_measure_mean_i] * n_points,
             "time_save_mean": [t_save_mean_i] * n_points,
-            "reference_std": (np.std(channel_0, axis=0) / np.sqrt(n_rows)).tolist(),
-            "value_std": (np.std(channel_1, axis=0) / np.sqrt(n_rows)).tolist(),
-            "contrast_std": (np.std(contrast, axis=0) / np.sqrt(n_rows)).tolist(),
+            "reference_std": reference_std.tolist(),
+            "value_std": value_std.tolist(),
+            "contrast_std": contrast_std.tolist(),
             "time_measure_std": [t_measure_std_i] * n_points,
             "time_save_std": [t_save_std_i] * n_points,
             "reference_length": [n_rows] * n_points,

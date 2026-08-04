@@ -71,10 +71,18 @@ class Potentiostat():
         return method
     def get_callback_data(self) -> dict:
         with self.callback_data_lock:
-            return self.callback_data.copy()
+            return {
+                "Potential": list(self.callback_data.get("Potential", [])),
+                "Current": list(self.callback_data.get("Current", [])),
+                "Time": list(self.callback_data.get("Time", [])),
+            }
     def set_callback_data(self,data: list):
         with self.callback_data_lock:
-            self.callback_data = data
+            self.callback_data = {
+                "Potential": list(data.get("Potential", [])),
+                "Current": list(data.get("Current", [])),
+                "Time": list(data.get("Time", [])),
+            }
     def get_measurement_start_time(self) -> list:
         with self.start_time_lock:
             return self.measurement_start_time.copy()
@@ -83,10 +91,11 @@ class Potentiostat():
             self.measurement_start_time = time
     def set_measurement_results(self, result):
         with self.result_lock:
-            self.measurement_results = result
+            measurements, results_df = result
+            self.measurement_results = [list(measurements), results_df.copy()]
     def get_measurement_results(self):
         with self.result_lock:
-            return self.measurement_results.copy()
+            return [list(self.measurement_results[0]), self.measurement_results[1].copy()]
     def get_measurement_count(self) -> int:
         with self.result_lock:
             return len(self.measurement_results[0])
@@ -103,7 +112,7 @@ class Potentiostat():
     def get_measurement_dataframe(self, measurement_from=1, measurement_to=None) -> pd.DataFrame:
         """Select the contiguous CSV rows belonging to a range of finished scans."""
         with self.result_lock:
-            raw_df = self.measurement_results[1]
+            raw_df = self.measurement_results[1].copy()
             count = len(self.measurement_results[0])
         if raw_df.empty or count == 0:
             return raw_df.copy()
@@ -114,7 +123,7 @@ class Potentiostat():
 
     def get_measurement_integrals(self, measurement_from=1, measurement_to=None) -> list[float]:
         with self.result_lock:
-            measurements = self.measurement_results[0]
+            measurements = list(self.measurement_results[0])
         if not measurements:
             return []
         start, end = self.normalize_measurement_range(measurement_from, measurement_to)
@@ -167,24 +176,22 @@ class Potentiostat():
         start_time = time()
         if self.get_measurement_start_time() == []:
             self.set_measurement_start_time([start_time, data.index])
-        data_dict = self.get_callback_data()
         start = data.start  # index where new data begins
-        data_dict.setdefault("Potential", [])
-        data_dict.setdefault("Current", [])
-        data_dict.setdefault("Time", [])
 
         # append new data
         n = min(len(data.x_array[start:]), len(data.y_array[start:]))
         x_values = list(data.x_array[start:start+n])
         y_values = list(data.y_array[start:start+n])
-        if self.method is not None and getattr(self.method, "id", "") == "ad":
-            data_dict["Time"].extend(self.ca_callback_time_values(len(data_dict["Current"]), n))
-            data_dict["Potential"].extend([self.method.potential] * n)
-        else:
-            data_dict["Potential"].extend(x_values)
-        data_dict["Current"].extend(y_values)
-    
-        self.set_callback_data(data_dict)
+        with self.callback_data_lock:
+            self.callback_data.setdefault("Potential", [])
+            self.callback_data.setdefault("Current", [])
+            self.callback_data.setdefault("Time", [])
+            if self.method is not None and getattr(self.method, "id", "") == "ad":
+                self.callback_data["Time"].extend(self.ca_callback_time_values(len(self.callback_data["Current"]), n))
+                self.callback_data["Potential"].extend([self.method.potential] * n)
+            else:
+                self.callback_data["Potential"].extend(x_values)
+            self.callback_data["Current"].extend(y_values)
         
         #this method takes
     def evaluated_data(self, measurement_from=1, measurement_to=None) -> pd.DataFrame:
@@ -209,10 +216,11 @@ class Potentiostat():
         measurement_results= []
         session_measurements = []
         ctypes.windll.winmm.timeBeginPeriod(1)  
-        self.stop_measurement.clear()
-        self.potentiostat_disconnected.clear()
-        self.set_measurement_results([[], pd.DataFrame()])
-        with ps.connect() as manager:
+        try:
+            self.stop_measurement.clear()
+            self.potentiostat_disconnected.clear()
+            self.set_measurement_results([[], pd.DataFrame()])
+            with ps.connect() as manager:
                 for i in range(n_scans):
                         if self.stop_measurement.is_set():
                             break
@@ -233,56 +241,63 @@ class Potentiostat():
                         corrected_df = self.correct_time_stamps(self.get_measurement_start_time(), new_df)
                         results_df = self.append_measurement_frame(results_df, corrected_df)
                         self.set_measurement_results([measurement_results, results_df])
-                        self.save_measurement_to_file(session_measurements, file_name)
                         self.save_df_to_csv(results_df, file_name)
                 manager.disconnect()
                 self.potentiostat_disconnected.set()
-        print("Potentiostat disonnected")
-        self.set_callback_data( {"Potential": [],
-         "Current": [],
-         "Time": []})    
-        self.set_measurement_start_time([])        
-        ctypes.windll.winmm.timeEndPeriod(1)
-        print("EC Experiment finished")
+            if session_measurements:
+                self.save_measurement_to_file(session_measurements, file_name)
+            print("Potentiostat disonnected")
+        finally:
+            self.potentiostat_disconnected.set()
+            self.set_callback_data( {"Potential": [],
+             "Current": [],
+             "Time": []})
+            self.set_measurement_start_time([])
+            ctypes.windll.winmm.timeEndPeriod(1)
+            print("EC Experiment finished")
         
     def measure_until_done(self,file_name,method):
         results_df = pd.DataFrame()
         measurement_results= []
         session_measurements = []
         ctypes.windll.winmm.timeBeginPeriod(1)  
-        self.stop_measurement.clear()
-        self.potentiostat_disconnected.clear()
-        self.set_measurement_results([[], pd.DataFrame()])
-        with ps.connect() as manager:
-            while not self.stop_measurement.is_set():
-                self.set_measurement_start_time([])
-                self.set_callback_data( {"Potential": [],
-                 "Current": [],
-                 "Time": []})
-                print("Starting EC measurement")
-                measurement = manager.measure(method, callback=self.callback)
-                print("EC measurement finished")
-                session_measurements.append(measurement)
-                measurement_results.append({
-                    "current_integral": float(np.sum(np.abs(measurement.dataset.arrays(type='Current'))))
-                })
-                new_df = pd.DataFrame(measurement.dataset.to_dict())
-                if getattr(method, "id", "") == "ad" and "Potential" not in new_df.columns:
-                    new_df["Potential"] = method.potential
-                corrected_df = self.correct_time_stamps(self.get_measurement_start_time(), new_df)
-                results_df = self.append_measurement_frame(results_df, corrected_df)
-                self.set_measurement_results([measurement_results, results_df])
+        try:
+            self.stop_measurement.clear()
+            self.potentiostat_disconnected.clear()
+            self.set_measurement_results([[], pd.DataFrame()])
+            with ps.connect() as manager:
+                while not self.stop_measurement.is_set():
+                    self.set_measurement_start_time([])
+                    self.set_callback_data( {"Potential": [],
+                     "Current": [],
+                     "Time": []})
+                    print("Starting EC measurement")
+                    measurement = manager.measure(method, callback=self.callback)
+                    print("EC measurement finished")
+                    session_measurements.append(measurement)
+                    measurement_results.append({
+                        "current_integral": float(np.sum(np.abs(measurement.dataset.arrays(type='Current'))))
+                    })
+                    new_df = pd.DataFrame(measurement.dataset.to_dict())
+                    if getattr(method, "id", "") == "ad" and "Potential" not in new_df.columns:
+                        new_df["Potential"] = method.potential
+                    corrected_df = self.correct_time_stamps(self.get_measurement_start_time(), new_df)
+                    results_df = self.append_measurement_frame(results_df, corrected_df)
+                    self.set_measurement_results([measurement_results, results_df])
+                    self.save_df_to_csv(results_df, file_name)
+                manager.disconnect()
+                self.potentiostat_disconnected.set()
+            if session_measurements:
                 self.save_measurement_to_file(session_measurements, file_name)
-                self.save_df_to_csv(results_df, file_name)
-            manager.disconnect()    
+            print("Potentiostat disonnected")
+        finally:
             self.potentiostat_disconnected.set()
-        print("Potentiostat disonnected")
-        self.set_callback_data( {"Potential": [],
-         "Current": [],
-         "Time": []})    
-        self.set_measurement_start_time([])        
-        ctypes.windll.winmm.timeEndPeriod(1)
-        print("EC Experiment finished")
+            self.set_callback_data( {"Potential": [],
+             "Current": [],
+             "Time": []})
+            self.set_measurement_start_time([])
+            ctypes.windll.winmm.timeEndPeriod(1)
+            print("EC Experiment finished")
     def correct_time_stamps(self,start_time:list, df:pd.DataFrame) -> pd.DataFrame:
         time_to_correct = df["Time"][start_time[1]]
         true_start_time = start_time[0] - time_to_correct

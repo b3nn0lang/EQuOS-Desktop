@@ -1300,7 +1300,7 @@ def ecqs_qs_averages_from_indices(qs_data_reader, filtered_indices) -> int:
 
     return int(len(filtered_indices))
 
-def ecqs_qs_averages_in_window(qs_data_reader, time_begin, time_end, cutoff_rate, qs_t_begin=None, qs_t_end=None) -> int:
+def ecqs_qs_averages_in_window(qs_data_reader, time_begin, time_end, cutoff_rate=None, qs_t_begin=None, qs_t_end=None) -> int:
     time_begin = np.atleast_1d(time_begin).astype(float)
     time_end = np.atleast_1d(time_end).astype(float)
     if len(time_begin) == 0 or len(time_end) == 0:
@@ -1309,19 +1309,27 @@ def ecqs_qs_averages_in_window(qs_data_reader, time_begin, time_end, cutoff_rate
     time_frames = np.column_stack((time_begin, time_end))
     if qs_t_begin is None or qs_t_end is None:
         try:
-            filtered_indices = qs_data_reader.filter_by_time_stamps(cutoff_rate=cutoff_rate, t_lim=time_frames)
+            qs_t_begin, qs_t_end, _ = qs_data_reader._load_raw_data()
         except Exception:
             return 0
-        return ecqs_qs_averages_from_indices(qs_data_reader, filtered_indices)
 
-    measurement_time = qs_t_end - qs_t_begin
+    if len(qs_t_begin) == 0:
+        return 0
+    if cutoff_rate is not None:
+        measurement_time = qs_t_end - qs_t_begin
+        mask = np.zeros(len(qs_t_begin), dtype=bool)
+        for t_min, t_max in time_frames:
+            outside = (qs_t_end < t_min) | (qs_t_begin > t_max)
+            overlap = np.minimum(qs_t_end, t_max) - np.maximum(qs_t_begin, t_min)
+            overlap = np.where(outside, 0.0, overlap)
+            cutoff = np.divide(overlap, measurement_time, out=np.zeros_like(overlap), where=measurement_time > 0)
+            mask |= cutoff >= cutoff_rate
+        return ecqs_qs_averages_from_indices(qs_data_reader, np.flatnonzero(mask))
+
+    qs_time_mid = (qs_t_begin + qs_t_end) / 2
     mask = np.zeros(len(qs_t_begin), dtype=bool)
     for t_min, t_max in time_frames:
-        outside = (qs_t_end < t_min) | (qs_t_begin > t_max)
-        overlap = np.minimum(qs_t_end, t_max) - np.maximum(qs_t_begin, t_min)
-        overlap = np.where(outside, 0.0, overlap)
-        cutoff = np.divide(overlap, measurement_time, out=np.zeros_like(overlap), where=measurement_time > 0)
-        mask |= cutoff >= cutoff_rate
+        mask |= (qs_time_mid >= t_min) & (qs_time_mid < t_max)
     return ecqs_qs_averages_from_indices(qs_data_reader, np.flatnonzero(mask))
 
 def ecqs_live_average_data(qs_data_reader, ec_data, t1_potential_step, cutoff_rate):
@@ -1347,7 +1355,7 @@ def ecqs_live_average_data(qs_data_reader, ec_data, t1_potential_step, cutoff_ra
                 qs_data_reader,
                 point["Time_begin"],
                 point["Time_end"],
-                cutoff_rate,
+                None,
                 qs_t_begin,
                 qs_t_end,
             )
@@ -2093,6 +2101,40 @@ def ecqs_data_displayer(qs_data_reader, potentiostat, fitting_dic: dict, cache, 
         print("Evaluating Contrast")
         contrast_time_list = contrast_scale_by_time_bins(qs_data_reader, time_lists)
         ax_contrast_time.plot(x_list[1:], contrast_time_list, label="Contrast scale", color="tab:purple")
+        try:
+            print("Evaluating T1 time over time")
+            t1_time_values, t1_tau_values, t1_points_by_bin = t1_time_by_average_bins(
+                qs_data_reader,
+                averages_per_bin=3000,
+                fitting_dic=fitting_dic,
+                maxfev=maxfev,
+            )
+            t1_time_values, t1_tau_values, t1_points_by_bin = trim_t1_time_bins(
+                t1_time_values,
+                t1_tau_values,
+                t1_points_by_bin,
+                time_min,
+                time_max,
+            )
+            if len(t1_time_values) > 0 and time_max > time_min:
+                t1_x_values = measurement_from + (
+                    (t1_time_values - time_min) / (time_max - time_min)
+                ) * (measurement_to - measurement_from)
+                ax_t1_time = axes[1,0].twinx()
+                ax_t1_time.spines["right"].set_position(("outward", 120))
+                ax_t1_time.set_ylabel("T1 Time [ms]")
+                plot_line_with_missing_fit_markers(
+                    ax_t1_time,
+                    t1_x_values,
+                    t1_tau_values,
+                    "tab:green",
+                    "T1 time / 3000 avg",
+                )
+                set_t1_axis_from_zero(ax_t1_time)
+                info_dic["T1 over time bin"] = "3000 averages"
+                info_dic["T1 over time bins"] = len(t1_points_by_bin)
+        except Exception as e:
+            print(f"Evaluating T1 time over time failed: {e}")
         del ll_list,contrast_time_list,x_list
         
         if not points_up and not points_down:
@@ -2159,6 +2201,82 @@ def safe_min(arr):
     if len(arr) == 0:
         return 0
     return np.min(arr)
+
+def fit_t1_tau_from_summary(qs_tau, qs_contrast, fitting_dic, maxfev):
+    try:
+        qs_tau = np.atleast_1d(np.asarray(qs_tau, dtype=float))
+        qs_contrast, t1_cutoff_idx = normalize_averaged_decay(qs_contrast, return_cutoff=True)
+        qs_tau = qs_tau[t1_cutoff_idx:]
+    except (TypeError, ValueError):
+        return np.nan
+    if len(qs_contrast) < 3 or len(qs_tau) < 3:
+        return np.nan
+    try:
+        min_tau = positive_tau_lower_bound(qs_tau)
+        p0 = [qs_tau[-1] / 3, 1.0]
+        if fitting_dic.get("use_bounds") == True:
+            bounds = ([min_tau, 0.1], [qs_tau[-1] * 10, 3.0])
+        else:
+            bounds = (-np.inf, np.inf)
+        popt, _ = curve_fit(stretched_exp, qs_tau, qs_contrast, p0=p0, bounds=bounds, maxfev=maxfev)
+        tau = float(popt[0])
+        if tau < 0 or not np.isfinite(tau):
+            return np.nan
+        return tau
+    except Exception:
+        return np.nan
+
+def t1_time_by_average_bins(qs_data_reader, averages_per_bin=3000, fitting_dic=None, maxfev=50):
+    fitting_dic = fitting_dic or {}
+    averages_per_bin = max(int(averages_per_bin), 1)
+    t_begin, t_end, signal_rows = qs_data_reader._load_raw_data()
+    if len(t_begin) == 0:
+        return np.array([], dtype=float), np.array([], dtype=float), []
+
+    rows_per_average = 1
+    if qs_data_reader.averaging_mode == "sum":
+        rows_per_average = max(len(qs_data_reader._x_values_array), 1)
+    rows_per_bin = averages_per_bin * rows_per_average
+    time_values = []
+    tau_values = []
+    averages_by_bin = []
+    for start in range(0, len(t_begin), rows_per_bin):
+        stop = min(start + rows_per_bin, len(t_begin))
+        if stop <= start:
+            continue
+        row_indices = np.arange(start, stop, dtype=int)
+        t_begin_rows = t_begin[row_indices]
+        t_end_rows = t_end[row_indices]
+        signal_rows_bin = signal_rows[row_indices]
+        if qs_data_reader.averaging_mode == "sum":
+            summary = qs_data_reader.evaluate_sum_mode(row_indices, t_begin_rows, t_end_rows, signal_rows_bin)
+        else:
+            summary = qs_data_reader.evaluate_spread_mode(t_begin_rows, t_end_rows, signal_rows_bin)
+        tau = fit_t1_tau_from_summary(summary["x_data"], summary["contrast_mean"], fitting_dic, maxfev)
+        time_values.append(float(np.nanmean((t_begin_rows + t_end_rows) / 2)))
+        tau_values.append(tau)
+        averages_by_bin.append((stop - start) / rows_per_average)
+
+    return np.asarray(time_values, dtype=float), np.asarray(tau_values, dtype=float), averages_by_bin
+
+def trim_t1_time_bins(time_values, tau_values, averages_by_bin, time_min, time_max):
+    """Keep T1 bins whose timestamps fall within the displayed EC interval."""
+    time_values = np.asarray(time_values, dtype=float)
+    tau_values = np.asarray(tau_values, dtype=float)
+    averages_by_bin = list(averages_by_bin)
+    if len(time_values) != len(tau_values) or len(time_values) != len(averages_by_bin):
+        raise ValueError("T1 time, fit, and average-bin data must have the same length")
+
+    in_ec_range = (
+        np.isfinite(time_values)
+        & (time_values >= float(time_min))
+        & (time_values <= float(time_max))
+    )
+    return (
+        time_values[in_ec_range],
+        tau_values[in_ec_range],
+        [count for count, keep in zip(averages_by_bin, in_ec_range) if keep],
+    )
 
 def lightlevel_by_time_bins(qs_data_reader, time_edges):
     t_begin, t_end, signal_rows = qs_data_reader._load_raw_data()
