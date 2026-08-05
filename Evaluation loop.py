@@ -14,6 +14,7 @@ import sys
 from matplotlib.figure import Figure
 
 from Data_evaluator import ecqs_data_displayer
+from Plot_export import export_figure_data_csv
 from Equos_logic import ECQS_cache
 from Potentiostat import Potentiostat
 from QS_data_reader import QS_data_reader
@@ -25,7 +26,7 @@ DATA_FOLDER = Path(r"G:\Bucherlab\Surface_Electrochemistry_EPR\Data\NV\2026_08_0
 
 # The shared part after ``ECQS_CV_`` / ``ECQS_T1_``, including an annotation
 # if there is one.  Example: "20260730143000_my_sample".
-MEASUREMENT_NAME = "20260804112312_Ru3-KCl"
+MEASUREMENT_NAME = "20260804134206"
 
 
 # --- Hardcoded fit settings --------------------------------------------------
@@ -159,6 +160,7 @@ def run_evaluation_sweep(
             fig=output_figure,
         )
         fig.savefig(image_path, dpi=200, bbox_inches="tight")
+        export_figure_data_csv(fig, image_path.with_suffix(".csv"))
         print(f"Saved: {image_path.name}")
         for key, value in info.items():
             print(f"  {key}: {value}")

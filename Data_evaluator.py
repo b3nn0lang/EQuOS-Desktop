@@ -15,6 +15,7 @@ import os
 import glob
 import warnings
 from tqdm import tqdm
+from Plot_export import export_figure_data_csv
 
 def qs_data_displayer(qs_data_reader: object, fitting_parameters: dict, fig: Figure | None = None) -> tuple[object, object, bool]:
     data = qs_data_reader.evaluate_qs_data()
@@ -384,15 +385,17 @@ def save_ecqs_t1_detail_plot(qs_tau, qs_contrast, potential, color, direction, s
     label = f"{potential:.3f}V"
     name = f"QS_{direction}_{potential:.3f}V.png"
     fig_path = os.path.join(sub_path, name)
+    fig = Figure(figsize=(6, 4), constrained_layout=True)
+    ax = fig.subplots()
 
     if len(qs_tau) and len(qs_contrast):
-        plt.plot(qs_tau, qs_contrast, marker="x", color=color, label=label)
+        ax.plot(qs_tau, qs_contrast, marker="x", color=color, label=label)
         all_ax.plot(qs_tau, qs_contrast, marker="x", label=label)
     else:
-        plt.plot([], [], marker="x", color=color, label=f"{label}: no T1 data")
+        ax.plot([], [], marker="x", color=color, label=f"{label}: no T1 data")
 
     if y_fit is not None and tau is not None and r_square is not None:
-        plt.plot(
+        ax.plot(
             qs_tau,
             y_fit,
             linestyle="--",
@@ -400,16 +403,19 @@ def save_ecqs_t1_detail_plot(qs_tau, qs_contrast, potential, color, direction, s
             label=f"fit: {tau:.3f} ms, R^2 = {r_square:.3f}",
         )
     elif fit_error:
-        plt.plot([], [], color=color, label=f"fit failed: {fit_error}")
+        ax.plot([], [], color=color, label=f"fit failed: {fit_error}")
 
-    plt.xlabel("tau spacing")
-    plt.ylabel("normalized contrast")
-    plt.legend()
-    plt.savefig(fig_path, dpi=300)
-    plt.close()
+    ax.set_xlabel("tau spacing")
+    ax.set_ylabel("normalized contrast")
+    ax.legend()
+    fig.savefig(fig_path, dpi=300)
+    export_figure_data_csv(fig, os.path.splitext(fig_path)[0] + ".csv")
+    plt.close(fig)
 
 def clear_ca_t1_detail_plots(sub_path):
-    for old_file in glob.glob(os.path.join(sub_path, "CA_T1_point_*.png")):
+    old_files = glob.glob(os.path.join(sub_path, "CA_T1_point_*.png"))
+    old_files += glob.glob(os.path.join(sub_path, "CA_T1_point_*.csv"))
+    for old_file in old_files:
         try:
             os.remove(old_file)
         except OSError:
@@ -446,6 +452,7 @@ def save_ca_t1_detail_plot(point_number, qs_tau, qs_contrast, sub_path, y_fit=No
     ax.set_ylabel("normalized contrast")
     ax.legend()
     fig.savefig(fig_path, dpi=300)
+    export_figure_data_csv(fig, os.path.splitext(fig_path)[0] + ".csv")
     plt.close(fig)
 
 def ecqs_t1_selected_points(plot_data, t1_potential_step: float) -> list[dict]:
@@ -1767,6 +1774,7 @@ def ecqs_data_displayer(qs_data_reader, potentiostat, fitting_dic: dict, cache, 
                         fig_path = os.path.join(sub_path,f"EC_{i}.png")
                         if not os.path.exists(fig_path):
                             figure.savefig(fig_path, dpi=300)
+                        export_figure_data_csv(figure, os.path.splitext(fig_path)[0] + ".csv")
                     finally:
                         plt.close(figure)
             except:
@@ -1780,6 +1788,8 @@ def ecqs_data_displayer(qs_data_reader, potentiostat, fitting_dic: dict, cache, 
             all_down_ax.legend(loc="lower right")
             all_up_fig.savefig(os.path.join(sub_path, up_fig_name), dpi=300)
             all_down_fig.savefig(os.path.join(sub_path, down_fig_name), dpi=300)
+            export_figure_data_csv(all_up_fig, os.path.join(sub_path, "QS_Up_all.csv"))
+            export_figure_data_csv(all_down_fig, os.path.join(sub_path, "QS_Down_all.csv"))
         plt.close(all_up_fig)
         plt.close(all_down_fig)
         #Code lightlevel over time here

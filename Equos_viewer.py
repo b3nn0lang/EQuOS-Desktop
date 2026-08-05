@@ -15,6 +15,7 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.figure import Figure
 
 from Data_evaluator import ec_data_displayer, ecqs_data_displayer, qs_data_displayer
+from Plot_export import export_figure_data_csv
 from Equos_logic import ECQS_cache, parse_file_folder
 from Potentiostat import Potentiostat
 from QS_data_reader import QS_data_reader
@@ -460,6 +461,7 @@ class App(tk.Tk):
         try:
             os.makedirs(plot_folder, exist_ok=True)
             self.save_figure_without_titles(os.path.join(plot_folder, "final_figure.png"))
+            export_figure_data_csv(self.fig, os.path.join(plot_folder, "plotted_data.csv"))
             for index, axis in enumerate(self.fig.axes, start=1):
                 if not axis.get_visible():
                     continue
