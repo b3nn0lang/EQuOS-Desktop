@@ -22,7 +22,7 @@ from tqdm import tqdm
 
 # --- Measurement to evaluate -------------------------------------------------
 # The folder that contains the saved ECQS_CV_* and ECQS_T1_* files.
-DATA_FOLDER = Path(r"G:\Bucherlab\Surface_Electrochemistry_EPR\Data\NV\2026_08_04_2J_Ru3-1mM-KCl-50mM")
+DATA_FOLDER = Path(r"G:\Bucherlab\Surface_Electrochemistry_EPR\Data\NV\2026_08_10_2J_Ru3-1mM-KCl-50mM")
 
 # The shared part after ``ECQS_CV_`` / ``ECQS_T1_``, including an annotation
 # if there is one.  Example: "20260730143000_my_sample".
