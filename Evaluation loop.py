@@ -45,10 +45,13 @@ FITTING_DIC = {
 
 
 # --- Evaluation sweep --------------------------------------------------------
-# Each cycle difference is the number of cycles in one consecutive evaluation
-# block.  For example, 50 evaluates cycles 1-50, 51-100, 101-150, and so on
-# until the measurement ends. The final block can be shorter.
-CYCLE_DIFFERENCES = [20,50,100,200]
+# Each entry defines ``[cycle_difference, cycle_step]``: the number of cycles
+# included in an evaluation and the number of cycles by which its start is
+# advanced.  For example, ``[50, 10]`` evaluates 1-50, 11-60, 21-70, etc.
+# until the measurement ends.  The final block can be shorter.  A single
+# integer remains supported as a shorthand for non-overlapping blocks, e.g.
+# ``50`` is equivalent to ``[50, 50]``.
+CYCLE_DIFFERENCES = [[20, 20], [50, 50], [100, 100], [200, 200]]
 
 # Each cycle block is evaluated once for every T1 potential step below.
 T1_POTENTIAL_STEPS = [0.02, 0.050, 0.100, 0.2]  # V; 0.010 V = 10 mV
@@ -98,28 +101,27 @@ def run_evaluation_sweep(
     potentiostat: Potentiostat,
     evaluation_folder: Path,
 ) -> Path | None:
-    """Evaluate consecutive blocks for every configured difference and T1 step."""
+    """Evaluate configured cycle windows for every cycle/step setting and T1 step."""
     if not CYCLE_DIFFERENCES or not T1_POTENTIAL_STEPS:
         raise ValueError("CYCLE_DIFFERENCES and T1_POTENTIAL_STEPS must not be empty.")
-    if any(int(cycle_difference) < 1 for cycle_difference in CYCLE_DIFFERENCES):
-        raise ValueError("Every value in CYCLE_DIFFERENCES must be positive.")
+
+    cycle_windows = [normalise_cycle_window(configured_window) for configured_window in CYCLE_DIFFERENCES]
 
     measurement_count = potentiostat.get_measurement_count()
     selections = [
-        (cycle_difference, cycle_start, min(cycle_start + cycle_difference - 1, measurement_count), t1_step)
-        for configured_difference in CYCLE_DIFFERENCES
-        for cycle_difference in [int(configured_difference)]
-        for cycle_start in range(1, measurement_count + 1, cycle_difference)
+        (cycle_difference, cycle_step, cycle_start, min(cycle_start + cycle_difference - 1, measurement_count), t1_step)
+        for cycle_difference, cycle_step in cycle_windows
+        for cycle_start in range(1, measurement_count + 1, cycle_step)
         for t1_step in T1_POTENTIAL_STEPS
     ]
     last_image_path = None
     requested_runs = len(selections)
     print(
-        f"Starting {requested_runs} evaluations for cycle differences "
-        f"{CYCLE_DIFFERENCES}; measurement has {measurement_count} cycles."
+        f"Starting {requested_runs} evaluations for cycle windows "
+        f"{cycle_windows}; measurement has {measurement_count} cycles."
     )
 
-    for cycle_difference, cycle_start, cycle_end, t1_step in tqdm(
+    for cycle_difference, cycle_step, cycle_start, cycle_end, t1_step in tqdm(
         selections,
         total=requested_runs,
         desc="Evaluating CV-T1 selections",
@@ -145,11 +147,13 @@ def run_evaluation_sweep(
             cycle_start,
             cycle_end,
             cycle_difference,
+            cycle_step,
             t1_step,
         )
         print(
             f"Evaluating cycles {cycle_start}-{cycle_end}, "
-            f"cycle difference {cycle_difference}, T1 step {t1_step * 1000:g} mV"
+            f"cycle difference {cycle_difference}, cycle step {cycle_step}, "
+            f"T1 step {t1_step * 1000:g} mV"
         )
         output_figure = Figure(figsize=(12, 8), constrained_layout=True)
         fig, _, _, _, info, _ = ecqs_data_displayer(
@@ -169,10 +173,30 @@ def run_evaluation_sweep(
     return last_image_path
 
 
+def normalise_cycle_window(configured_window: int | list[int] | tuple[int, int]) -> tuple[int, int]:
+    """Return a validated ``(cycle_difference, cycle_step)`` pair."""
+    if isinstance(configured_window, (list, tuple)):
+        if len(configured_window) != 2:
+            raise ValueError(
+                "Each list/tuple in CYCLE_DIFFERENCES must be "
+                "[cycle_difference, cycle_step]."
+            )
+        cycle_difference, cycle_step = configured_window
+    else:
+        cycle_difference = cycle_step = configured_window
+
+    cycle_difference = int(cycle_difference)
+    cycle_step = int(cycle_step)
+    if cycle_difference < 1 or cycle_step < 1:
+        raise ValueError("Cycle difference and cycle step must both be positive.")
+    return cycle_difference, cycle_step
+
+
 def selection_image_name(
     cycle_start: int,
     cycle_end: int,
     cycle_difference: int,
+    cycle_step: int,
     t1_step: float,
 ) -> str:
     """Return a filename that records every parameter used for one evaluation."""
@@ -181,6 +205,7 @@ def selection_image_name(
     return (
         f"cycles_{cycle_start:03d}-{cycle_end:03d}"
         f"_difference_{cycle_difference:03d}"
+        f"_cycle-step_{cycle_step:03d}"
         f"_t1-step_{t1_step_label}mV.png"
     )
 
