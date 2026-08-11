@@ -4,8 +4,7 @@
     <option name="autoReloadType" value="ALL" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="7f911216-e681-405e-8252-ad6017b9785b" name="Changes" comment="cv standard changed">
-      <change beforePath="$PROJECT_DIR$/.idea/EQuOS.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/EQuOS.iml" afterDir="false" />
+    <list default="true" id="7f911216-e681-405e-8252-ad6017b9785b" name="Changes" comment="plot export">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Evaluation loop.py" beforeDir="false" afterPath="$PROJECT_DIR$/Evaluation loop.py" afterDir="false" />
     </list>
@@ -44,23 +43,23 @@
   </component>
   <component name="NextEditCompletionFeaturesState">
     <decayedCancelled>
-      <entry key="MS100" value="1.5601580789480058" />
-      <entry key="MS500" value="4.685029805227005" />
-      <entry key="S2" value="10.20119826324682" />
-      <entry key="S5" value="14.565664919722916" />
-      <entry key="S10" value="17.185572919200755" />
-      <entry key="S30" value="19.55607551223235" />
-      <entry key="S60" value="20.25330349223028" />
-      <entry key="M2" value="20.62522797482135" />
-      <entry key="M5" value="25.188972713943258" />
-      <entry key="M10" value="75.71136110881852" />
-      <entry key="M15" value="155.02301368317782" />
-      <entry key="M30" value="360.0845359953789" />
-      <entry key="H1" value="568.5545723787471" />
-      <entry key="H2" value="720.1914492442316" />
-      <entry key="H4" value="819.7309033641553" />
-      <entry key="D1" value="1659.9640030231803" />
-      <entry key="W1" value="4987.002231191566" />
+      <entry key="MS100" value="1.4322977538160562" />
+      <entry key="MS500" value="3.007840162744249" />
+      <entry key="S2" value="5.8593754081233955" />
+      <entry key="S5" value="12.648946799841774" />
+      <entry key="S10" value="25.26465334214215" />
+      <entry key="S30" value="55.31607165330241" />
+      <entry key="S60" value="72.62650346369608" />
+      <entry key="M2" value="84.66426290892706" />
+      <entry key="M5" value="97.17298535044311" />
+      <entry key="M10" value="147.68233060187214" />
+      <entry key="M15" value="225.6556370479941" />
+      <entry key="M30" value="430.10216360793197" />
+      <entry key="H1" value="640.6075795230425" />
+      <entry key="H2" value="794.8214907233101" />
+      <entry key="H4" value="896.2513839380345" />
+      <entry key="D1" value="1738.1397917986242" />
+      <entry key="W1" value="5065.652229504989" />
     </decayedCancelled>
     <decayedSelected>
       <entry key="MS100" value="0.0" />
@@ -73,32 +72,32 @@
       <entry key="M2" value="0.0" />
       <entry key="M5" value="0.0" />
       <entry key="M10" value="0.0" />
-      <entry key="M15" value="2.644704885537248E-228" />
-      <entry key="M30" value="1.6262548648774603E-114" />
-      <entry key="H1" value="1.275246981912693E-57" />
-      <entry key="H2" value="3.5710600413779147E-29" />
-      <entry key="H4" value="5.975834704354721E-15" />
-      <entry key="D1" value="0.004259903515520966" />
-      <entry key="W1" value="0.45850367738809444" />
+      <entry key="M15" value="2.5235108698949186E-228" />
+      <entry key="M30" value="1.5885562218238523E-114" />
+      <entry key="H1" value="1.260379395985124E-57" />
+      <entry key="H2" value="3.550182243188414E-29" />
+      <entry key="H4" value="5.958340577029408E-15" />
+      <entry key="D1" value="0.004257822513078822" />
+      <entry key="W1" value="0.45847167307187864" />
     </decayedSelected>
     <decayedShown>
-      <entry key="MS100" value="1.4791674062067546" />
-      <entry key="MS500" value="4.634670249449793" />
-      <entry key="S2" value="10.171161231562596" />
-      <entry key="S5" value="14.547607608198653" />
-      <entry key="S10" value="17.17467768996306" />
-      <entry key="S30" value="19.55187366992762" />
-      <entry key="S60" value="20.251118219578462" />
-      <entry key="M2" value="20.624112654076498" />
-      <entry key="M5" value="25.18839018914716" />
-      <entry key="M10" value="75.71039062730415" />
-      <entry key="M15" value="155.02168804727347" />
-      <entry key="M30" value="360.08301424166774" />
-      <entry key="H1" value="568.553378322686" />
-      <entry key="H2" value="720.1906948935804" />
-      <entry key="H4" value="819.730474210135" />
-      <entry key="D1" value="1659.968119853164" />
-      <entry key="W1" value="4987.4606595935375" />
+      <entry key="MS100" value="1.3586630900558843" />
+      <entry key="MS500" value="2.979058208476488" />
+      <entry key="S2" value="5.845906311555901" />
+      <entry key="S5" value="12.637544737957764" />
+      <entry key="S10" value="25.25302875003824" />
+      <entry key="S30" value="55.30660492647044" />
+      <entry key="S60" value="72.6199061863026" />
+      <entry key="M2" value="84.6602781284832" />
+      <entry key="M5" value="97.17107237746812" />
+      <entry key="M10" value="147.68069943260602" />
+      <entry key="M15" value="225.6538824305254" />
+      <entry key="M30" value="430.1004295680175" />
+      <entry key="H1" value="640.6062749243217" />
+      <entry key="H2" value="794.8206783794122" />
+      <entry key="H4" value="896.2509247955799" />
+      <entry key="D1" value="1738.1439014040461" />
+      <entry key="W1" value="5066.110625162966" />
     </decayedShown>
   </component>
   <component name="ProjectColorInfo">{
@@ -198,7 +197,7 @@
       <workItem from="1785763576501" duration="2956000" />
       <workItem from="1785842325778" duration="1451000" />
       <workItem from="1785851668189" duration="6780000" />
-      <workItem from="1786438986361" duration="326000" />
+      <workItem from="1786438986361" duration="635000" />
     </task>
     <task id="LOCAL-00001" summary="Changed the voltage to mV for LL.&#10;Also made the ECQS t1 UI better by showing missing fits">
       <option name="closed" value="true" />
@@ -240,7 +239,15 @@
       <option name="project" value="LOCAL" />
       <updated>1785765880463</updated>
     </task>
-    <option name="localTasksCounter" value="6" />
+    <task id="LOCAL-00006" summary="plot export">
+      <option name="closed" value="true" />
+      <created>1786439333198</created>
+      <option name="number" value="00006" />
+      <option name="presentableId" value="LOCAL-00006" />
+      <option name="project" value="LOCAL" />
+      <updated>1786439333198</updated>
+    </task>
+    <option name="localTasksCounter" value="7" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -263,14 +270,15 @@
     <MESSAGE value="CV-T1 dynamic potential steps" />
     <MESSAGE value="changed meaning dynamic" />
     <MESSAGE value="cv standard changed" />
-    <option name="LAST_COMMIT_MESSAGE" value="cv standard changed" />
+    <MESSAGE value="plot export" />
+    <option name="LAST_COMMIT_MESSAGE" value="plot export" />
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
     <SUITE FILE_PATH="coverage/EQuOS$Potentiostat.coverage" NAME="Potentiostat Coverage Results" MODIFIED="1782304189652" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/EQuOS$Equos_gui.coverage" NAME="Equos_gui Coverage Results" MODIFIED="1784537631926" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/EQuOS$Data_evaluator.coverage" NAME="Data_evaluator Coverage Results" MODIFIED="1784100232697" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/EQuOS_viewer$Data_evaluator.coverage" NAME="Data_evaluator Coverage Results" MODIFIED="1784825910100" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
-    <SUITE FILE_PATH="coverage/EQuOS_viewer$Equos_viewer.coverage" NAME="Equos_viewer Coverage Results" MODIFIED="1785855403216" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/EQuOS_viewer$Equos_viewer.coverage" NAME="Equos_viewer Coverage Results" MODIFIED="1786439410074" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/EQuOS_viewer$Equos_gui.coverage" NAME="Equos_gui Coverage Results" MODIFIED="1784550182822" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/EQuOS_viewer$Evaluation_loop.coverage" NAME="Evaluation loop Coverage Results" MODIFIED="1785852784984" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
   </component>

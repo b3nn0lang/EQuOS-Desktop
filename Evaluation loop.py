@@ -45,10 +45,12 @@ FITTING_DIC = {
 
 
 # --- Evaluation sweep --------------------------------------------------------
-# Each cycle difference is the number of cycles in one consecutive evaluation
-# block.  For example, 50 evaluates cycles 1-50, 51-100, 101-150, and so on
-# until the measurement ends. The final block can be shorter.
-CYCLE_DIFFERENCES = [[50,10]]
+# Configure each sweep as either:
+#   50       -> 1-50, 51-100, 101-150, ...
+#   [50, 10] -> 1-50, 11-60, 21-70, ...
+# The first value is the evaluation-window size and the optional second value
+# is how many cycles to advance between windows. The final window can be shorter.
+CYCLE_DIFFERENCES = [[50, 10]]
 
 # Each cycle block is evaluated once for every T1 potential step below.
 T1_POTENTIAL_STEPS = [0.025, 0.050,0.01]  # V; 0.010 V = 10 mV
@@ -101,15 +103,15 @@ def run_evaluation_sweep(
     """Evaluate consecutive blocks for every configured difference and T1 step."""
     if not CYCLE_DIFFERENCES or not T1_POTENTIAL_STEPS:
         raise ValueError("CYCLE_DIFFERENCES and T1_POTENTIAL_STEPS must not be empty.")
-    if any(int(cycle_difference) < 1 for cycle_difference in CYCLE_DIFFERENCES):
-        raise ValueError("Every value in CYCLE_DIFFERENCES must be positive.")
+
+    cycle_sweeps = [normalize_cycle_sweep(value) for value in CYCLE_DIFFERENCES]
 
     measurement_count = potentiostat.get_measurement_count()
     selections = [
-        (cycle_difference, cycle_start, min(cycle_start + cycle_difference - 1, measurement_count), t1_step)
-        for configured_difference in CYCLE_DIFFERENCES
-        for cycle_difference in [int(configured_difference)]
-        for cycle_start in range(1, measurement_count + 1, cycle_difference)
+        (window_size, cycle_advance, cycle_start,
+         min(cycle_start + window_size - 1, measurement_count), t1_step)
+        for window_size, cycle_advance in cycle_sweeps
+        for cycle_start in range(1, measurement_count + 1, cycle_advance)
         for t1_step in T1_POTENTIAL_STEPS
     ]
     last_image_path = None
@@ -119,7 +121,7 @@ def run_evaluation_sweep(
         f"{CYCLE_DIFFERENCES}; measurement has {measurement_count} cycles."
     )
 
-    for cycle_difference, cycle_start, cycle_end, t1_step in tqdm(
+    for window_size, cycle_advance, cycle_start, cycle_end, t1_step in tqdm(
         selections,
         total=requested_runs,
         desc="Evaluating CV-T1 selections",
@@ -144,12 +146,14 @@ def run_evaluation_sweep(
         image_path = evaluation_folder / selection_image_name(
             cycle_start,
             cycle_end,
-            cycle_difference,
+            window_size,
+            cycle_advance,
             t1_step,
         )
         print(
             f"Evaluating cycles {cycle_start}-{cycle_end}, "
-            f"cycle difference {cycle_difference}, T1 step {t1_step * 1000:g} mV"
+            f"window {window_size}, advance {cycle_advance}, "
+            f"T1 step {t1_step * 1000:g} mV"
         )
         output_figure = Figure(figsize=(12, 8), constrained_layout=True)
         fig, _, _, _, info, _ = ecqs_data_displayer(
@@ -169,10 +173,27 @@ def run_evaluation_sweep(
     return last_image_path
 
 
+def normalize_cycle_sweep(configured_sweep: int | list[int] | tuple[int, int]) -> tuple[int, int]:
+    """Return ``(window size, cycle advance)`` for one sweep setting."""
+    if isinstance(configured_sweep, (list, tuple)):
+        if len(configured_sweep) != 2:
+            raise ValueError(
+                "A cycle sweep list must contain [window_size, cycle_advance]."
+            )
+        window_size, cycle_advance = map(int, configured_sweep)
+    else:
+        window_size = cycle_advance = int(configured_sweep)
+
+    if window_size < 1 or cycle_advance < 1:
+        raise ValueError("Cycle window sizes and advances must be positive.")
+    return window_size, cycle_advance
+
+
 def selection_image_name(
     cycle_start: int,
     cycle_end: int,
-    cycle_difference: int,
+    window_size: int,
+    cycle_advance: int,
     t1_step: float,
 ) -> str:
     """Return a filename that records every parameter used for one evaluation."""
@@ -180,7 +201,8 @@ def selection_image_name(
     t1_step_label = f"{t1_step_mv:g}".replace("-", "neg").replace(".", "p")
     return (
         f"cycles_{cycle_start:03d}-{cycle_end:03d}"
-        f"_difference_{cycle_difference:03d}"
+        f"_window_{window_size:03d}"
+        f"_advance_{cycle_advance:03d}"
         f"_t1-step_{t1_step_label}mV.png"
     )
 
