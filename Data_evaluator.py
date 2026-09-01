@@ -702,7 +702,16 @@ def ca_live_ec_trace(potentiostat, method, raw_ec_data, callback_data):
     ec_end = ec_start + float(rel_time[-1])
     return ec_start, ec_end, rel_time, current
 
-def ca_t1_windows(qs_data_reader, ec_start, ec_end, avg_per_datapoint, time_bin_size, measurement_done):
+def ca_t1_windows(
+    qs_data_reader,
+    ec_start,
+    ec_end,
+    avg_per_datapoint,
+    time_bin_size,
+    measurement_done,
+    floating=False,
+    floating_step=1,
+):
     t_begin, t_end, _ = qs_data_reader._load_raw_data()
     if len(t_begin) == 0 or ec_start is None or ec_end is None:
         return [], [], []
@@ -714,27 +723,39 @@ def ca_t1_windows(qs_data_reader, ec_start, ec_end, avg_per_datapoint, time_bin_
     median_times = []
     qs_counts = []
     if time_bin_size > 0:
-        edges = np.arange(ec_start, ec_end + time_bin_size, time_bin_size)
-        for start, end in zip(edges[:-1], edges[1:]):
-            if end > ec_end and not measurement_done:
+        step_size = time_bin_size
+        if floating:
+            try:
+                step_size = max(float(floating_step), 1e-9)
+            except (TypeError, ValueError):
+                step_size = time_bin_size
+        starts = np.arange(ec_start, ec_end, step_size)
+        for start in starts:
+            end = start + time_bin_size
+            if end > ec_end:
                 break
-            mask = (qs_centers >= start) & (qs_centers < end)
+            mask = in_ec_run & (qs_centers >= start) & (qs_centers < end)
             if not np.any(mask):
                 continue
             windows.append((start, end))
-            median_times.append(float(np.median(qs_centers[mask]) - ec_start))
+            median_times.append(float(np.mean(qs_centers[mask]) - ec_start))
             qs_counts.append(int(np.sum(mask)))
     else:
-        full_count = len(qs_indices) // avg_per_datapoint
-        if measurement_done and len(qs_indices) % avg_per_datapoint:
-            full_count += 1
-        for chunk_number in range(full_count):
-            chunk_start = chunk_number * avg_per_datapoint
+        if floating:
+            try:
+                point_step = max(1, int(floating_step))
+            except (TypeError, ValueError):
+                point_step = 1
+        else:
+            point_step = avg_per_datapoint
+        for chunk_start in range(0, len(qs_indices), point_step):
             chunk = qs_indices[chunk_start:chunk_start + avg_per_datapoint]
             if len(chunk) == 0:
                 continue
+            if len(chunk) < avg_per_datapoint:
+                continue
             windows.append((float(t_begin[chunk[0]]), float(t_end[chunk[-1]])))
-            median_times.append(float(np.median(qs_centers[chunk]) - ec_start))
+            median_times.append(float(np.mean(qs_centers[chunk]) - ec_start))
             qs_counts.append(len(chunk))
     return windows, median_times, qs_counts
 
@@ -1115,6 +1136,15 @@ def ca_t1_data_displayer(qs_data_reader, potentiostat, fitting_dic: dict, cache,
         time_bin_size = float(fitting_dic.get("time_bin_size", 0))
     except (TypeError, ValueError):
         time_bin_size = 0
+    floating_windows = bool(fitting_dic.get("floating_windows", False))
+    try:
+        floating_step = float(fitting_dic.get("floating_step", 1))
+    except (TypeError, ValueError):
+        floating_step = 1
+    if time_bin_size <= 0:
+        floating_step = max(1, int(floating_step))
+    else:
+        floating_step = max(float(floating_step), 1e-9)
     save_detail_plots = bool(fitting_dic.get("save_detail_plots", False))
 
     method = potentiostat.method.to_dict()
@@ -1130,6 +1160,11 @@ def ca_t1_data_displayer(qs_data_reader, potentiostat, fitting_dic: dict, cache,
     }
     if time_bin_size > 0:
         info_dic["Time bin size"] = f"{time_bin_size} s"
+    if floating_windows:
+        if time_bin_size > 0:
+            info_dic["Floating window step"] = f"{floating_step:g} s"
+        else:
+            info_dic["Floating window step"] = f"{floating_step:g} points"
     if use_r_square_threshold:
         info_dic["T1 R^2 threshold"] = f"{r_square_threshold:.3f}"
     try:
@@ -1157,6 +1192,8 @@ def ca_t1_data_displayer(qs_data_reader, potentiostat, fitting_dic: dict, cache,
         avg_per_datapoint,
         time_bin_size,
         measurement_done,
+        floating_windows,
+        floating_step,
     )
     available_end = float(np.nanmax(ec_time)) if len(ec_time) else float(method.get("run_time", 0) or 0)
     time_from, time_to = ca_time_region(fitting_dic, available_end)

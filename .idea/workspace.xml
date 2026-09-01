@@ -4,8 +4,10 @@
     <option name="autoReloadType" value="ALL" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="7f911216-e681-405e-8252-ad6017b9785b" name="Changes" comment="working variable diff">
+    <list default="true" id="7f911216-e681-405e-8252-ad6017b9785b" name="Changes" comment="loop more precise steps">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Data_evaluator.py" beforeDir="false" afterPath="$PROJECT_DIR$/Data_evaluator.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Equos_viewer.py" beforeDir="false" afterPath="$PROJECT_DIR$/Equos_viewer.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Evaluation loop.py" beforeDir="false" afterPath="$PROJECT_DIR$/Evaluation loop.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -14,7 +16,7 @@
     <option name="LAST_RESOLUTION" value="IGNORE" />
   </component>
   <component name="EmbeddingIndexingInfo">
-    <option name="cachedIndexableFilesCount" value="23" />
+    <option name="cachedIndexableFilesCount" value="19" />
   </component>
   <component name="Git.Settings">
     <option name="INCOMING_COMMITS_CHECK_STRATEGY" value="FETCH" />
@@ -31,35 +33,35 @@
     &quot;assignee&quot;: &quot;b3nn0lang&quot;
   }
 }</component>
-  <component name="GithubPullRequestsUISettings">{
-  &quot;selectedUrlAndAccountId&quot;: {
-    &quot;url&quot;: &quot;https://github.com/b3nn0lang/EQuOS-Desktop.git&quot;,
-    &quot;accountId&quot;: &quot;123ad5c9-3333-424e-be65-93ff474930f3&quot;
+  <component name="GithubPullRequestsUISettings"><![CDATA[{
+  "selectedUrlAndAccountId": {
+    "url": "https://github.com/b3nn0lang/EQuOS-Desktop.git",
+    "accountId": "5286e233-5bf6-474d-aaf9-d67acebd9808"
   }
-}</component>
+}]]></component>
   <component name="McpProjectServerCommands">
     <commands />
     <urls />
   </component>
   <component name="NextEditCompletionFeaturesState">
     <decayedCancelled>
-      <entry key="MS100" value="1.001269887154314" />
-      <entry key="MS500" value="1.503291280561561" />
-      <entry key="S2" value="3.6263338129283644" />
-      <entry key="S5" value="5.517359393080272" />
-      <entry key="S10" value="6.577428458568032" />
-      <entry key="S30" value="7.590549093284342" />
-      <entry key="S60" value="11.015190316304583" />
-      <entry key="M2" value="25.865166651131535" />
-      <entry key="M5" value="60.25503383446566" />
-      <entry key="M10" value="116.32708145798108" />
-      <entry key="M15" value="191.5475100969152" />
-      <entry key="M30" value="395.9128531537215" />
-      <entry key="H1" value="616.3803787836672" />
-      <entry key="H2" value="782.5715022543944" />
-      <entry key="H4" value="892.7608064477664" />
-      <entry key="D1" value="1742.4059473879304" />
-      <entry key="W1" value="5072.096283857214" />
+      <entry key="MS100" value="1.000474929173541" />
+      <entry key="MS500" value="1.216434676323717" />
+      <entry key="S2" value="1.7574133984726719" />
+      <entry key="S5" value="3.306458405111585" />
+      <entry key="S10" value="6.281325778225104" />
+      <entry key="S30" value="11.466075474616714" />
+      <entry key="S60" value="16.153512339569144" />
+      <entry key="M2" value="30.975101425026295" />
+      <entry key="M5" value="65.73720851802757" />
+      <entry key="M10" value="121.96217548547197" />
+      <entry key="M15" value="196.98437583318454" />
+      <entry key="M30" value="401.2895466990171" />
+      <entry key="H1" value="622.3439236487179" />
+      <entry key="H2" value="789.2798440172548" />
+      <entry key="H4" value="900.0243061174397" />
+      <entry key="D1" value="1750.1669316327375" />
+      <entry key="W1" value="5079.997065580109" />
     </decayedCancelled>
     <decayedSelected>
       <entry key="MS100" value="0.0" />
@@ -72,32 +74,32 @@
       <entry key="M2" value="0.0" />
       <entry key="M5" value="0.0" />
       <entry key="M10" value="0.0" />
-      <entry key="M15" value="2.05281945087592E-228" />
-      <entry key="M30" value="1.4327663629762556E-114" />
-      <entry key="H1" value="1.1969821899160541E-57" />
-      <entry key="H2" value="3.45974303946979E-29" />
-      <entry key="H4" value="5.88195804088138E-15" />
-      <entry key="D1" value="0.0042486763934806784" />
-      <entry key="W1" value="0.45833085319806377" />
+      <entry key="M15" value="2.0260363786095264E-228" />
+      <entry key="M30" value="1.4233890468209353E-114" />
+      <entry key="H1" value="1.1930586937870715E-57" />
+      <entry key="H2" value="3.454068172151474E-29" />
+      <entry key="H4" value="5.877132100055773E-15" />
+      <entry key="D1" value="0.004248095213038874" />
+      <entry key="W1" value="0.45832189617170566" />
     </decayedSelected>
     <decayedShown>
-      <entry key="MS100" value="0.9738815771336891" />
-      <entry key="MS500" value="1.4942314777069008" />
-      <entry key="S2" value="3.6200782139206114" />
-      <entry key="S5" value="5.51337375382464" />
-      <entry key="S10" value="6.575015157737209" />
-      <entry key="S30" value="7.589605788134969" />
-      <entry key="S60" value="11.014413168351656" />
-      <entry key="M2" value="25.86407556985704" />
-      <entry key="M5" value="60.25390542900191" />
-      <entry key="M10" value="116.32583517651142" />
-      <entry key="M15" value="191.54604971915242" />
-      <entry key="M30" value="395.9112726330661" />
-      <entry key="H1" value="616.379131532212" />
-      <entry key="H2" value="782.5707064662128" />
-      <entry key="H4" value="892.7603511217601" />
-      <entry key="D1" value="1742.410047820654" />
-      <entry key="W1" value="5072.554538669385" />
+      <entry key="MS100" value="0.9530935805593361" />
+      <entry key="MS500" value="1.2049847606356643" />
+      <entry key="S2" value="1.7533207766497194" />
+      <entry key="S5" value="3.302879138048276" />
+      <entry key="S10" value="6.277720001220372" />
+      <entry key="S30" value="11.463863587502225" />
+      <entry key="S60" value="16.15197085106418" />
+      <entry key="M2" value="30.973628361267654" />
+      <entry key="M5" value="65.73592159024915" />
+      <entry key="M10" value="121.96085101190614" />
+      <entry key="M15" value="196.98286584910602" />
+      <entry key="M30" value="401.2879420295389" />
+      <entry key="H1" value="622.3426631979562" />
+      <entry key="H2" value="789.2790408803135" />
+      <entry key="H4" value="900.0238468354145" />
+      <entry key="D1" value="1750.1710307826022" />
+      <entry key="W1" value="5080.455311333593" />
     </decayedShown>
   </component>
   <component name="ProjectColorInfo">{
@@ -169,7 +171,7 @@
   <component name="SharedIndexes">
     <attachedChunks>
       <set>
-        <option value="bundled-python-sdk-c59985aa861c-c2ffad84badb-com.jetbrains.pycharm.pro.sharedIndexes.bundled-PY-261.24374.152" />
+        <option value="bundled-python-sdk-50341a9f1f9c-c2ffad84badb-com.jetbrains.pycharm.pro.sharedIndexes.bundled-PY-261.26222.68" />
       </set>
     </attachedChunks>
   </component>
@@ -255,7 +257,15 @@
       <option name="project" value="LOCAL" />
       <updated>1786439656783</updated>
     </task>
-    <option name="localTasksCounter" value="8" />
+    <task id="LOCAL-00008" summary="loop more precise steps">
+      <option name="closed" value="true" />
+      <created>1787038502703</created>
+      <option name="number" value="00008" />
+      <option name="presentableId" value="LOCAL-00008" />
+      <option name="project" value="LOCAL" />
+      <updated>1787038502703</updated>
+    </task>
+    <option name="localTasksCounter" value="9" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -280,7 +290,8 @@
     <MESSAGE value="cv standard changed" />
     <MESSAGE value="plot export" />
     <MESSAGE value="working variable diff" />
-    <option name="LAST_COMMIT_MESSAGE" value="working variable diff" />
+    <MESSAGE value="loop more precise steps" />
+    <option name="LAST_COMMIT_MESSAGE" value="loop more precise steps" />
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
     <SUITE FILE_PATH="coverage/EQuOS$Potentiostat.coverage" NAME="Potentiostat Coverage Results" MODIFIED="1782304189652" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />

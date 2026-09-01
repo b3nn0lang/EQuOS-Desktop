@@ -170,8 +170,8 @@ class App(tk.Tk):
             setattr(self, attr, self.layout_fitting_params(frame, ecqs_labels, ecqs_defaults))
             tk.Button(frame, text="Fit Data", command=getattr(self, method.lower().replace("-", "_") + "_fitting")).pack()
 
-        ca_t1_labels = ["Fitting:", "Cutoff Rate", "Use Bounds:", "Max. Tries:", "Use R^2 Threshold:", "Min. R^2:", "T1 averages/datapoint:", "Time bin size [s]:", "Save individual T1 plots:", "From time [s]:", "To time [s] (0 = last):"]
-        ca_t1_defaults = [True, 0.5, False, 5000, False, 0.95, 300, 0, True, 0, 0]
+        ca_t1_labels = ["Fitting:", "Cutoff Rate", "Use Bounds:", "Max. Tries:", "Use R^2 Threshold:", "Min. R^2:", "T1 averages/datapoint:", "Time bin size [s]:", "Floating windows:", "Floating step [points or s]:", "Save individual T1 plots:", "From time [s]:", "To time [s] (0 = last):"]
+        ca_t1_defaults = [True, 0.5, False, 5000, False, 0.95, 300, 0, False, 1, True, 0, 0]
         ca_t1_frame = self.add_fitting_frame("CA-T1", "CA-T1 fitting")
         self.ca_t1_fitting_entries = self.layout_fitting_params(ca_t1_frame, ca_t1_labels, ca_t1_defaults)
         tk.Button(ca_t1_frame, text="Fit Data", command=self.ca_t1_fitting).pack()
@@ -599,9 +599,11 @@ class App(tk.Tk):
                 "r_square_threshold": values[5],
                 "t1_averages_per_datapoint": values[6],
                 "time_bin_size": values[7],
-                "save_detail_plots": values[8],
-                "time_from": values[9],
-                "time_to": values[10],
+                "floating_windows": values[8],
+                "floating_step": values[9],
+                "save_detail_plots": values[10],
+                "time_from": values[11],
+                "time_to": values[12],
             }
         )
 
