@@ -1,0 +1,1391 @@
+Windows fatal exception: access violation
+
+Current thread 0x00000794 (most recent call first):
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\QS_data_reader.py", line 280 in _update_live_summary
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\QS_data_reader.py", line 175 in build_dataframe
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\QS_data_reader.py", line 469 in data_building_loop
+  File "C:\Users\ge54vec\AppData\Local\anaconda3\Lib\threading.py", line 982 in run
+  File "C:\Users\ge54vec\AppData\Local\anaconda3\Lib\threading.py", line 1045 in _bootstrap_inner
+  File "C:\Users\ge54vec\AppData\Local\anaconda3\Lib\threading.py", line 1002 in _bootstrap
+
+Thread 0x0000120c (most recent call first):
+  File "C:\Users\ge54vec\AppData\Local\anaconda3\Lib\tkinter\__init__.py", line 1376 in update_idletasks
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\Equos_gui.py", line 1863 in update_qs_live_figure
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\Equos_gui.py", line 1409 in file_selected
+  File "C:\Users\ge54vec\AppData\Local\anaconda3\Lib\tkinter\__init__.py", line 1948 in __call__
+  File "C:\Users\ge54vec\AppData\Local\anaconda3\Lib\tkinter\__init__.py", line 1485 in mainloop
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\Equos_gui.py", line 2161 in main
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\Equos_gui.py", line 2169 in <module>
+
+[2026-08-06 09:31:08] GUI action failed: on_t1_send
+Traceback (most recent call last):
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\Equos_gui.py", line 84, in run_gui_action
+    action()
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\Equos_gui.py", line 1579, in on_t1_send
+    self.qs_data_reader = QS_data_reader(self.data_folder, self.qs_file_name)
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\QS_data_reader.py", line 49, in __init__
+    raise FileNotFoundError(
+FileNotFoundError: G:/Bucherlab/Surface_Electrochemistry_EPR/Data/NV/2026_08_06_2J_Ru3-1mM-KCl-50mM/QS_T1_20260806093107_sample_before.yaml has not been found after waiting 10.0 s
+
+
+[2026-08-10 13:31:15] Unhandled Tk callback exception
+Traceback (most recent call last):
+  File "C:\Users\ge54vec\AppData\Local\anaconda3\Lib\tkinter\__init__.py", line 1948, in __call__
+    return self.func(*args)
+           ^^^^^^^^^^^^^^^^
+  File "C:\Users\ge54vec\AppData\Local\anaconda3\Lib\tkinter\__init__.py", line 861, in callit
+    func(*args)
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\Equos_gui.py", line 1953, in update_ecqs_live_figure
+    self.fig, _, measurement_done, prog, info, kill_measurement = ecqs_data_displayer(self.qs_data_reader,self.potentiostat,{"fitting": False}, self.ecqs_cache, fig=current_fig)
+                                                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\Data_evaluator.py", line 1599, in ecqs_data_displayer
+    return ca_t1_data_displayer(qs_data_reader, potentiostat, fitting_dic, cache, fig)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\Data_evaluator.py", line 1153, in ca_t1_data_displayer
+    windows, median_times, qs_counts = ca_t1_windows(
+                                       ^^^^^^^^^^^^^^
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\Data_evaluator.py", line 706, in ca_t1_windows
+    t_begin, t_end, _ = qs_data_reader._load_raw_data()
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\QS_data_reader.py", line 418, in _load_raw_data
+    mm = np.memmap(self._active_dat_file, dtype=float, mode="r", shape=self.data_array_dim)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\.venv\Lib\site-packages\numpy\_core\memmap.py", line 236, in __new__
+    f_ctx = open(
+            ^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: 'C:/Users/ge54vec/.qupyt/temp\\ECQS_T1_20260810130108_CA-0V_temp.dat'
+
+
+[2026-08-10 16:07:04] Unhandled Tk callback exception
+Traceback (most recent call last):
+  File "C:\Users\ge54vec\AppData\Local\anaconda3\Lib\tkinter\__init__.py", line 1948, in __call__
+    return self.func(*args)
+           ^^^^^^^^^^^^^^^^
+  File "C:\Users\ge54vec\AppData\Local\anaconda3\Lib\tkinter\__init__.py", line 861, in callit
+    func(*args)
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\Equos_gui.py", line 1953, in update_ecqs_live_figure
+    self.fig, _, measurement_done, prog, info, kill_measurement = ecqs_data_displayer(self.qs_data_reader,self.potentiostat,{"fitting": False}, self.ecqs_cache, fig=current_fig)
+                                                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\Data_evaluator.py", line 1599, in ecqs_data_displayer
+    return ca_t1_data_displayer(qs_data_reader, potentiostat, fitting_dic, cache, fig)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\Data_evaluator.py", line 1196, in ca_t1_data_displayer
+    fit_result = fit_t1_from_qs_window(
+                 ^^^^^^^^^^^^^^^^^^^^^^
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\Data_evaluator.py", line 840, in fit_t1_from_qs_window
+    qs_data = qs_data_reader.evaluate_qs_data(cutoff_rate=cutoff_rate, time_array=np.asarray([time_window]))
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\QS_data_reader.py", line 568, in evaluate_qs_data
+    t_begin_rows, t_end_rows, signal_rows = self._load_raw_data(filtered_indices)
+                                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\QS_data_reader.py", line 418, in _load_raw_data
+    mm = np.memmap(self._active_dat_file, dtype=float, mode="r", shape=self.data_array_dim)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\.venv\Lib\site-packages\numpy\_core\memmap.py", line 291, in __new__
+    mm = mmap.mmap(fid.fileno(), bytes, access=acc, offset=start)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+OSError: [WinError 8] Not enough memory resources are available to process this command
+
+
+[2026-08-10 16:08:25] Unhandled Tk callback exception
+Traceback (most recent call last):
+  File "C:\Users\ge54vec\AppData\Local\anaconda3\Lib\tkinter\__init__.py", line 1948, in __call__
+    return self.func(*args)
+           ^^^^^^^^^^^^^^^^
+  File "C:\Users\ge54vec\AppData\Local\anaconda3\Lib\tkinter\__init__.py", line 861, in callit
+    func(*args)
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\Equos_gui.py", line 1953, in update_ecqs_live_figure
+    self.fig, _, measurement_done, prog, info, kill_measurement = ecqs_data_displayer(self.qs_data_reader,self.potentiostat,{"fitting": False}, self.ecqs_cache, fig=current_fig)
+                                                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\Data_evaluator.py", line 1599, in ecqs_data_displayer
+    return ca_t1_data_displayer(qs_data_reader, potentiostat, fitting_dic, cache, fig)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\Data_evaluator.py", line 1196, in ca_t1_data_displayer
+    fit_result = fit_t1_from_qs_window(
+                 ^^^^^^^^^^^^^^^^^^^^^^
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\Data_evaluator.py", line 840, in fit_t1_from_qs_window
+    qs_data = qs_data_reader.evaluate_qs_data(cutoff_rate=cutoff_rate, time_array=np.asarray([time_window]))
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\QS_data_reader.py", line 568, in evaluate_qs_data
+    t_begin_rows, t_end_rows, signal_rows = self._load_raw_data(filtered_indices)
+                                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\QS_data_reader.py", line 418, in _load_raw_data
+    mm = np.memmap(self._active_dat_file, dtype=float, mode="r", shape=self.data_array_dim)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\.venv\Lib\site-packages\numpy\_core\memmap.py", line 291, in __new__
+    mm = mmap.mmap(fid.fileno(), bytes, access=acc, offset=start)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+OSError: [WinError 8] Not enough memory resources are available to process this command
+
+
+[2026-08-17 15:37:22] Unhandled Tk callback exception
+Traceback (most recent call last):
+  File "C:\Users\ge54vec\AppData\Local\anaconda3\Lib\tkinter\__init__.py", line 1948, in __call__
+    return self.func(*args)
+           ^^^^^^^^^^^^^^^^
+  File "C:\Users\ge54vec\AppData\Local\anaconda3\Lib\tkinter\__init__.py", line 861, in callit
+    func(*args)
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\Equos_gui.py", line 1953, in update_ecqs_live_figure
+    self.fig, _, measurement_done, prog, info, kill_measurement = ecqs_data_displayer(self.qs_data_reader,self.potentiostat,{"fitting": False}, self.ecqs_cache, fig=current_fig)
+                                                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\Data_evaluator.py", line 1599, in ecqs_data_displayer
+    return ca_t1_data_displayer(qs_data_reader, potentiostat, fitting_dic, cache, fig)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\Data_evaluator.py", line 1153, in ca_t1_data_displayer
+    windows, median_times, qs_counts = ca_t1_windows(
+                                       ^^^^^^^^^^^^^^
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\Data_evaluator.py", line 706, in ca_t1_windows
+    t_begin, t_end, _ = qs_data_reader._load_raw_data()
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\QS_data_reader.py", line 418, in _load_raw_data
+    mm = np.memmap(self._active_dat_file, dtype=float, mode="r", shape=self.data_array_dim)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\.venv\Lib\site-packages\numpy\_core\memmap.py", line 236, in __new__
+    f_ctx = open(
+            ^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: 'C:/Users/ge54vec/.qupyt/temp\\ECQS_T1_20260817150718_-0.1_temp.dat'
+
+
+[2026-08-20 10:32:47] GUI action failed: on_esr_send
+Traceback (most recent call last):
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\Equos_gui.py", line 84, in run_gui_action
+    action()
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\Equos_gui.py", line 1532, in on_esr_send
+    user_params = self.esr.export_params()
+                  ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\QS_data_sender.py", line 136, in export_params
+    export['dynamic_devices']['mw_source']['config']['frequency'][0][1][1] = float(self.max_mw_freq)*1000000000
+                                                                             ^^^^^^^^^^^^^^^^^^^^^^^
+ValueError: could not convert string to float: '2-95'
+
+
+[2026-08-27 10:38:54] Unhandled Tk callback exception
+Traceback (most recent call last):
+  File "C:\Users\ge54vec\AppData\Local\anaconda3\Lib\tkinter\__init__.py", line 1948, in __call__
+    return self.func(*args)
+           ^^^^^^^^^^^^^^^^
+  File "C:\Users\ge54vec\AppData\Local\anaconda3\Lib\tkinter\__init__.py", line 861, in callit
+    func(*args)
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\Equos_gui.py", line 2086, in update_ecqs_live_figure
+    self.live_canvas.draw()
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\.venv\Lib\site-packages\matplotlib\backends\backend_tkagg.py", line 11, in draw
+    self.blit()
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\.venv\Lib\site-packages\matplotlib\backends\backend_tkagg.py", line 14, in blit
+    _backend_tk.blit(self._tkphoto, self.renderer.buffer_rgba(),
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\.venv\Lib\site-packages\matplotlib\backends\_backend_tk.py", line 144, in blit
+    photoimage.tk.call(_blit_tcl_name, argsid)
+_tkinter.TclError: pyimage29
+
+Windows fatal exception: code 0x80010012
+
+Thread 0x00003b88 (most recent call first):
+  File "C:\Users\ge54vec\AppData\Local\anaconda3\Lib\tkinter\__init__.py", line 1485 in mainloop
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\Equos_gui.py", line 2274 in main
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\Equos_gui.py", line 2282 in <module>
+Windows fatal exception: code 0x80010012
+
+Thread 0x00003b88 (most recent call first):
+  File "C:\Users\ge54vec\AppData\Local\anaconda3\Lib\tkinter\__init__.py", line 1485 in mainloop
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\Equos_gui.py", line 2274 in main
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\Equos_gui.py", line 2282 in <module>
+
+[2026-08-28 16:10:49] Unhandled Tk callback exception
+Traceback (most recent call last):
+  File "C:\Users\ge54vec\AppData\Local\anaconda3\Lib\tkinter\__init__.py", line 1948, in __call__
+    return self.func(*args)
+           ^^^^^^^^^^^^^^^^
+  File "C:\Users\ge54vec\AppData\Local\anaconda3\Lib\tkinter\__init__.py", line 861, in callit
+    func(*args)
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\Equos_gui.py", line 1148, in run_pending_queue_item
+    self.start_queued_measurement(item)
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\Equos_gui.py", line 1167, in start_queued_measurement
+    command_map[item["method"]]()
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\Equos_gui.py", line 1644, in on_t1_send
+    self.qs_data_reader = QS_data_reader(self.data_folder, self.qs_file_name)
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\QS_data_reader.py", line 39, in __init__
+    time.sleep(self.qupyt_param_creation_time/100)
+KeyboardInterrupt
+
+
+[2026-08-28 16:13:00] Unhandled Tk callback exception
+Traceback (most recent call last):
+  File "C:\Users\ge54vec\AppData\Local\anaconda3\Lib\tkinter\__init__.py", line 1948, in __call__
+    return self.func(*args)
+           ^^^^^^^^^^^^^^^^
+  File "C:\Users\ge54vec\AppData\Local\anaconda3\Lib\tkinter\__init__.py", line 861, in callit
+    func(*args)
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\Equos_gui.py", line 2062, in update_ecqs_live_figure
+    self.fig, _, measurement_done, prog, info, kill_measurement = ecqs_data_displayer(self.qs_data_reader,self.potentiostat,{"fitting": False}, self.ecqs_cache, fig=current_fig)
+                                                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\Data_evaluator.py", line 1728, in ecqs_data_displayer
+    return ca_t1_data_displayer(qs_data_reader, potentiostat, fitting_dic, cache, fig)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\Data_evaluator.py", line 1256, in ca_t1_data_displayer
+    windows, median_times, qs_counts, window_segments = ca_t1_windows(
+                                                        ^^^^^^^^^^^^^^
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\Data_evaluator.py", line 737, in ca_t1_windows
+    t_begin, t_end, _ = qs_data_reader._load_raw_data()
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\QS_data_reader.py", line 418, in _load_raw_data
+    mm = np.memmap(self._active_dat_file, dtype=float, mode="r", shape=self.data_array_dim)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\.venv\Lib\site-packages\numpy\_core\memmap.py", line 291, in __new__
+    mm = mmap.mmap(fid.fileno(), bytes, access=acc, offset=start)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+OSError: [WinError 8] Not enough memory resources are available to process this command
+
+
+[2026-08-28 16:36:00] Unhandled Tk callback exception
+Traceback (most recent call last):
+  File "C:\Users\ge54vec\AppData\Local\anaconda3\Lib\tkinter\__init__.py", line 1948, in __call__
+    return self.func(*args)
+           ^^^^^^^^^^^^^^^^
+  File "C:\Users\ge54vec\AppData\Local\anaconda3\Lib\tkinter\__init__.py", line 861, in callit
+    func(*args)
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\Equos_gui.py", line 2062, in update_ecqs_live_figure
+    self.fig, _, measurement_done, prog, info, kill_measurement = ecqs_data_displayer(self.qs_data_reader,self.potentiostat,{"fitting": False}, self.ecqs_cache, fig=current_fig)
+                                                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\Data_evaluator.py", line 1728, in ecqs_data_displayer
+    return ca_t1_data_displayer(qs_data_reader, potentiostat, fitting_dic, cache, fig)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\Data_evaluator.py", line 1307, in ca_t1_data_displayer
+    fit_result = fit_t1_from_qs_window(
+                 ^^^^^^^^^^^^^^^^^^^^^^
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\Data_evaluator.py", line 925, in fit_t1_from_qs_window
+    qs_data = qs_data_reader.evaluate_qs_data(cutoff_rate=cutoff_rate, time_array=np.asarray([time_window]))
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\QS_data_reader.py", line 561, in evaluate_qs_data
+    filtered_indices = self.filter_by_time_stamps(cutoff_rate=cutoff_rate, t_lim=time_array)
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\QS_data_reader.py", line 512, in filter_by_time_stamps
+    t_begin, t_end, _ = self._load_raw_data()
+                        ^^^^^^^^^^^^^^^^^^^^^
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\QS_data_reader.py", line 418, in _load_raw_data
+    mm = np.memmap(self._active_dat_file, dtype=float, mode="r", shape=self.data_array_dim)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\.venv\Lib\site-packages\numpy\_core\memmap.py", line 291, in __new__
+    mm = mmap.mmap(fid.fileno(), bytes, access=acc, offset=start)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+OSError: [WinError 8] Not enough memory resources are available to process this command
+
+Windows fatal exception: code 0x80010012
+
+Thread 0x00004850 (most recent call first):
+  File "C:\Users\ge54vec\AppData\Local\anaconda3\Lib\asyncio\windows_events.py", line 817 in _poll
+  File "C:\Users\ge54vec\AppData\Local\anaconda3\Lib\asyncio\windows_events.py", line 444 in select
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\.venv\Lib\site-packages\nest_asyncio.py", line 115 in _run_once
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\.venv\Lib\site-packages\nest_asyncio.py", line 92 in run_until_complete
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\.venv\Lib\site-packages\nest_asyncio.py", line 30 in run
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\.venv\Lib\site-packages\pypalmsens\_instruments\instrument_manager.py", line 329 in measure
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\Potentiostat.py", line 259 in measure_n_times
+  File "C:\Users\ge54vec\AppData\Local\anaconda3\Lib\threading.py", line 982 in run
+  File "C:\Users\ge54vec\AppData\Local\anaconda3\Lib\threading.py", line 1045 in _bootstrap_inner
+  File "C:\Users\ge54vec\AppData\Local\anaconda3\Lib\threading.py", line 1002 in _bootstrap
+
+Thread 0x00000a80 (most recent call first):
+  File "C:\Users\ge54vec\AppData\Local\anaconda3\Lib\tkinter\__init__.py", line 1485 in mainloop
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\Equos_gui.py", line 2274 in main
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\Equos_gui.py", line 2282 in <module>
+
+[2026-09-01 10:57:20] GUI action failed: on_esr_send
+Traceback (most recent call last):
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\Equos_gui.py", line 84, in run_gui_action
+    action()
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\Equos_gui.py", line 1601, in on_esr_send
+    self.qs_data_reader = QS_data_reader(self.data_folder, self.qs_file_name)
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\QS_data_reader.py", line 49, in __init__
+    raise FileNotFoundError(
+FileNotFoundError: G:/Bucherlab/Surface_Electrochemistry_EPR/Data/NV/2026_09_01_K4FeCN6_1mM_KCl_50mM_KOH_100uM/QS_ESR_20260901105710.yaml has not been found after waiting 10.0 s
+
+
+[2026-09-01 16:59:59] Unhandled Tk callback exception
+Traceback (most recent call last):
+  File "C:\Users\ge54vec\AppData\Local\anaconda3\Lib\tkinter\__init__.py", line 1948, in __call__
+    return self.func(*args)
+           ^^^^^^^^^^^^^^^^
+  File "C:\Users\ge54vec\AppData\Local\anaconda3\Lib\tkinter\__init__.py", line 861, in callit
+    func(*args)
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\Equos_gui.py", line 2062, in update_ecqs_live_figure
+    self.fig, _, measurement_done, prog, info, kill_measurement = ecqs_data_displayer(self.qs_data_reader,self.potentiostat,{"fitting": False}, self.ecqs_cache, fig=current_fig)
+                                                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\Data_evaluator.py", line 1742, in ecqs_data_displayer
+    return ca_t1_data_displayer(qs_data_reader, potentiostat, fitting_dic, cache, fig)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\Data_evaluator.py", line 1321, in ca_t1_data_displayer
+    fit_result = fit_t1_from_qs_window(
+                 ^^^^^^^^^^^^^^^^^^^^^^
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\Data_evaluator.py", line 939, in fit_t1_from_qs_window
+    qs_data = qs_data_reader.evaluate_qs_data(cutoff_rate=cutoff_rate, time_array=np.asarray([time_window]))
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\QS_data_reader.py", line 561, in evaluate_qs_data
+    filtered_indices = self.filter_by_time_stamps(cutoff_rate=cutoff_rate, t_lim=time_array)
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\QS_data_reader.py", line 512, in filter_by_time_stamps
+    t_begin, t_end, _ = self._load_raw_data()
+                        ^^^^^^^^^^^^^^^^^^^^^
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\QS_data_reader.py", line 418, in _load_raw_data
+    mm = np.memmap(self._active_dat_file, dtype=float, mode="r", shape=self.data_array_dim)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\.venv\Lib\site-packages\numpy\_core\memmap.py", line 236, in __new__
+    f_ctx = open(
+            ^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: 'C:/Users/ge54vec/.qupyt/temp\\ECQS_T1_20260901162955_S1_0p5V_temp.dat'
+
+
+[2026-09-01 17:58:14] GUI action failed: on_t1_send
+Traceback (most recent call last):
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\Equos_gui.py", line 84, in run_gui_action
+    action()
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\Equos_gui.py", line 1644, in on_t1_send
+    self.qs_data_reader = QS_data_reader(self.data_folder, self.qs_file_name)
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\QS_data_reader.py", line 49, in __init__
+    raise FileNotFoundError(
+FileNotFoundError: G:/Bucherlab/Surface_Electrochemistry_EPR/Data/NV/2029_09_01_K4FeCN6_1mM_KCl_50mM_KOH_100uM_measurements/QS_T1_20260901175814_after_ox.yaml has not been found after waiting 10.0 s
+
+
+[2026-09-01 17:58:44] GUI action failed: on_t1_send
+Traceback (most recent call last):
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\Equos_gui.py", line 84, in run_gui_action
+    action()
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\Equos_gui.py", line 1644, in on_t1_send
+    self.qs_data_reader = QS_data_reader(self.data_folder, self.qs_file_name)
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\QS_data_reader.py", line 49, in __init__
+    raise FileNotFoundError(
+FileNotFoundError: G:/Bucherlab/Surface_Electrochemistry_EPR/Data/NV/2029_09_01_K4FeCN6_1mM_KCl_50mM_KOH_100uM_measurements/QS_T1_20260901175834_after_ox.yaml has not been found after waiting 10.0 s
+
+
+[2026-09-14 17:47:57] Unhandled Tk callback exception
+Traceback (most recent call last):
+  File "C:\Users\ge54vec\AppData\Local\anaconda3\Lib\tkinter\__init__.py", line 1948, in __call__
+    return self.func(*args)
+           ^^^^^^^^^^^^^^^^
+  File "C:\Users\ge54vec\AppData\Local\anaconda3\Lib\tkinter\__init__.py", line 861, in callit
+    func(*args)
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\Equos_gui.py", line 2062, in update_ecqs_live_figure
+    self.fig, _, measurement_done, prog, info, kill_measurement = ecqs_data_displayer(self.qs_data_reader,self.potentiostat,{"fitting": False}, self.ecqs_cache, fig=current_fig)
+                                                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\Data_evaluator.py", line 1742, in ecqs_data_displayer
+    return ca_t1_data_displayer(qs_data_reader, potentiostat, fitting_dic, cache, fig)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\Data_evaluator.py", line 1321, in ca_t1_data_displayer
+    fit_result = fit_t1_from_qs_window(
+                 ^^^^^^^^^^^^^^^^^^^^^^
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\Data_evaluator.py", line 939, in fit_t1_from_qs_window
+    qs_data = qs_data_reader.evaluate_qs_data(cutoff_rate=cutoff_rate, time_array=np.asarray([time_window]))
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\QS_data_reader.py", line 568, in evaluate_qs_data
+    t_begin_rows, t_end_rows, signal_rows = self._load_raw_data(filtered_indices)
+                                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\QS_data_reader.py", line 418, in _load_raw_data
+    mm = np.memmap(self._active_dat_file, dtype=float, mode="r", shape=self.data_array_dim)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\.venv\Lib\site-packages\numpy\_core\memmap.py", line 236, in __new__
+    f_ctx = open(
+            ^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: 'C:/Users/ge54vec/.qupyt/temp\\ECQS_T1_20260914171753_S1-0p8V_temp.dat'
+
+
+[2026-09-15 16:01:45] Unhandled Tk callback exception
+Traceback (most recent call last):
+  File "C:\Users\ge54vec\AppData\Local\anaconda3\Lib\tkinter\__init__.py", line 1948, in __call__
+    return self.func(*args)
+           ^^^^^^^^^^^^^^^^
+  File "C:\Users\ge54vec\AppData\Local\anaconda3\Lib\tkinter\__init__.py", line 861, in callit
+    func(*args)
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\Equos_gui.py", line 1148, in run_pending_queue_item
+    self.start_queued_measurement(item)
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\Equos_gui.py", line 1167, in start_queued_measurement
+    command_map[item["method"]]()
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\Equos_gui.py", line 1644, in on_t1_send
+    self.qs_data_reader = QS_data_reader(self.data_folder, self.qs_file_name)
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\QS_data_reader.py", line 49, in __init__
+    raise FileNotFoundError(
+FileNotFoundError: G:/Bucherlab/Surface_Electrochemistry_EPR/Data/NV/2026_09_15_K3FeCN6_1mM_KCl_50mM_Buffer_10mM/QS_T1_20260915160145_S_after_red.yaml has not been found after waiting 10.0 s
+
+
+[2026-09-17 10:21:25] GUI action failed: on_rabi_send
+Traceback (most recent call last):
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\Equos_gui.py", line 84, in run_gui_action
+    action()
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\Equos_gui.py", line 1621, in on_rabi_send
+    self.qs_data_reader = QS_data_reader(self.data_folder, self.qs_file_name)
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\QS_data_reader.py", line 49, in __init__
+    raise FileNotFoundError(
+FileNotFoundError: G:/Bucherlab/Surface_Electrochemistry_EPR/Data/NV/2026_09_17_K4FeCN6_1mM_Kcl_50mM_buffer_10mM/QS_Rabi_20260917102125.yaml has not been found after waiting 10.0 s
+
+
+[2026-09-17 13:23:34] Unhandled Tk callback exception
+Traceback (most recent call last):
+  File "C:\Users\ge54vec\AppData\Local\anaconda3\Lib\tkinter\__init__.py", line 1948, in __call__
+    return self.func(*args)
+           ^^^^^^^^^^^^^^^^
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\Equos_gui.py", line 1511, in file_selected
+    self.potentiostat.load_measurement_from_file(self.ec_file_name)
+                                                 ^^^^^^^^^^^^^^^^^
+  File "C:\Users\ge54vec\AppData\Local\anaconda3\Lib\tkinter\__init__.py", line 2410, in __getattr__
+    return getattr(self.tk, attr)
+           ^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: '_tkinter.tkapp' object has no attribute 'ec_file_name'
+
+
+[2026-09-17 18:31:54] Unhandled Tk callback exception
+Traceback (most recent call last):
+  File "C:\Users\ge54vec\AppData\Local\anaconda3\Lib\tkinter\__init__.py", line 1948, in __call__
+    return self.func(*args)
+           ^^^^^^^^^^^^^^^^
+  File "C:\Users\ge54vec\AppData\Local\anaconda3\Lib\tkinter\__init__.py", line 861, in callit
+    func(*args)
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\Equos_gui.py", line 2062, in update_ecqs_live_figure
+    self.fig, _, measurement_done, prog, info, kill_measurement = ecqs_data_displayer(self.qs_data_reader,self.potentiostat,{"fitting": False}, self.ecqs_cache, fig=current_fig)
+                                                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\Data_evaluator.py", line 1742, in ecqs_data_displayer
+    return ca_t1_data_displayer(qs_data_reader, potentiostat, fitting_dic, cache, fig)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\Data_evaluator.py", line 1270, in ca_t1_data_displayer
+    windows, median_times, qs_counts, window_segments = ca_t1_windows(
+                                                        ^^^^^^^^^^^^^^
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\Data_evaluator.py", line 751, in ca_t1_windows
+    t_begin, t_end, _ = qs_data_reader._load_raw_data()
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\QS_data_reader.py", line 418, in _load_raw_data
+    mm = np.memmap(self._active_dat_file, dtype=float, mode="r", shape=self.data_array_dim)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\.venv\Lib\site-packages\numpy\_core\memmap.py", line 236, in __new__
+    f_ctx = open(
+            ^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: 'C:/Users/ge54vec/.qupyt/temp\\ECQS_T1_20260917180151_run2_0p4V_temp.dat'
+
+
+[2026-09-18 10:58:47] GUI action failed: on_rabi_send
+Traceback (most recent call last):
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\Equos_gui.py", line 84, in run_gui_action
+    action()
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\Equos_gui.py", line 1621, in on_rabi_send
+    self.qs_data_reader = QS_data_reader(self.data_folder, self.qs_file_name)
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\QS_data_reader.py", line 49, in __init__
+    raise FileNotFoundError(
+FileNotFoundError: G:/Bucherlab/Surface_Electrochemistry_EPR/Data/NV/2026_09_18_K4FeCN6_1mM_KCl_50mM_buffer_10mM/QS_Rabi_20260918105847_2nd_clean.yaml has not been found after waiting 10.0 s
+
+
+[2026-09-18 11:00:24] GUI action failed: on_t1_send
+Traceback (most recent call last):
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\Equos_gui.py", line 84, in run_gui_action
+    action()
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\Equos_gui.py", line 1644, in on_t1_send
+    self.qs_data_reader = QS_data_reader(self.data_folder, self.qs_file_name)
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\QS_data_reader.py", line 49, in __init__
+    raise FileNotFoundError(
+FileNotFoundError: G:/Bucherlab/Surface_Electrochemistry_EPR/Data/NV/2026_09_18_K4FeCN6_1mM_KCl_50mM_buffer_10mM/QS_T1_20260918110024_2nd_cleaned.yaml has not been found after waiting 10.0 s
+
+
+[2026-09-18 11:12:12] GUI action failed: on_rabi_send
+Traceback (most recent call last):
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\Equos_gui.py", line 84, in run_gui_action
+    action()
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\Equos_gui.py", line 1621, in on_rabi_send
+    self.qs_data_reader = QS_data_reader(self.data_folder, self.qs_file_name)
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\QS_data_reader.py", line 49, in __init__
+    raise FileNotFoundError(
+FileNotFoundError: G:/Bucherlab/Surface_Electrochemistry_EPR/Data/NV/2026_09_18_K4FeCN6_1mM_KCl_50mM_buffer_10mM/QS_Rabi_20260918111212_2nd_clean.yaml has not been found after waiting 10.0 s
+
+
+[2026-09-18 17:21:05] GUI action failed: on_esr_send
+Traceback (most recent call last):
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\Equos_gui.py", line 84, in run_gui_action
+    action()
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\Equos_gui.py", line 1601, in on_esr_send
+    self.qs_data_reader = QS_data_reader(self.data_folder, self.qs_file_name)
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\QS_data_reader.py", line 49, in __init__
+    raise FileNotFoundError(
+FileNotFoundError: G:/Bucherlab/Surface_Electrochemistry_EPR/Data/NV/2026_09_18_K4FeCN6_1mM_KCl_50mM_buffer_10mM/QS_ESR_20260918172055.yaml has not been found after waiting 10.0 s
+
+
+[2026-09-21 13:04:20] GUI action failed: on_rabi_send
+Traceback (most recent call last):
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\Equos_gui.py", line 84, in run_gui_action
+    action()
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\Equos_gui.py", line 1621, in on_rabi_send
+    self.qs_data_reader = QS_data_reader(self.data_folder, self.qs_file_name)
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\QS_data_reader.py", line 49, in __init__
+    raise FileNotFoundError(
+FileNotFoundError: G:/Bucherlab/Surface_Electrochemistry_EPR/Data/NV/2026_09_21_new_cable_management/QS_Rabi_20260921130410.yaml has not been found after waiting 10.0 s
+
+
+[2026-09-21 13:21:03] GUI action failed: on_esr_send
+Traceback (most recent call last):
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\Equos_gui.py", line 84, in run_gui_action
+    action()
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\Equos_gui.py", line 1601, in on_esr_send
+    self.qs_data_reader = QS_data_reader(self.data_folder, self.qs_file_name)
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\QS_data_reader.py", line 49, in __init__
+    raise FileNotFoundError(
+FileNotFoundError: G:/Bucherlab/Surface_Electrochemistry_EPR/Data/NV/2026_09_21_new_cable_management/QS_ESR_20260921132053.yaml has not been found after waiting 10.0 s
+
+
+[2026-09-21 14:09:23] GUI action failed: on_esr_send
+Traceback (most recent call last):
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\Equos_gui.py", line 84, in run_gui_action
+    action()
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\Equos_gui.py", line 1601, in on_esr_send
+    self.qs_data_reader = QS_data_reader(self.data_folder, self.qs_file_name)
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\QS_data_reader.py", line 49, in __init__
+    raise FileNotFoundError(
+FileNotFoundError: G:/Bucherlab/Surface_Electrochemistry_EPR/Data/NV/2026_09_21_new_cable_management/QS_ESR_20260921140912.yaml has not been found after waiting 10.0 s
+
+
+[2026-09-21 16:22:05] GUI action failed: on_esr_send
+Traceback (most recent call last):
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\Equos_gui.py", line 84, in run_gui_action
+    action()
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\Equos_gui.py", line 1601, in on_esr_send
+    self.qs_data_reader = QS_data_reader(self.data_folder, self.qs_file_name)
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\QS_data_reader.py", line 49, in __init__
+    raise FileNotFoundError(
+FileNotFoundError: G:/Bucherlab/Surface_Electrochemistry_EPR/Data/NV/2026_09_21_new_cable_management/QS_ESR_20260921162155.yaml has not been found after waiting 10.0 s
+
+
+[2026-09-21 16:35:21] GUI action failed: on_rabi_send
+Traceback (most recent call last):
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\Equos_gui.py", line 84, in run_gui_action
+    action()
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\Equos_gui.py", line 1621, in on_rabi_send
+    self.qs_data_reader = QS_data_reader(self.data_folder, self.qs_file_name)
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\QS_data_reader.py", line 49, in __init__
+    raise FileNotFoundError(
+FileNotFoundError: G:/Bucherlab/Surface_Electrochemistry_EPR/Data/NV/2026_09_21_new_cable_management/QS_Rabi_20260921163511.yaml has not been found after waiting 10.0 s
+
+
+[2026-09-21 16:40:48] GUI action failed: on_rabi_send
+Traceback (most recent call last):
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\Equos_gui.py", line 84, in run_gui_action
+    action()
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\Equos_gui.py", line 1621, in on_rabi_send
+    self.qs_data_reader = QS_data_reader(self.data_folder, self.qs_file_name)
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\QS_data_reader.py", line 49, in __init__
+    raise FileNotFoundError(
+FileNotFoundError: G:/Bucherlab/Surface_Electrochemistry_EPR/Data/NV/2026_09_21_new_cable_management/QS_Rabi_20260921164038_daq_sweep.yaml has not been found after waiting 10.0 s
+
+
+[2026-09-21 16:47:34] GUI action failed: on_rabi_send
+Traceback (most recent call last):
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\QS_data_reader.py", line 73, in __init__
+    self.x_values = list(self.params["pi_pulse_durations"])
+                         ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^
+KeyError: 'pi_pulse_durations'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\Equos_gui.py", line 84, in run_gui_action
+    action()
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\Equos_gui.py", line 1621, in on_rabi_send
+    self.qs_data_reader = QS_data_reader(self.data_folder, self.qs_file_name)
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\QS_data_reader.py", line 78, in __init__
+    raise KeyError(f"One of the parameters in {self.file_name}.yaml has not been defined. Have fun looking: {e}")
+KeyError: "One of the parameters in QS_Rabi_20260921164734.yaml has not been defined. Have fun looking: 'pi_pulse_durations'"
+
+
+[2026-09-21 16:50:23] GUI action failed: on_rabi_send
+Traceback (most recent call last):
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\QS_data_reader.py", line 73, in __init__
+    self.x_values = list(self.params["pi_pulse_durations"])
+                         ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^
+KeyError: 'pi_pulse_durations'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\Equos_gui.py", line 84, in run_gui_action
+    action()
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\Equos_gui.py", line 1621, in on_rabi_send
+    self.qs_data_reader = QS_data_reader(self.data_folder, self.qs_file_name)
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\QS_data_reader.py", line 78, in __init__
+    raise KeyError(f"One of the parameters in {self.file_name}.yaml has not been defined. Have fun looking: {e}")
+KeyError: "One of the parameters in QS_Rabi_20260921165023.yaml has not been defined. Have fun looking: 'pi_pulse_durations'"
+
+
+[2026-09-21 16:53:20] GUI action failed: on_rabi_send
+Traceback (most recent call last):
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\QS_data_reader.py", line 73, in __init__
+    self.x_values = list(self.params["pi_pulse_durations"])
+                         ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^
+KeyError: 'pi_pulse_durations'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\Equos_gui.py", line 84, in run_gui_action
+    action()
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\Equos_gui.py", line 1621, in on_rabi_send
+    self.qs_data_reader = QS_data_reader(self.data_folder, self.qs_file_name)
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\QS_data_reader.py", line 78, in __init__
+    raise KeyError(f"One of the parameters in {self.file_name}.yaml has not been defined. Have fun looking: {e}")
+KeyError: "One of the parameters in QS_Rabi_20260921165319.yaml has not been defined. Have fun looking: 'pi_pulse_durations'"
+
+
+[2026-09-21 16:59:44] GUI action failed: on_rabi_send
+Traceback (most recent call last):
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\QS_data_reader.py", line 73, in __init__
+    self.x_values = list(self.params["pi_pulse_durations"])
+                         ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^
+KeyError: 'pi_pulse_durations'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\Equos_gui.py", line 84, in run_gui_action
+    action()
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\Equos_gui.py", line 1621, in on_rabi_send
+    self.qs_data_reader = QS_data_reader(self.data_folder, self.qs_file_name)
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\QS_data_reader.py", line 78, in __init__
+    raise KeyError(f"One of the parameters in {self.file_name}.yaml has not been defined. Have fun looking: {e}")
+KeyError: "One of the parameters in QS_Rabi_20260921165944.yaml has not been defined. Have fun looking: 'pi_pulse_durations'"
+
+
+[2026-09-21 17:00:50] GUI action failed: on_rabi_send
+Traceback (most recent call last):
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\QS_data_reader.py", line 73, in __init__
+    self.x_values = list(self.params["pi_pulse_durations"])
+                         ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^
+KeyError: 'pi_pulse_durations'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\Equos_gui.py", line 84, in run_gui_action
+    action()
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\Equos_gui.py", line 1621, in on_rabi_send
+    self.qs_data_reader = QS_data_reader(self.data_folder, self.qs_file_name)
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\QS_data_reader.py", line 78, in __init__
+    raise KeyError(f"One of the parameters in {self.file_name}.yaml has not been defined. Have fun looking: {e}")
+KeyError: "One of the parameters in QS_Rabi_20260921170049.yaml has not been defined. Have fun looking: 'pi_pulse_durations'"
+
+
+[2026-09-21 17:14:08] GUI action failed: on_rabi_send
+Traceback (most recent call last):
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\QS_data_reader.py", line 73, in __init__
+    self.x_values = list(self.params["pi_pulse_durations"])
+                         ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^
+KeyError: 'pi_pulse_durations'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\Equos_gui.py", line 84, in run_gui_action
+    action()
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\Equos_gui.py", line 1621, in on_rabi_send
+    self.qs_data_reader = QS_data_reader(self.data_folder, self.qs_file_name)
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\QS_data_reader.py", line 78, in __init__
+    raise KeyError(f"One of the parameters in {self.file_name}.yaml has not been defined. Have fun looking: {e}")
+KeyError: "One of the parameters in QS_Rabi_20260921171408.yaml has not been defined. Have fun looking: 'pi_pulse_durations'"
+
+
+[2026-09-21 17:16:03] GUI action failed: on_rabi_send
+Traceback (most recent call last):
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\QS_data_reader.py", line 41, in __init__
+    self.params = self.write_params_from_yaml(f"{self.file_path}/{self.file_name}.yaml")
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\QS_data_reader.py", line 91, in write_params_from_yaml
+    params = yaml.safe_load(f)
+             ^^^^^^^^^^^^^^^^^
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\.venv\Lib\site-packages\yaml\__init__.py", line 125, in safe_load
+    return load(stream, SafeLoader)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\.venv\Lib\site-packages\yaml\__init__.py", line 81, in load
+    return loader.get_single_data()
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\.venv\Lib\site-packages\yaml\constructor.py", line 51, in get_single_data
+    return self.construct_document(node)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\.venv\Lib\site-packages\yaml\constructor.py", line 60, in construct_document
+    for dummy in generator:
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\.venv\Lib\site-packages\yaml\constructor.py", line 408, in construct_yaml_seq
+    data.extend(self.construct_sequence(node))
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\.venv\Lib\site-packages\yaml\constructor.py", line 129, in construct_sequence
+    return [self.construct_object(child, deep=deep)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\.venv\Lib\site-packages\yaml\constructor.py", line 129, in <listcomp>
+    return [self.construct_object(child, deep=deep)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\.venv\Lib\site-packages\yaml\constructor.py", line 100, in construct_object
+    data = constructor(self, node)
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\.venv\Lib\site-packages\yaml\constructor.py", line 427, in construct_undefined
+    raise ConstructorError(None, None,
+yaml.constructor.ConstructorError: could not determine a constructor for the tag 'tag:yaml.org,2002:python/object/apply:numpy._core.multiarray.scalar'
+  in "G:/Bucherlab/Surface_Electrochemistry_EPR/Data/NV/2026_09_21_new_cable_management/QS_Rabi_20260921171603.yaml", line 15, column 3
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\Equos_gui.py", line 84, in run_gui_action
+    action()
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\Equos_gui.py", line 1621, in on_rabi_send
+    self.qs_data_reader = QS_data_reader(self.data_folder, self.qs_file_name)
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\QS_data_reader.py", line 47, in __init__
+    raise FileNotFoundError(f"{self.file_path}/{self.file_name}.yaml has not been found: {e}")
+FileNotFoundError: G:/Bucherlab/Surface_Electrochemistry_EPR/Data/NV/2026_09_21_new_cable_management/QS_Rabi_20260921171603.yaml has not been found: could not determine a constructor for the tag 'tag:yaml.org,2002:python/object/apply:numpy._core.multiarray.scalar'
+  in "G:/Bucherlab/Surface_Electrochemistry_EPR/Data/NV/2026_09_21_new_cable_management/QS_Rabi_20260921171603.yaml", line 15, column 3
+
+
+[2026-09-21 17:37:37] Unhandled Tk callback exception
+Traceback (most recent call last):
+  File "C:\Users\ge54vec\AppData\Local\anaconda3\Lib\tkinter\__init__.py", line 1948, in __call__
+    return self.func(*args)
+           ^^^^^^^^^^^^^^^^
+  File "C:\Users\ge54vec\AppData\Local\anaconda3\Lib\tkinter\__init__.py", line 861, in callit
+    func(*args)
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\Equos_gui.py", line 1987, in update_qs_live_figure
+    self.eval_qs_figure()
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\Equos_gui.py", line 2016, in eval_qs_figure
+    self.update_file_loader()
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\Equos_gui.py", line 1446, in update_file_loader
+    measurements = parse_file_folder(self.data_folder)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\Equos_logic.py", line 40, in parse_file_folder
+    for file in os.listdir(folder_name):
+                ^^^^^^^^^^^^^^^^^^^^^^^
+FileNotFoundError: [WinError 3] The system cannot find the path specified: ''
+
+
+[2026-09-22 08:50:45] GUI action failed: on_rabi_send
+Traceback (most recent call last):
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\Equos_gui.py", line 84, in run_gui_action
+    action()
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\Equos_gui.py", line 1621, in on_rabi_send
+    self.qs_data_reader = QS_data_reader(self.data_folder, self.qs_file_name)
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\QS_data_reader.py", line 49, in __init__
+    raise FileNotFoundError(
+FileNotFoundError: G:/Bucherlab/Surface_Electrochemistry_EPR/Data/NV/2026_09_22_daq_sweep/QS_Rabi_20260922085035.yaml has not been found after waiting 10.0 s
+
+
+[2026-09-22 13:07:19] GUI action failed: on_rabi_send
+Traceback (most recent call last):
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\Equos_gui.py", line 84, in run_gui_action
+    action()
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\Equos_gui.py", line 1621, in on_rabi_send
+    self.qs_data_reader = QS_data_reader(self.data_folder, self.qs_file_name)
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\QS_data_reader.py", line 49, in __init__
+    raise FileNotFoundError(
+FileNotFoundError: G:/Bucherlab/Surface_Electrochemistry_EPR/Data/NV/2026_09_22_daq_sweep/QS_Rabi_20260922130709_sweep_IAF_1.yaml has not been found after waiting 10.0 s
+
+
+[2026-09-22 15:06:13] GUI action failed: on_cv_send
+Traceback (most recent call last):
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\Equos_gui.py", line 84, in run_gui_action
+    action()
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\Equos_gui.py", line 1689, in on_cv_send
+    method = self.potentiostat.cv_measurement(float(values[0]), float(values[1]), float(values[2])/1000, float(values[3])/1000)
+                                                                ^^^^^^^^^^^^^^^^
+ValueError: could not convert string to float: '0-5'
+
+
+[2026-09-23 15:47:45] Unhandled Tk callback exception
+Traceback (most recent call last):
+  File "C:\Users\ge54vec\AppData\Local\anaconda3\Lib\tkinter\__init__.py", line 1948, in __call__
+    return self.func(*args)
+           ^^^^^^^^^^^^^^^^
+  File "C:\Users\ge54vec\AppData\Local\anaconda3\Lib\tkinter\__init__.py", line 861, in callit
+    func(*args)
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\Equos_gui.py", line 2062, in update_ecqs_live_figure
+    self.fig, _, measurement_done, prog, info, kill_measurement = ecqs_data_displayer(self.qs_data_reader,self.potentiostat,{"fitting": False}, self.ecqs_cache, fig=current_fig)
+                                                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\Data_evaluator.py", line 1742, in ecqs_data_displayer
+    return ca_t1_data_displayer(qs_data_reader, potentiostat, fitting_dic, cache, fig)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\Data_evaluator.py", line 1321, in ca_t1_data_displayer
+    fit_result = fit_t1_from_qs_window(
+                 ^^^^^^^^^^^^^^^^^^^^^^
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\Data_evaluator.py", line 939, in fit_t1_from_qs_window
+    qs_data = qs_data_reader.evaluate_qs_data(cutoff_rate=cutoff_rate, time_array=np.asarray([time_window]))
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\QS_data_reader.py", line 561, in evaluate_qs_data
+    filtered_indices = self.filter_by_time_stamps(cutoff_rate=cutoff_rate, t_lim=time_array)
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\QS_data_reader.py", line 512, in filter_by_time_stamps
+    t_begin, t_end, _ = self._load_raw_data()
+                        ^^^^^^^^^^^^^^^^^^^^^
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\QS_data_reader.py", line 418, in _load_raw_data
+    mm = np.memmap(self._active_dat_file, dtype=float, mode="r", shape=self.data_array_dim)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\.venv\Lib\site-packages\numpy\_core\memmap.py", line 236, in __new__
+    f_ctx = open(
+            ^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: 'C:/Users/ge54vec/.qupyt/temp\\ECQS_T1_20260923144740_Oxidation_0p35V_temp.dat'
+
+
+[2026-09-23 18:56:25] Unhandled Tk callback exception
+Traceback (most recent call last):
+  File "C:\Users\ge54vec\AppData\Local\anaconda3\Lib\tkinter\__init__.py", line 1948, in __call__
+    return self.func(*args)
+           ^^^^^^^^^^^^^^^^
+  File "C:\Users\ge54vec\AppData\Local\anaconda3\Lib\tkinter\__init__.py", line 861, in callit
+    func(*args)
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\Equos_gui.py", line 2062, in update_ecqs_live_figure
+    self.fig, _, measurement_done, prog, info, kill_measurement = ecqs_data_displayer(self.qs_data_reader,self.potentiostat,{"fitting": False}, self.ecqs_cache, fig=current_fig)
+                                                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\Data_evaluator.py", line 1742, in ecqs_data_displayer
+    return ca_t1_data_displayer(qs_data_reader, potentiostat, fitting_dic, cache, fig)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\Data_evaluator.py", line 1270, in ca_t1_data_displayer
+    windows, median_times, qs_counts, window_segments = ca_t1_windows(
+                                                        ^^^^^^^^^^^^^^
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\Data_evaluator.py", line 751, in ca_t1_windows
+    t_begin, t_end, _ = qs_data_reader._load_raw_data()
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\QS_data_reader.py", line 418, in _load_raw_data
+    mm = np.memmap(self._active_dat_file, dtype=float, mode="r", shape=self.data_array_dim)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\.venv\Lib\site-packages\numpy\_core\memmap.py", line 291, in __new__
+    mm = mmap.mmap(fid.fileno(), bytes, access=acc, offset=start)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+OSError: [WinError 8] Not enough memory resources are available to process this command
+
+
+[2026-09-23 19:00:15] Unhandled Tk callback exception
+Traceback (most recent call last):
+  File "C:\Users\ge54vec\AppData\Local\anaconda3\Lib\tkinter\__init__.py", line 1948, in __call__
+    return self.func(*args)
+           ^^^^^^^^^^^^^^^^
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\Equos_gui.py", line 1511, in file_selected
+    self.potentiostat.load_measurement_from_file(self.ec_file_name)
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\Potentiostat.py", line 400, in load_measurement_from_file
+    self.set_measurement_results([self.load_pssession_file(file_name),self.load_csv_file(file_name)])
+                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\Potentiostat.py", line 440, in load_pssession_file
+    measurements = ps.load_session_file(os.path.join(self.folder_path, f"{file_name}.pssession"))
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\.venv\Lib\site-packages\pypalmsens\_io.py", line 53, in load_session_file
+    with stream_reader(str(path)) as stream:
+  File "C:\Users\ge54vec\AppData\Local\anaconda3\Lib\contextlib.py", line 137, in __enter__
+    return next(self.gen)
+           ^^^^^^^^^^^^^^
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\.venv\Lib\site-packages\pypalmsens\_io.py", line 18, in stream_reader
+    sr = StreamReader(*args, **kwargs)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+System.IO.FileNotFoundException: Could not find file 'G:\Bucherlab\Surface_Electrochemistry_EPR\Data\NV\2026_09_23_K4FeCN6_pH11\ECQS_CA_20260923185415_Oxidation_0p5V.pssession'.
+File name: 'G:\Bucherlab\Surface_Electrochemistry_EPR\Data\NV\2026_09_23_K4FeCN6_pH11\ECQS_CA_20260923185415_Oxidation_0p5V.pssession'
+   at System.IO.__Error.WinIOError(Int32 errorCode, String maybeFullPath)
+   at System.IO.FileStream.Init(String path, FileMode mode, FileAccess access, Int32 rights, Boolean useRights, FileShare share, Int32 bufferSize, FileOptions options, SECURITY_ATTRIBUTES secAttrs, String msgPath, Boolean bFromProxy, Boolean useLongPath, Boolean checkHost)
+   at System.IO.FileStream..ctor(String path, FileMode mode, FileAccess access, FileShare share, Int32 bufferSize, FileOptions options, String msgPath, Boolean bFromProxy, Boolean useLongPath, Boolean checkHost)
+   at System.IO.StreamReader..ctor(String path, Encoding encoding, Boolean detectEncodingFromByteOrderMarks, Int32 bufferSize, Boolean checkHost)
+   at System.IO.StreamReader..ctor(String path)
+
+
+[2026-09-23 19:00:26] Unhandled Tk callback exception
+Traceback (most recent call last):
+  File "C:\Users\ge54vec\AppData\Local\anaconda3\Lib\tkinter\__init__.py", line 1948, in __call__
+    return self.func(*args)
+           ^^^^^^^^^^^^^^^^
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\Equos_gui.py", line 1511, in file_selected
+    self.potentiostat.load_measurement_from_file(self.ec_file_name)
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\Potentiostat.py", line 400, in load_measurement_from_file
+    self.set_measurement_results([self.load_pssession_file(file_name),self.load_csv_file(file_name)])
+                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\Potentiostat.py", line 440, in load_pssession_file
+    measurements = ps.load_session_file(os.path.join(self.folder_path, f"{file_name}.pssession"))
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\.venv\Lib\site-packages\pypalmsens\_io.py", line 53, in load_session_file
+    with stream_reader(str(path)) as stream:
+  File "C:\Users\ge54vec\AppData\Local\anaconda3\Lib\contextlib.py", line 137, in __enter__
+    return next(self.gen)
+           ^^^^^^^^^^^^^^
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\.venv\Lib\site-packages\pypalmsens\_io.py", line 18, in stream_reader
+    sr = StreamReader(*args, **kwargs)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+System.IO.FileNotFoundException: Could not find file 'G:\Bucherlab\Surface_Electrochemistry_EPR\Data\NV\2026_09_23_K4FeCN6_pH11\ECQS_CA_20260923185415_Oxidation_0p5V.pssession'.
+File name: 'G:\Bucherlab\Surface_Electrochemistry_EPR\Data\NV\2026_09_23_K4FeCN6_pH11\ECQS_CA_20260923185415_Oxidation_0p5V.pssession'
+   at System.IO.__Error.WinIOError(Int32 errorCode, String maybeFullPath)
+   at System.IO.FileStream.Init(String path, FileMode mode, FileAccess access, Int32 rights, Boolean useRights, FileShare share, Int32 bufferSize, FileOptions options, SECURITY_ATTRIBUTES secAttrs, String msgPath, Boolean bFromProxy, Boolean useLongPath, Boolean checkHost)
+   at System.IO.FileStream..ctor(String path, FileMode mode, FileAccess access, FileShare share, Int32 bufferSize, FileOptions options, String msgPath, Boolean bFromProxy, Boolean useLongPath, Boolean checkHost)
+   at System.IO.StreamReader..ctor(String path, Encoding encoding, Boolean detectEncodingFromByteOrderMarks, Int32 bufferSize, Boolean checkHost)
+   at System.IO.StreamReader..ctor(String path)
+
+
+[2026-09-23 19:02:40] Unhandled Tk callback exception
+Traceback (most recent call last):
+  File "C:\Users\ge54vec\AppData\Local\anaconda3\Lib\tkinter\__init__.py", line 1948, in __call__
+    return self.func(*args)
+           ^^^^^^^^^^^^^^^^
+  File "C:\Users\ge54vec\AppData\Local\anaconda3\Lib\tkinter\__init__.py", line 861, in callit
+    func(*args)
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\Equos_gui.py", line 2062, in update_ecqs_live_figure
+    self.fig, _, measurement_done, prog, info, kill_measurement = ecqs_data_displayer(self.qs_data_reader,self.potentiostat,{"fitting": False}, self.ecqs_cache, fig=current_fig)
+                                                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\Data_evaluator.py", line 1742, in ecqs_data_displayer
+    return ca_t1_data_displayer(qs_data_reader, potentiostat, fitting_dic, cache, fig)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\Data_evaluator.py", line 1321, in ca_t1_data_displayer
+    fit_result = fit_t1_from_qs_window(
+                 ^^^^^^^^^^^^^^^^^^^^^^
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\Data_evaluator.py", line 939, in fit_t1_from_qs_window
+    qs_data = qs_data_reader.evaluate_qs_data(cutoff_rate=cutoff_rate, time_array=np.asarray([time_window]))
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\QS_data_reader.py", line 561, in evaluate_qs_data
+    filtered_indices = self.filter_by_time_stamps(cutoff_rate=cutoff_rate, t_lim=time_array)
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\QS_data_reader.py", line 512, in filter_by_time_stamps
+    t_begin, t_end, _ = self._load_raw_data()
+                        ^^^^^^^^^^^^^^^^^^^^^
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\QS_data_reader.py", line 418, in _load_raw_data
+    mm = np.memmap(self._active_dat_file, dtype=float, mode="r", shape=self.data_array_dim)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\.venv\Lib\site-packages\numpy\_core\memmap.py", line 291, in __new__
+    mm = mmap.mmap(fid.fileno(), bytes, access=acc, offset=start)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+OSError: [WinError 8] Not enough memory resources are available to process this command
+
+
+[2026-09-24 09:38:31] GUI action failed: on_esr_send
+Traceback (most recent call last):
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\Equos_gui.py", line 84, in run_gui_action
+    action()
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\Equos_gui.py", line 1601, in on_esr_send
+    self.qs_data_reader = QS_data_reader(self.data_folder, self.qs_file_name)
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\QS_data_reader.py", line 49, in __init__
+    raise FileNotFoundError(
+FileNotFoundError: G:/Bucherlab/Surface_Electrochemistry_EPR/Data/NV/2026_09_24_K4feCN6_10mM_KOH_1mM_KCl_500mM/QS_ESR_20260924093831.yaml has not been found after waiting 10.0 s
+
+
+[2026-09-24 13:29:12] Unhandled Tk callback exception
+Traceback (most recent call last):
+  File "C:\Users\ge54vec\AppData\Local\anaconda3\Lib\tkinter\__init__.py", line 1948, in __call__
+    return self.func(*args)
+           ^^^^^^^^^^^^^^^^
+  File "C:\Users\ge54vec\AppData\Local\anaconda3\Lib\tkinter\__init__.py", line 861, in callit
+    func(*args)
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\Equos_gui.py", line 2062, in update_ecqs_live_figure
+    self.fig, _, measurement_done, prog, info, kill_measurement = ecqs_data_displayer(self.qs_data_reader,self.potentiostat,{"fitting": False}, self.ecqs_cache, fig=current_fig)
+                                                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\Data_evaluator.py", line 1742, in ecqs_data_displayer
+    return ca_t1_data_displayer(qs_data_reader, potentiostat, fitting_dic, cache, fig)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\Data_evaluator.py", line 1321, in ca_t1_data_displayer
+    fit_result = fit_t1_from_qs_window(
+                 ^^^^^^^^^^^^^^^^^^^^^^
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\Data_evaluator.py", line 939, in fit_t1_from_qs_window
+    qs_data = qs_data_reader.evaluate_qs_data(cutoff_rate=cutoff_rate, time_array=np.asarray([time_window]))
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\QS_data_reader.py", line 561, in evaluate_qs_data
+    filtered_indices = self.filter_by_time_stamps(cutoff_rate=cutoff_rate, t_lim=time_array)
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\QS_data_reader.py", line 512, in filter_by_time_stamps
+    t_begin, t_end, _ = self._load_raw_data()
+                        ^^^^^^^^^^^^^^^^^^^^^
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\QS_data_reader.py", line 418, in _load_raw_data
+    mm = np.memmap(self._active_dat_file, dtype=float, mode="r", shape=self.data_array_dim)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\.venv\Lib\site-packages\numpy\_core\memmap.py", line 236, in __new__
+    f_ctx = open(
+            ^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: 'C:/Users/ge54vec/.qupyt/temp\\ECQS_T1_20260924122908_0p4V_temp.dat'
+
+
+[2026-09-24 15:32:09] Unhandled Tk callback exception
+Traceback (most recent call last):
+  File "C:\Users\ge54vec\AppData\Local\anaconda3\Lib\tkinter\__init__.py", line 1948, in __call__
+    return self.func(*args)
+           ^^^^^^^^^^^^^^^^
+  File "C:\Users\ge54vec\AppData\Local\anaconda3\Lib\tkinter\__init__.py", line 861, in callit
+    func(*args)
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\Equos_gui.py", line 2062, in update_ecqs_live_figure
+    self.fig, _, measurement_done, prog, info, kill_measurement = ecqs_data_displayer(self.qs_data_reader,self.potentiostat,{"fitting": False}, self.ecqs_cache, fig=current_fig)
+                                                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\Data_evaluator.py", line 1742, in ecqs_data_displayer
+    return ca_t1_data_displayer(qs_data_reader, potentiostat, fitting_dic, cache, fig)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\Data_evaluator.py", line 1321, in ca_t1_data_displayer
+    fit_result = fit_t1_from_qs_window(
+                 ^^^^^^^^^^^^^^^^^^^^^^
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\Data_evaluator.py", line 939, in fit_t1_from_qs_window
+    qs_data = qs_data_reader.evaluate_qs_data(cutoff_rate=cutoff_rate, time_array=np.asarray([time_window]))
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\QS_data_reader.py", line 561, in evaluate_qs_data
+    filtered_indices = self.filter_by_time_stamps(cutoff_rate=cutoff_rate, t_lim=time_array)
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\QS_data_reader.py", line 512, in filter_by_time_stamps
+    t_begin, t_end, _ = self._load_raw_data()
+                        ^^^^^^^^^^^^^^^^^^^^^
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\QS_data_reader.py", line 418, in _load_raw_data
+    mm = np.memmap(self._active_dat_file, dtype=float, mode="r", shape=self.data_array_dim)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\.venv\Lib\site-packages\numpy\_core\memmap.py", line 236, in __new__
+    f_ctx = open(
+            ^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: 'C:/Users/ge54vec/.qupyt/temp\\ECQS_T1_20260924143204_0p5V_temp.dat'
+
+
+[2026-09-24 17:34:41] Unhandled Tk callback exception
+Traceback (most recent call last):
+  File "C:\Users\ge54vec\AppData\Local\anaconda3\Lib\tkinter\__init__.py", line 1948, in __call__
+    return self.func(*args)
+           ^^^^^^^^^^^^^^^^
+  File "C:\Users\ge54vec\AppData\Local\anaconda3\Lib\tkinter\__init__.py", line 861, in callit
+    func(*args)
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\Equos_gui.py", line 2062, in update_ecqs_live_figure
+    self.fig, _, measurement_done, prog, info, kill_measurement = ecqs_data_displayer(self.qs_data_reader,self.potentiostat,{"fitting": False}, self.ecqs_cache, fig=current_fig)
+                                                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\Data_evaluator.py", line 1742, in ecqs_data_displayer
+    return ca_t1_data_displayer(qs_data_reader, potentiostat, fitting_dic, cache, fig)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\Data_evaluator.py", line 1321, in ca_t1_data_displayer
+    fit_result = fit_t1_from_qs_window(
+                 ^^^^^^^^^^^^^^^^^^^^^^
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\Data_evaluator.py", line 939, in fit_t1_from_qs_window
+    qs_data = qs_data_reader.evaluate_qs_data(cutoff_rate=cutoff_rate, time_array=np.asarray([time_window]))
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\QS_data_reader.py", line 561, in evaluate_qs_data
+    filtered_indices = self.filter_by_time_stamps(cutoff_rate=cutoff_rate, t_lim=time_array)
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\QS_data_reader.py", line 512, in filter_by_time_stamps
+    t_begin, t_end, _ = self._load_raw_data()
+                        ^^^^^^^^^^^^^^^^^^^^^
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\QS_data_reader.py", line 418, in _load_raw_data
+    mm = np.memmap(self._active_dat_file, dtype=float, mode="r", shape=self.data_array_dim)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\.venv\Lib\site-packages\numpy\_core\memmap.py", line 236, in __new__
+    f_ctx = open(
+            ^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: 'C:/Users/ge54vec/.qupyt/temp\\ECQS_T1_20260924163436_0p65V_temp.dat'
+
+
+[2026-09-28 12:49:04] Unhandled Tk callback exception
+Traceback (most recent call last):
+  File "C:\Users\ge54vec\AppData\Local\anaconda3\Lib\tkinter\__init__.py", line 1948, in __call__
+    return self.func(*args)
+           ^^^^^^^^^^^^^^^^
+  File "C:\Users\ge54vec\AppData\Local\anaconda3\Lib\tkinter\__init__.py", line 861, in callit
+    func(*args)
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\Equos_gui.py", line 2062, in update_ecqs_live_figure
+    self.fig, _, measurement_done, prog, info, kill_measurement = ecqs_data_displayer(self.qs_data_reader,self.potentiostat,{"fitting": False}, self.ecqs_cache, fig=current_fig)
+                                                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\Data_evaluator.py", line 1742, in ecqs_data_displayer
+    return ca_t1_data_displayer(qs_data_reader, potentiostat, fitting_dic, cache, fig)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\Data_evaluator.py", line 1321, in ca_t1_data_displayer
+    fit_result = fit_t1_from_qs_window(
+                 ^^^^^^^^^^^^^^^^^^^^^^
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\Data_evaluator.py", line 939, in fit_t1_from_qs_window
+    qs_data = qs_data_reader.evaluate_qs_data(cutoff_rate=cutoff_rate, time_array=np.asarray([time_window]))
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\QS_data_reader.py", line 561, in evaluate_qs_data
+    filtered_indices = self.filter_by_time_stamps(cutoff_rate=cutoff_rate, t_lim=time_array)
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\QS_data_reader.py", line 512, in filter_by_time_stamps
+    t_begin, t_end, _ = self._load_raw_data()
+                        ^^^^^^^^^^^^^^^^^^^^^
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\QS_data_reader.py", line 418, in _load_raw_data
+    mm = np.memmap(self._active_dat_file, dtype=float, mode="r", shape=self.data_array_dim)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\.venv\Lib\site-packages\numpy\_core\memmap.py", line 236, in __new__
+    f_ctx = open(
+            ^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: 'C:/Users/ge54vec/.qupyt/temp\\ECQS_T1_20260928114859_0p35V_temp.dat'
+
+
+[2026-09-28 13:55:33] Unhandled Tk callback exception
+Traceback (most recent call last):
+  File "C:\Users\ge54vec\AppData\Local\anaconda3\Lib\tkinter\__init__.py", line 1948, in __call__
+    return self.func(*args)
+           ^^^^^^^^^^^^^^^^
+  File "C:\Users\ge54vec\AppData\Local\anaconda3\Lib\tkinter\__init__.py", line 861, in callit
+    func(*args)
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\Equos_gui.py", line 2062, in update_ecqs_live_figure
+    self.fig, _, measurement_done, prog, info, kill_measurement = ecqs_data_displayer(self.qs_data_reader,self.potentiostat,{"fitting": False}, self.ecqs_cache, fig=current_fig)
+                                                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\Data_evaluator.py", line 1742, in ecqs_data_displayer
+    return ca_t1_data_displayer(qs_data_reader, potentiostat, fitting_dic, cache, fig)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\Data_evaluator.py", line 1321, in ca_t1_data_displayer
+    fit_result = fit_t1_from_qs_window(
+                 ^^^^^^^^^^^^^^^^^^^^^^
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\Data_evaluator.py", line 939, in fit_t1_from_qs_window
+    qs_data = qs_data_reader.evaluate_qs_data(cutoff_rate=cutoff_rate, time_array=np.asarray([time_window]))
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\QS_data_reader.py", line 561, in evaluate_qs_data
+    filtered_indices = self.filter_by_time_stamps(cutoff_rate=cutoff_rate, t_lim=time_array)
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\QS_data_reader.py", line 512, in filter_by_time_stamps
+    t_begin, t_end, _ = self._load_raw_data()
+                        ^^^^^^^^^^^^^^^^^^^^^
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\QS_data_reader.py", line 418, in _load_raw_data
+    mm = np.memmap(self._active_dat_file, dtype=float, mode="r", shape=self.data_array_dim)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\.venv\Lib\site-packages\numpy\_core\memmap.py", line 236, in __new__
+    f_ctx = open(
+            ^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: 'C:/Users/ge54vec/.qupyt/temp\\ECQS_T1_20260928125529_0p35V_temp.dat'
+
+
+[2026-09-29 09:57:29] Unhandled Tk callback exception
+Traceback (most recent call last):
+  File "C:\Users\ge54vec\AppData\Local\anaconda3\Lib\tkinter\__init__.py", line 1948, in __call__
+    return self.func(*args)
+           ^^^^^^^^^^^^^^^^
+  File "C:\Users\ge54vec\AppData\Local\anaconda3\Lib\tkinter\__init__.py", line 861, in callit
+    func(*args)
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\Equos_gui.py", line 2062, in update_ecqs_live_figure
+    self.fig, _, measurement_done, prog, info, kill_measurement = ecqs_data_displayer(self.qs_data_reader,self.potentiostat,{"fitting": False}, self.ecqs_cache, fig=current_fig)
+                                                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\Data_evaluator.py", line 1742, in ecqs_data_displayer
+    return ca_t1_data_displayer(qs_data_reader, potentiostat, fitting_dic, cache, fig)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\Data_evaluator.py", line 1321, in ca_t1_data_displayer
+    fit_result = fit_t1_from_qs_window(
+                 ^^^^^^^^^^^^^^^^^^^^^^
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\Data_evaluator.py", line 939, in fit_t1_from_qs_window
+    qs_data = qs_data_reader.evaluate_qs_data(cutoff_rate=cutoff_rate, time_array=np.asarray([time_window]))
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\QS_data_reader.py", line 561, in evaluate_qs_data
+    filtered_indices = self.filter_by_time_stamps(cutoff_rate=cutoff_rate, t_lim=time_array)
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\QS_data_reader.py", line 512, in filter_by_time_stamps
+    t_begin, t_end, _ = self._load_raw_data()
+                        ^^^^^^^^^^^^^^^^^^^^^
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\QS_data_reader.py", line 418, in _load_raw_data
+    mm = np.memmap(self._active_dat_file, dtype=float, mode="r", shape=self.data_array_dim)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\.venv\Lib\site-packages\numpy\_core\memmap.py", line 236, in __new__
+    f_ctx = open(
+            ^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: 'C:/Users/ge54vec/.qupyt/temp\\ECQS_T1_20260929085724_0p15V_temp.dat'
+
+
+[2026-09-29 13:02:06] Unhandled Tk callback exception
+Traceback (most recent call last):
+  File "C:\Users\ge54vec\AppData\Local\anaconda3\Lib\tkinter\__init__.py", line 1948, in __call__
+    return self.func(*args)
+           ^^^^^^^^^^^^^^^^
+  File "C:\Users\ge54vec\AppData\Local\anaconda3\Lib\tkinter\__init__.py", line 861, in callit
+    func(*args)
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\Equos_gui.py", line 2062, in update_ecqs_live_figure
+    self.fig, _, measurement_done, prog, info, kill_measurement = ecqs_data_displayer(self.qs_data_reader,self.potentiostat,{"fitting": False}, self.ecqs_cache, fig=current_fig)
+                                                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\Data_evaluator.py", line 1742, in ecqs_data_displayer
+    return ca_t1_data_displayer(qs_data_reader, potentiostat, fitting_dic, cache, fig)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\Data_evaluator.py", line 1321, in ca_t1_data_displayer
+    fit_result = fit_t1_from_qs_window(
+                 ^^^^^^^^^^^^^^^^^^^^^^
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\Data_evaluator.py", line 939, in fit_t1_from_qs_window
+    qs_data = qs_data_reader.evaluate_qs_data(cutoff_rate=cutoff_rate, time_array=np.asarray([time_window]))
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\QS_data_reader.py", line 561, in evaluate_qs_data
+    filtered_indices = self.filter_by_time_stamps(cutoff_rate=cutoff_rate, t_lim=time_array)
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\QS_data_reader.py", line 512, in filter_by_time_stamps
+    t_begin, t_end, _ = self._load_raw_data()
+                        ^^^^^^^^^^^^^^^^^^^^^
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\QS_data_reader.py", line 418, in _load_raw_data
+    mm = np.memmap(self._active_dat_file, dtype=float, mode="r", shape=self.data_array_dim)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\.venv\Lib\site-packages\numpy\_core\memmap.py", line 236, in __new__
+    f_ctx = open(
+            ^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: 'C:/Users/ge54vec/.qupyt/temp\\ECQS_T1_20260929120202_0p1V_temp.dat'
+
+
+[2026-09-30 15:09:40] Unhandled Tk callback exception
+Traceback (most recent call last):
+  File "C:\Users\ge54vec\AppData\Local\anaconda3\Lib\tkinter\__init__.py", line 1948, in __call__
+    return self.func(*args)
+           ^^^^^^^^^^^^^^^^
+  File "C:\Users\ge54vec\AppData\Local\anaconda3\Lib\tkinter\__init__.py", line 861, in callit
+    func(*args)
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\Equos_gui.py", line 2134, in update_ecqs_live_figure
+    self.fig, _, measurement_done, prog, info, kill_measurement = ecqs_data_displayer(self.qs_data_reader,self.potentiostat,{"fitting": False}, self.ecqs_cache, fig=current_fig)
+                                                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\Data_evaluator.py", line 1742, in ecqs_data_displayer
+    return ca_t1_data_displayer(qs_data_reader, potentiostat, fitting_dic, cache, fig)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\Data_evaluator.py", line 1270, in ca_t1_data_displayer
+    windows, median_times, qs_counts, window_segments = ca_t1_windows(
+                                                        ^^^^^^^^^^^^^^
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\Data_evaluator.py", line 751, in ca_t1_windows
+    t_begin, t_end, _ = qs_data_reader._load_raw_data()
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\QS_data_reader.py", line 418, in _load_raw_data
+    mm = np.memmap(self._active_dat_file, dtype=float, mode="r", shape=self.data_array_dim)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\.venv\Lib\site-packages\numpy\_core\memmap.py", line 291, in __new__
+    mm = mmap.mmap(fid.fileno(), bytes, access=acc, offset=start)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+OSError: [WinError 8] Not enough memory resources are available to process this command
+
+
+[2026-10-12 16:33:01] GUI action failed: on_rabi_send
+Traceback (most recent call last):
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\Equos_gui.py", line 87, in run_gui_action
+    action()
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\Equos_gui.py", line 1692, in on_rabi_send
+    self.qs_data_reader = QS_data_reader(self.data_folder, self.qs_file_name)
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\QS_data_reader.py", line 49, in __init__
+    raise FileNotFoundError(
+FileNotFoundError: G:/Bucherlab/Surface_Electrochemistry_EPR/Data/NV/2026_10_12_K3K4_50mM_KCl_250mM_KOH_1mM_CV/QS_Rabi_20261012163301.yaml has not been found after waiting 10.0 s
+
+
+[2026-10-13 10:45:31] Unhandled Tk callback exception
+Traceback (most recent call last):
+  File "C:\Users\ge54vec\AppData\Local\anaconda3\Lib\tkinter\__init__.py", line 1948, in __call__
+    return self.func(*args)
+           ^^^^^^^^^^^^^^^^
+  File "C:\Users\ge54vec\AppData\Local\anaconda3\Lib\tkinter\__init__.py", line 861, in callit
+    func(*args)
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\Equos_gui.py", line 1151, in run_pending_queue_item
+    self.start_queued_measurement(item)
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\Equos_gui.py", line 1170, in start_queued_measurement
+    command_map[item["method"]]()
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\Equos_gui.py", line 1715, in on_t1_send
+    self.qs_data_reader = QS_data_reader(self.data_folder, self.qs_file_name)
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\QS_data_reader.py", line 49, in __init__
+    raise FileNotFoundError(
+FileNotFoundError: G:/Bucherlab/Surface_Electrochemistry_EPR/Data/NV/2026_10_13_K3FeCN6_50mM_KCl_250mM_KOH_1mM_CA/QS_T1_20261013104531_after_red_4.yaml has not been found after waiting 10.0 s
+
+
+[2026-10-13 10:48:53] Unhandled Tk callback exception
+Traceback (most recent call last):
+  File "C:\Users\ge54vec\AppData\Local\anaconda3\Lib\tkinter\__init__.py", line 1948, in __call__
+    return self.func(*args)
+           ^^^^^^^^^^^^^^^^
+  File "C:\Users\ge54vec\AppData\Local\anaconda3\Lib\tkinter\__init__.py", line 861, in callit
+    func(*args)
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\Equos_gui.py", line 2134, in update_ecqs_live_figure
+    self.fig, _, measurement_done, prog, info, kill_measurement = ecqs_data_displayer(self.qs_data_reader,self.potentiostat,{"fitting": False}, self.ecqs_cache, fig=current_fig)
+                                                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\Data_evaluator.py", line 1742, in ecqs_data_displayer
+    return ca_t1_data_displayer(qs_data_reader, potentiostat, fitting_dic, cache, fig)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\Data_evaluator.py", line 1321, in ca_t1_data_displayer
+    fit_result = fit_t1_from_qs_window(
+                 ^^^^^^^^^^^^^^^^^^^^^^
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\Data_evaluator.py", line 939, in fit_t1_from_qs_window
+    qs_data = qs_data_reader.evaluate_qs_data(cutoff_rate=cutoff_rate, time_array=np.asarray([time_window]))
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\QS_data_reader.py", line 568, in evaluate_qs_data
+    t_begin_rows, t_end_rows, signal_rows = self._load_raw_data(filtered_indices)
+                                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\QS_data_reader.py", line 418, in _load_raw_data
+    mm = np.memmap(self._active_dat_file, dtype=float, mode="r", shape=self.data_array_dim)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\.venv\Lib\site-packages\numpy\_core\memmap.py", line 291, in __new__
+    mm = mmap.mmap(fid.fileno(), bytes, access=acc, offset=start)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+OSError: [WinError 8] Not enough memory resources are available to process this command
+
+
+[2026-10-13 11:28:32] GUI action failed: on_t1_send
+Traceback (most recent call last):
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\Equos_gui.py", line 87, in run_gui_action
+    action()
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\Equos_gui.py", line 1715, in on_t1_send
+    self.qs_data_reader = QS_data_reader(self.data_folder, self.qs_file_name)
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\QS_data_reader.py", line 49, in __init__
+    raise FileNotFoundError(
+FileNotFoundError: G:/Bucherlab/Surface_Electrochemistry_EPR/Data/NV/2026_10_13_K3FeCN6_50mM_KCl_250mM_KOH_1mM_CA/QS_T1_20261013112822_before_red_6.yaml has not been found after waiting 10.0 s
+
+
+[2026-10-13 11:28:57] GUI action failed: on_t1_send
+Traceback (most recent call last):
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\Equos_gui.py", line 87, in run_gui_action
+    action()
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\Equos_gui.py", line 1715, in on_t1_send
+    self.qs_data_reader = QS_data_reader(self.data_folder, self.qs_file_name)
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\QS_data_reader.py", line 49, in __init__
+    raise FileNotFoundError(
+FileNotFoundError: G:/Bucherlab/Surface_Electrochemistry_EPR/Data/NV/2026_10_13_K3FeCN6_50mM_KCl_250mM_KOH_1mM_CA/QS_T1_20261013112857_before_red_6.yaml has not been found after waiting 10.0 s
+
+
+[2026-10-13 15:22:19] Unhandled Tk callback exception
+Traceback (most recent call last):
+  File "C:\Users\ge54vec\AppData\Local\anaconda3\Lib\tkinter\__init__.py", line 1948, in __call__
+    return self.func(*args)
+           ^^^^^^^^^^^^^^^^
+  File "C:\Users\ge54vec\AppData\Local\anaconda3\Lib\tkinter\__init__.py", line 861, in callit
+    func(*args)
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\Equos_gui.py", line 1151, in run_pending_queue_item
+    self.start_queued_measurement(item)
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\Equos_gui.py", line 1170, in start_queued_measurement
+    command_map[item["method"]]()
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\Equos_gui.py", line 1987, in on_ca_t1_send
+    self.qs_data_reader = QS_data_reader(self.data_folder, self.qs_file_name)
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\QS_data_reader.py", line 49, in __init__
+    raise FileNotFoundError(
+FileNotFoundError: G:/Bucherlab/Surface_Electrochemistry_EPR/Data/NV/2026_10_13_K3FeCN6_50mM_KCl_250mM_KOH_1mM_CA/ECQS_T1_20261013152209_Red_12.yaml has not been found after waiting 10.0 s
+
+Windows fatal exception: code 0x80010012
+
+Thread 0x0000285c (most recent call first):
+  File "C:\Users\ge54vec\AppData\Local\anaconda3\Lib\tkinter\__init__.py", line 1485 in mainloop
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\Equos_gui.py", line 2345 in main
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\Equos_gui.py", line 2353 in <module>
+
+[2026-10-14 11:38:49] Unhandled Tk callback exception
+Traceback (most recent call last):
+  File "C:\Users\ge54vec\AppData\Local\anaconda3\Lib\tkinter\__init__.py", line 1948, in __call__
+    return self.func(*args)
+           ^^^^^^^^^^^^^^^^
+  File "C:\Users\ge54vec\AppData\Local\anaconda3\Lib\tkinter\__init__.py", line 861, in callit
+    func(*args)
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\Equos_gui.py", line 1151, in run_pending_queue_item
+    self.start_queued_measurement(item)
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\Equos_gui.py", line 1170, in start_queued_measurement
+    command_map[item["method"]]()
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\Equos_gui.py", line 1715, in on_t1_send
+    self.qs_data_reader = QS_data_reader(self.data_folder, self.qs_file_name)
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\QS_data_reader.py", line 49, in __init__
+    raise FileNotFoundError(
+FileNotFoundError: G:/Bucherlab/Surface_Electrochemistry_EPR/Data/NV/2026_10_14_K4FeCN6_50mM_KCl_250mM_KOH_1mM_CA/QS_T1_20261014113849_after_ox_1.yaml has not been found after waiting 10.0 s
+
+
+[2026-10-14 13:33:26] Unhandled Tk callback exception
+Traceback (most recent call last):
+  File "C:\Users\ge54vec\AppData\Local\anaconda3\Lib\tkinter\__init__.py", line 1948, in __call__
+    return self.func(*args)
+           ^^^^^^^^^^^^^^^^
+  File "C:\Users\ge54vec\AppData\Local\anaconda3\Lib\tkinter\__init__.py", line 861, in callit
+    func(*args)
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\Equos_gui.py", line 1151, in run_pending_queue_item
+    self.start_queued_measurement(item)
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\Equos_gui.py", line 1170, in start_queued_measurement
+    command_map[item["method"]]()
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\Equos_gui.py", line 1715, in on_t1_send
+    self.qs_data_reader = QS_data_reader(self.data_folder, self.qs_file_name)
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "G:\Bucherlab\Surface_Electrochemistry_EPR\Code\EQuOS\QS_data_reader.py", line 49, in __init__
+    raise FileNotFoundError(
+FileNotFoundError: G:/Bucherlab/Surface_Electrochemistry_EPR/Data/NV/2026_10_14_K4FeCN6_50mM_KCl_250mM_KOH_1mM_CA/QS_T1_20261014133326_after_ox_4.yaml has not been found after waiting 10.0 s
+

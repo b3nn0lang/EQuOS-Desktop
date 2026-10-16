@@ -15,6 +15,9 @@ import os
 import glob
 import warnings
 from tqdm import tqdm
+from Plot_export import export_figure_data_csv
+
+RABI_PULSE_CUTOFF_NS = 10.0
 
 def qs_data_displayer(qs_data_reader: object, fitting_parameters: dict, fig: Figure | None = None) -> tuple[object, object, bool]:
     data = qs_data_reader.evaluate_qs_data()
@@ -34,6 +37,7 @@ def qs_data_displayer(qs_data_reader: object, fitting_parameters: dict, fig: Fig
     try:
         measurement_progress = qs_data_reader.get_raw_dataframe_progress()
         measurement_done = qs_data_reader.dataframe_loop_stop.is_set()
+        measurement_type = data["experiment"]
         x_data = np.array(data["x_data"])
         x_label = f"{data['x_label']} / {data['x_unit']}" if data["x_unit"] else data["x_label"]
         reference_mean = np.array(data["reference_mean"])
@@ -55,12 +59,26 @@ def qs_data_displayer(qs_data_reader: object, fitting_parameters: dict, fig: Fig
         else:
             contrast_mean = np.array(data["contrast_mean"])
             contrast_std =  np.array(data["contrast_std"])
+        if measurement_type == "Rabi" or measurement_type == "Rabi_ECQS":
+            rabi_cutoff_mask = x_data > RABI_PULSE_CUTOFF_NS
+            removed_rabi_points = int(np.count_nonzero(~rabi_cutoff_mask))
+            x_data = x_data[rabi_cutoff_mask]
+            reference_mean = reference_mean[rabi_cutoff_mask]
+            reference_std = reference_std[rabi_cutoff_mask]
+            value_mean = value_mean[rabi_cutoff_mask]
+            value_std = value_std[rabi_cutoff_mask]
+            contrast_mean = contrast_mean[rabi_cutoff_mask]
+            contrast_std = contrast_std[rabi_cutoff_mask]
+            if removed_rabi_points:
+                info_dic["Rabi cutoff"] = f"removed {removed_rabi_points} points below {RABI_PULSE_CUTOFF_NS:g} ns"
         if x_data.size == 0:
             return fig, axes, measurement_done, measurement_progress, info_dic
         info_dic["Measurement_time"] = f"{np.mean(data['time_measure_mean'])*1000:.0f} +- {np.mean(data['time_measure_std'])*1000:.0f} ms"
         info_dic["Saving time"] = f"{np.mean(data['time_save_mean'])*1000:.0f} +- {np.mean(data['time_save_std'])*1000:.0f} ms"
-        info_dic["Light Level"] = f"{np.mean(data['reference_mean']):.4f} mV"
+        info_dic["Light Level"] = f"{np.mean(reference_mean):.4f} mV"
         info_dic["Measurement points"] = f"{len(data['x_data'])} points x {data['contrast_length'][0]} averages"
+        if measurement_type == "Rabi" or measurement_type == "Rabi_ECQS":
+            info_dic["Plotted Rabi points"] = f"{len(x_data)} points"
         add_qs_measurement_parameters(info_dic, qs_data_reader)
         axes[0].plot(x_data, contrast_mean, color="tab:blue", label="contrast mean")
         """ axes[0].fill_between(
@@ -73,7 +91,6 @@ def qs_data_displayer(qs_data_reader: object, fitting_parameters: dict, fig: Fig
         ) """#Fitting
         if fitting_parameters["fitting"] == True:
             fitting_time_begin = time()
-            measurement_type = data["experiment"]
             if measurement_type == "ESR" or measurement_type == "ESR_ECQS":
                 prominence = 0.01
                 distance = 5
@@ -147,10 +164,8 @@ def qs_data_displayer(qs_data_reader: object, fitting_parameters: dict, fig: Fig
                          print(e)
             if measurement_type == "Rabi" or measurement_type == "Rabi_ECQS":
                 if ("rabi_sin_fit" in fitting_parameters.keys() and fitting_parameters["rabi_sin_fit"] == True) or "rabi_sin_fit" not in fitting_parameters.keys():
-                    rabi_fit_skip_points = 5
-                    x_fit_data = x_data[rabi_fit_skip_points:]
-                    contrast_fit_mean = contrast_mean[rabi_fit_skip_points:]
-                    info_dic["Rabi fit skipped"] = "first 10 ns / 5 points"
+                    x_fit_data = x_data
+                    contrast_fit_mean = contrast_mean
                     p0 = estimate_rabi_initial_guess(x_fit_data, contrast_fit_mean)
                     if "rabi_max_tries" in fitting_parameters.keys():
                         maxfev = fitting_parameters["rabi_max_tries"]
@@ -384,15 +399,17 @@ def save_ecqs_t1_detail_plot(qs_tau, qs_contrast, potential, color, direction, s
     label = f"{potential:.3f}V"
     name = f"QS_{direction}_{potential:.3f}V.png"
     fig_path = os.path.join(sub_path, name)
+    fig = Figure(figsize=(6, 4), constrained_layout=True)
+    ax = fig.subplots()
 
     if len(qs_tau) and len(qs_contrast):
-        plt.plot(qs_tau, qs_contrast, marker="x", color=color, label=label)
+        ax.plot(qs_tau, qs_contrast, marker="x", color=color, label=label)
         all_ax.plot(qs_tau, qs_contrast, marker="x", label=label)
     else:
-        plt.plot([], [], marker="x", color=color, label=f"{label}: no T1 data")
+        ax.plot([], [], marker="x", color=color, label=f"{label}: no T1 data")
 
     if y_fit is not None and tau is not None and r_square is not None:
-        plt.plot(
+        ax.plot(
             qs_tau,
             y_fit,
             linestyle="--",
@@ -400,16 +417,19 @@ def save_ecqs_t1_detail_plot(qs_tau, qs_contrast, potential, color, direction, s
             label=f"fit: {tau:.3f} ms, R^2 = {r_square:.3f}",
         )
     elif fit_error:
-        plt.plot([], [], color=color, label=f"fit failed: {fit_error}")
+        ax.plot([], [], color=color, label=f"fit failed: {fit_error}")
 
-    plt.xlabel("tau spacing")
-    plt.ylabel("normalized contrast")
-    plt.legend()
-    plt.savefig(fig_path, dpi=300)
-    plt.close()
+    ax.set_xlabel("tau spacing")
+    ax.set_ylabel("normalized contrast")
+    ax.legend()
+    fig.savefig(fig_path, dpi=300)
+    export_figure_data_csv(fig, os.path.splitext(fig_path)[0] + ".csv")
+    plt.close(fig)
 
 def clear_ca_t1_detail_plots(sub_path):
-    for old_file in glob.glob(os.path.join(sub_path, "CA_T1_point_*.png")):
+    old_files = glob.glob(os.path.join(sub_path, "CA_T1_point_*.png"))
+    old_files += glob.glob(os.path.join(sub_path, "CA_T1_point_*.csv"))
+    for old_file in old_files:
         try:
             os.remove(old_file)
         except OSError:
@@ -446,6 +466,7 @@ def save_ca_t1_detail_plot(point_number, qs_tau, qs_contrast, sub_path, y_fit=No
     ax.set_ylabel("normalized contrast")
     ax.legend()
     fig.savefig(fig_path, dpi=300)
+    export_figure_data_csv(fig, os.path.splitext(fig_path)[0] + ".csv")
     plt.close(fig)
 
 def ecqs_t1_selected_points(plot_data, t1_potential_step: float) -> list[dict]:
@@ -695,41 +716,93 @@ def ca_live_ec_trace(potentiostat, method, raw_ec_data, callback_data):
     ec_end = ec_start + float(rel_time[-1])
     return ec_start, ec_end, rel_time, current
 
-def ca_t1_windows(qs_data_reader, ec_start, ec_end, avg_per_datapoint, time_bin_size, measurement_done):
+def ca_t1_segment_bounds(raw_ec_data, ec_start, ec_end):
+    if raw_ec_data is None or raw_ec_data.empty or "CA_Segment" not in raw_ec_data.columns:
+        if ec_start is None or ec_end is None:
+            return []
+        return [{"index": 1, "potential": None, "start": ec_start, "end": ec_end}]
+
+    segments = []
+    for segment_index, segment_data in raw_ec_data.groupby("CA_Segment", sort=True):
+        if segment_data.empty:
+            continue
+        potential = None
+        if "CA_Segment_Potential" in segment_data.columns:
+            potential = float(segment_data["CA_Segment_Potential"].iloc[0])
+        segments.append({
+            "index": int(segment_index),
+            "potential": potential,
+            "start": float(np.min(segment_data["Time_begin"])),
+            "end": float(np.max(segment_data["Time_end"])),
+        })
+    return segments
+
+def ca_t1_windows(
+    qs_data_reader,
+    ec_start,
+    ec_end,
+    avg_per_datapoint,
+    time_bin_size,
+    measurement_done,
+    segments=None,
+    floating=False,
+    floating_step=1,
+):
     t_begin, t_end, _ = qs_data_reader._load_raw_data()
     if len(t_begin) == 0 or ec_start is None or ec_end is None:
-        return [], [], []
+        return [], [], [], []
 
     qs_centers = (t_begin + t_end) / 2
-    in_ec_run = (t_begin >= ec_start) & (t_end <= ec_end)
-    qs_indices = np.flatnonzero(in_ec_run)
     windows = []
     median_times = []
     qs_counts = []
-    if time_bin_size > 0:
-        edges = np.arange(ec_start, ec_end + time_bin_size, time_bin_size)
-        for start, end in zip(edges[:-1], edges[1:]):
-            if end > ec_end and not measurement_done:
-                break
-            mask = (qs_centers >= start) & (qs_centers < end)
-            if not np.any(mask):
-                continue
-            windows.append((start, end))
-            median_times.append(float(np.median(qs_centers[mask]) - ec_start))
-            qs_counts.append(int(np.sum(mask)))
-    else:
-        full_count = len(qs_indices) // avg_per_datapoint
-        if measurement_done and len(qs_indices) % avg_per_datapoint:
-            full_count += 1
-        for chunk_number in range(full_count):
-            chunk_start = chunk_number * avg_per_datapoint
-            chunk = qs_indices[chunk_start:chunk_start + avg_per_datapoint]
-            if len(chunk) == 0:
-                continue
-            windows.append((float(t_begin[chunk[0]]), float(t_end[chunk[-1]])))
-            median_times.append(float(np.median(qs_centers[chunk]) - ec_start))
-            qs_counts.append(len(chunk))
-    return windows, median_times, qs_counts
+    window_segments = []
+    if segments is None:
+        segments = [{"index": 1, "potential": None, "start": ec_start, "end": ec_end}]
+
+    for segment in segments:
+        segment_start = float(segment["start"])
+        segment_end = float(segment["end"])
+        in_segment = (t_begin >= segment_start) & (t_end <= segment_end)
+        qs_indices = np.flatnonzero(in_segment)
+        if time_bin_size > 0:
+            step_size = time_bin_size
+            if floating:
+                try:
+                    step_size = max(float(floating_step), 1e-9)
+                except (TypeError, ValueError):
+                    step_size = time_bin_size
+            starts = np.arange(segment_start, segment_end, step_size)
+            for start in starts:
+                end = start + time_bin_size
+                if end > segment_end:
+                    break
+                mask = in_segment & (qs_centers >= start) & (qs_centers < end)
+                if not np.any(mask):
+                    continue
+                windows.append((start, end))
+                median_times.append(float(np.mean(qs_centers[mask]) - ec_start))
+                qs_counts.append(int(np.sum(mask)))
+                window_segments.append(segment)
+        else:
+            if floating:
+                try:
+                    point_step = max(1, int(floating_step))
+                except (TypeError, ValueError):
+                    point_step = 1
+            else:
+                point_step = avg_per_datapoint
+            for chunk_start in range(0, len(qs_indices), point_step):
+                chunk = qs_indices[chunk_start:chunk_start + avg_per_datapoint]
+                if len(chunk) == 0:
+                    continue
+                if len(chunk) < avg_per_datapoint:
+                    continue
+                windows.append((float(t_begin[chunk[0]]), float(t_end[chunk[-1]])))
+                median_times.append(float(np.mean(qs_centers[chunk]) - ec_start))
+                qs_counts.append(len(chunk))
+                window_segments.append(segment)
+    return windows, median_times, qs_counts, window_segments
 
 def setup_ca_t1_axes(fig, cache):
     fig.clear()
@@ -769,6 +842,7 @@ def setup_ca_t1_axes(fig, cache):
         "light": axes[1,0].plot([], [], label="Lightlevel", color="tab:cyan")[0],
         "contrast": ax_contrast.plot([], [], label="Contrast scale", color="tab:purple")[0],
         "bars": [],
+        "segment_lines": [],
     }
     ax_bar.set_ylabel("Averages")
     ax_contrast.set_ylabel("Contrast scale")
@@ -787,44 +861,76 @@ def update_ca_t1_bars(cache, x_values, heights, width):
     else:
         cache.ca_t1_artists["bars"] = []
 
-def update_ca_t1_t1_artists(cache, x_values, y_values):
+def ca_t1_gapped_line_data(x_values, y_values, segment_keys):
     x_values = np.asarray(x_values, dtype=float)
     y_values = np.asarray(y_values, dtype=float)
-    valid = np.isfinite(y_values)
-    missing = ~valid
-    cache.ca_t1_artists["t1"].set_data(x_values[valid], y_values[valid])
-    if np.any(missing) and np.any(valid):
-        sort_idx = np.argsort(x_values[valid])
-        marker_y = np.interp(
-            x_values[missing],
-            x_values[valid][sort_idx],
-            y_values[valid][sort_idx],
-        )
-        cache.ca_t1_artists["t1_missing"].set_offsets(np.column_stack((x_values[missing], marker_y)))
-    else:
-        cache.ca_t1_artists["t1_missing"].set_offsets(np.empty((0, 2)))
+    segment_keys = np.asarray(segment_keys, dtype=object)
+    if len(x_values) == 0:
+        return x_values, y_values
+    gapped_x = []
+    gapped_y = []
+    previous_key = segment_keys[0]
+    for x_value, y_value, segment_key in zip(x_values, y_values, segment_keys):
+        if gapped_x and segment_key != previous_key:
+            gapped_x.append(np.nan)
+            gapped_y.append(np.nan)
+        gapped_x.append(x_value)
+        gapped_y.append(y_value)
+        previous_key = segment_key
+    return np.asarray(gapped_x, dtype=float), np.asarray(gapped_y, dtype=float)
 
-def update_ca_t1_r2_artists(cache, x_values, y_values):
+def ca_t1_missing_offsets(x_values, y_values, segment_keys):
     x_values = np.asarray(x_values, dtype=float)
     y_values = np.asarray(y_values, dtype=float)
-    valid = np.isfinite(y_values)
-    missing = ~valid
-    cache.ca_t1_artists["r2"].set_data(x_values[valid], y_values[valid])
-    if np.any(missing) and np.any(valid):
-        sort_idx = np.argsort(x_values[valid])
+    segment_keys = np.asarray(segment_keys, dtype=object)
+    offsets = []
+    unique_segment_keys = []
+    for segment_key in segment_keys:
+        if segment_key not in unique_segment_keys:
+            unique_segment_keys.append(segment_key)
+    for segment_key in unique_segment_keys:
+        segment_mask = segment_keys == segment_key
+        segment_valid = segment_mask & np.isfinite(y_values)
+        segment_missing = segment_mask & ~np.isfinite(y_values)
+        if not np.any(segment_missing) or not np.any(segment_valid):
+            continue
+        sort_idx = np.argsort(x_values[segment_valid])
         marker_y = np.interp(
-            x_values[missing],
-            x_values[valid][sort_idx],
-            y_values[valid][sort_idx],
+            x_values[segment_missing],
+            x_values[segment_valid][sort_idx],
+            y_values[segment_valid][sort_idx],
         )
-        cache.ca_t1_artists["r2_missing"].set_offsets(np.column_stack((x_values[missing], marker_y)))
-    else:
-        cache.ca_t1_artists["r2_missing"].set_offsets(np.empty((0, 2)))
+        offsets.extend(zip(x_values[segment_missing], marker_y))
+    if offsets:
+        return np.asarray(offsets, dtype=float)
+    return np.empty((0, 2))
 
-def ca_t1_progress(method, ec_time, measurement_done):
+def update_ca_t1_t1_artists(cache, x_values, y_values, segment_keys=None):
+    if segment_keys is None:
+        segment_keys = np.zeros(len(x_values), dtype=int)
+    x_values = np.asarray(x_values, dtype=float)
+    y_values = np.asarray(y_values, dtype=float)
+    segment_keys = np.asarray(segment_keys, dtype=object)
+    valid = np.isfinite(y_values)
+    line_x, line_y = ca_t1_gapped_line_data(x_values[valid], y_values[valid], segment_keys[valid])
+    cache.ca_t1_artists["t1"].set_data(line_x, line_y)
+    cache.ca_t1_artists["t1_missing"].set_offsets(ca_t1_missing_offsets(x_values, y_values, segment_keys))
+
+def update_ca_t1_r2_artists(cache, x_values, y_values, segment_keys=None):
+    if segment_keys is None:
+        segment_keys = np.zeros(len(x_values), dtype=int)
+    x_values = np.asarray(x_values, dtype=float)
+    y_values = np.asarray(y_values, dtype=float)
+    segment_keys = np.asarray(segment_keys, dtype=object)
+    valid = np.isfinite(y_values)
+    line_x, line_y = ca_t1_gapped_line_data(x_values[valid], y_values[valid], segment_keys[valid])
+    cache.ca_t1_artists["r2"].set_data(line_x, line_y)
+    cache.ca_t1_artists["r2_missing"].set_offsets(ca_t1_missing_offsets(x_values, y_values, segment_keys))
+
+def ca_t1_progress(method, ec_time, measurement_done, total_run_time=None):
     if measurement_done:
         return 1
-    run_time = float(method.get("run_time", 0) or 0)
+    run_time = float(total_run_time if total_run_time is not None else method.get("run_time", 0) or 0)
     if run_time <= 0 or len(ec_time) == 0:
         return 0
     return max(0, min(float(np.nanmax(ec_time)) / run_time, 1))
@@ -1108,6 +1214,15 @@ def ca_t1_data_displayer(qs_data_reader, potentiostat, fitting_dic: dict, cache,
         time_bin_size = float(fitting_dic.get("time_bin_size", 0))
     except (TypeError, ValueError):
         time_bin_size = 0
+    floating_windows = bool(fitting_dic.get("floating_windows", False))
+    try:
+        floating_step = float(fitting_dic.get("floating_step", 1))
+    except (TypeError, ValueError):
+        floating_step = 1
+    if time_bin_size <= 0:
+        floating_step = max(1, int(floating_step))
+    else:
+        floating_step = max(float(floating_step), 1e-9)
     save_detail_plots = bool(fitting_dic.get("save_detail_plots", False))
 
     method = potentiostat.method.to_dict()
@@ -1115,14 +1230,25 @@ def ca_t1_data_displayer(qs_data_reader, potentiostat, fitting_dic: dict, cache,
     callback_data = potentiostat.get_callback_data()
     qs_data = qs_data_reader.evaluate_qs_data()
     time_label = "Time [s]"
+    sequence_potentials = getattr(potentiostat, "ca_sequence_potentials", []) or []
+    segment_count = len(sequence_potentials) if sequence_potentials else 1
+    total_run_time = float(method["run_time"]) * segment_count
     info_dic = {
-        "Potential": method["potential"],
-        "Run time": method["run_time"],
+        "Potential": method["potential"] if not sequence_potentials else ", ".join(f"{potential:g}" for potential in sequence_potentials),
+        "Run time": method["run_time"] if not sequence_potentials else f"{method['run_time']} s per CA, {total_run_time:g} s total",
         "Interval time": method["interval_time"],
         "T1 averages/datapoint": avg_per_datapoint,
     }
+    if getattr(potentiostat, "no_applied_potential", False):
+        info_dic["Potential"] = "Not applied (potentiostat unused)"
+        info_dic["Current"] = "Simulated zero current"
     if time_bin_size > 0:
         info_dic["Time bin size"] = f"{time_bin_size} s"
+    if floating_windows:
+        if time_bin_size > 0:
+            info_dic["Floating window step"] = f"{floating_step:g} s"
+        else:
+            info_dic["Floating window step"] = f"{floating_step:g} points"
     if use_r_square_threshold:
         info_dic["T1 R^2 threshold"] = f"{r_square_threshold:.3f}"
     try:
@@ -1143,13 +1269,17 @@ def ca_t1_data_displayer(qs_data_reader, potentiostat, fitting_dic: dict, cache,
     if fig is None:
         fig = Figure(figsize=(12,8), constrained_layout=True)
     ec_start, ec_end, ec_time, ec_current = ca_live_ec_trace(potentiostat, method, raw_ec_data, callback_data)
-    windows, median_times, qs_counts = ca_t1_windows(
+    segments = ca_t1_segment_bounds(raw_ec_data, ec_start, ec_end)
+    windows, median_times, qs_counts, window_segments = ca_t1_windows(
         qs_data_reader,
         ec_start,
         ec_end,
         avg_per_datapoint,
         time_bin_size,
         measurement_done,
+        segments,
+        floating_windows,
+        floating_step,
     )
     available_end = float(np.nanmax(ec_time)) if len(ec_time) else float(method.get("run_time", 0) or 0)
     time_from, time_to = ca_time_region(fitting_dic, available_end)
@@ -1157,9 +1287,13 @@ def ca_t1_data_displayer(qs_data_reader, potentiostat, fitting_dic: dict, cache,
     windows = [windows[i] for i in selected]
     median_times = [median_times[i] for i in selected]
     qs_counts = [qs_counts[i] for i in selected]
+    window_segments = [window_segments[i] for i in selected]
     info_dic["Displayed time region"] = f"{time_from:g} - {time_to:g} s"
+    if len(segments) > 1:
+        info_dic["CA segments"] = len(segments)
+        info_dic["Hard T1 cutoffs"] = "CA segment boundaries"
     completed_points = len(windows)
-    measurement_progress = ca_t1_progress(method, ec_time, measurement_done)
+    measurement_progress = ca_t1_progress(method, ec_time, measurement_done, total_run_time if sequence_potentials else None)
     if cache.axes is None or cache.fig is None:
         axes = setup_ca_t1_axes(fig, cache)
         cache.fig = fig
@@ -1185,6 +1319,7 @@ def ca_t1_data_displayer(qs_data_reader, potentiostat, fitting_dic: dict, cache,
         r_square_values = []
         light_values = []
         contrast_values = []
+        segment_labels = []
         for point_number, window in enumerate(windows, start=1):
             fit_result = fit_t1_from_qs_window(
                 qs_data_reader,
@@ -1215,8 +1350,11 @@ def ca_t1_data_displayer(qs_data_reader, potentiostat, fitting_dic: dict, cache,
             r_square_values.append(r_square)
             light_values.append(lightlevel)
             contrast_values.append(contrast_scale)
+            segment = window_segments[point_number - 1]
+            segment_labels.append(segment.get("potential"))
 
         scaled_median_times, time_label = ca_time_scale(median_times)
+        segment_keys = [segment.get("index", 1) for segment in window_segments]
         cache.ca_t1_artists["light"].set_data(scaled_median_times, light_values)
         cache.ca_t1_artists["contrast"].set_data(scaled_median_times, contrast_values)
         if len(scaled_median_times):
@@ -1228,9 +1366,11 @@ def ca_t1_data_displayer(qs_data_reader, potentiostat, fitting_dic: dict, cache,
                 width = 0.1
         else:
             width = 0.1
-        update_ca_t1_t1_artists(cache, scaled_median_times, tau_values)
-        update_ca_t1_r2_artists(cache, scaled_median_times, r_square_values)
+        update_ca_t1_t1_artists(cache, scaled_median_times, tau_values, segment_keys)
+        update_ca_t1_r2_artists(cache, scaled_median_times, r_square_values, segment_keys)
         update_ca_t1_bars(cache, scaled_median_times, qs_counts, width)
+        if len(set(label for label in segment_labels if label is not None)) > 1:
+            cache.ca_t1_artists["t1"].set_label("T1 Time by CA segment")
 
         cache.last_measurement = completed_points
         cache.axes = axes
@@ -1240,7 +1380,7 @@ def ca_t1_data_displayer(qs_data_reader, potentiostat, fitting_dic: dict, cache,
     else:
         cache.measurement_progress = measurement_progress
 
-    fig.suptitle("Chronoamperometry / T1_ECQS")
+    fig.suptitle(f"{potentiostat.measurement_name} / T1_ECQS")
     axes[0,0].set_xlabel(time_label)
     axes[0,0].set_ylabel("Current [uA]")
     axes[0,1].set_xlabel(time_label)
@@ -1264,6 +1404,19 @@ def ca_t1_data_displayer(qs_data_reader, potentiostat, fitting_dic: dict, cache,
         scaled_to, _ = ca_time_scale(time_to)
         if scaled_to > scaled_from:
             ax.set_xlim(scaled_from, scaled_to)
+    for line in cache.ca_t1_artists.get("segment_lines", []):
+        try:
+            line.remove()
+        except ValueError:
+            pass
+    cache.ca_t1_artists["segment_lines"] = []
+    if len(segments) > 1 and ec_start is not None:
+        segment_lines = []
+        for ax in (axes[0,0], axes[0,1], axes[1,0], axes[1,1]):
+            for segment in segments[1:]:
+                boundary, _ = ca_time_scale([segment["start"] - ec_start])
+                segment_lines.append(ax.axvline(float(boundary[0]), color="black", linestyle=":", alpha=0.35))
+        cache.ca_t1_artists["segment_lines"] = segment_lines
     return fig, axes, measurement_done, measurement_progress, info_dic, kill_qupyt
 
 def ecqs_progress_from_live_summary(qs_data: dict, t1_point_count: int, avg_per_point: int) -> float:
@@ -2068,6 +2221,7 @@ def ecqs_data_displayer(qs_data_reader, potentiostat, fitting_dic: dict, cache, 
                         fig_path = os.path.join(sub_path,f"EC_{i}.png")
                         if not os.path.exists(fig_path):
                             figure.savefig(fig_path, dpi=300)
+                        export_figure_data_csv(figure, os.path.splitext(fig_path)[0] + ".csv")
                     finally:
                         plt.close(figure)
             except:
@@ -2081,6 +2235,8 @@ def ecqs_data_displayer(qs_data_reader, potentiostat, fitting_dic: dict, cache, 
             all_down_ax.legend(loc="lower right")
             all_up_fig.savefig(os.path.join(sub_path, up_fig_name), dpi=300)
             all_down_fig.savefig(os.path.join(sub_path, down_fig_name), dpi=300)
+            export_figure_data_csv(all_up_fig, os.path.join(sub_path, "QS_Up_all.csv"))
+            export_figure_data_csv(all_down_fig, os.path.join(sub_path, "QS_Down_all.csv"))
         plt.close(all_up_fig)
         plt.close(all_down_fig)
         #Code lightlevel over time here

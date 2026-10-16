@@ -10,6 +10,7 @@ from datetime import datetime
 import os
 import numpy as np
 import math
+import csv
 #This method creates the file names for the measurements in a way that parse_file_folder sees which ones belong together
 def create_file_name(qs_type: str = None, ec_type: str = None, annotation: str = "") -> tuple[str, str]:
     timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
@@ -33,6 +34,13 @@ def create_file_name(qs_type: str = None, ec_type: str = None, annotation: str =
         ec_file_name = f"ECQS_{ec_type}_{timestamp}{annotation_str}"
 
     return qs_file_name, ec_file_name
+def is_no_potential_csv(path):
+    try:
+        with open(path, newline="", encoding="utf-8") as stream:
+            return "No_Applied_Potential" in next(csv.reader(stream), [])
+    except OSError:
+        return False
+
 #This method parses the current folder to load data and returns a dicteniorray with the splitted filename parts (only works is solely equos files are present)
 def parse_file_folder(folder_name: str) -> list:
        measurements = list()
@@ -47,7 +55,7 @@ def parse_file_folder(folder_name: str) -> list:
            full_dat_path = os.path.join(folder_name, dat_file)
            full_csv_path = os.path.join(folder_name,csv_file)
            full_psssession_path=os.path.join(folder_name, pssession_file)
-           if (os.path.isfile(full_dat_path) and os.path.isfile(full_yaml_path)) or (os.path.isfile(full_csv_path) and os.path.isfile(full_psssession_path)):
+           if (os.path.isfile(full_dat_path) and os.path.isfile(full_yaml_path)) or (os.path.isfile(full_csv_path) and (os.path.isfile(full_psssession_path) or is_no_potential_csv(full_csv_path))):
                file_name_list.add(file)
        file_name_list = sorted(file_name_list)
        for file in file_name_list:
