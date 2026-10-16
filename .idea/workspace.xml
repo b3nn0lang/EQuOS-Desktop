@@ -4,10 +4,9 @@
     <option name="autoReloadType" value="ALL" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="7f911216-e681-405e-8252-ad6017b9785b" name="Changes" comment="loop more precise steps">
+    <list default="true" id="7f911216-e681-405e-8252-ad6017b9785b" name="Changes" comment="latest version">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Data_evaluator.py" beforeDir="false" afterPath="$PROJECT_DIR$/Data_evaluator.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Equos_viewer.py" beforeDir="false" afterPath="$PROJECT_DIR$/Equos_viewer.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Evaluation loop.py" beforeDir="false" afterPath="$PROJECT_DIR$/Evaluation loop.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -33,35 +32,35 @@
     &quot;assignee&quot;: &quot;b3nn0lang&quot;
   }
 }</component>
-  <component name="GithubPullRequestsUISettings"><![CDATA[{
-  "selectedUrlAndAccountId": {
-    "url": "https://github.com/b3nn0lang/EQuOS-Desktop.git",
-    "accountId": "5286e233-5bf6-474d-aaf9-d67acebd9808"
+  <component name="GithubPullRequestsUISettings">{
+  &quot;selectedUrlAndAccountId&quot;: {
+    &quot;url&quot;: &quot;https://github.com/b3nn0lang/EQuOS-Desktop.git&quot;,
+    &quot;accountId&quot;: &quot;5286e233-5bf6-474d-aaf9-d67acebd9808&quot;
   }
-}]]></component>
+}</component>
   <component name="McpProjectServerCommands">
     <commands />
     <urls />
   </component>
   <component name="NextEditCompletionFeaturesState">
     <decayedCancelled>
-      <entry key="MS100" value="1.000474929173541" />
-      <entry key="MS500" value="1.216434676323717" />
-      <entry key="S2" value="1.7574133984726719" />
-      <entry key="S5" value="3.306458405111585" />
-      <entry key="S10" value="6.281325778225104" />
-      <entry key="S30" value="11.466075474616714" />
-      <entry key="S60" value="16.153512339569144" />
-      <entry key="M2" value="30.975101425026295" />
-      <entry key="M5" value="65.73720851802757" />
-      <entry key="M10" value="121.96217548547197" />
-      <entry key="M15" value="196.98437583318454" />
-      <entry key="M30" value="401.2895466990171" />
-      <entry key="H1" value="622.3439236487179" />
-      <entry key="H2" value="789.2798440172548" />
-      <entry key="H4" value="900.0243061174397" />
-      <entry key="D1" value="1750.1669316327375" />
-      <entry key="W1" value="5079.997065580109" />
+      <entry key="MS100" value="1.0008193211488308" />
+      <entry key="MS500" value="1.4826049794365073" />
+      <entry key="S2" value="3.866233003318532" />
+      <entry key="S5" value="6.381964788853731" />
+      <entry key="S10" value="9.7209109078424" />
+      <entry key="S30" value="15.594968663470437" />
+      <entry key="S60" value="20.564315979880067" />
+      <entry key="M2" value="35.44390930304689" />
+      <entry key="M5" value="70.30284506023835" />
+      <entry key="M10" value="126.56572938175567" />
+      <entry key="M15" value="201.56069482051907" />
+      <entry key="M30" value="405.86064720869814" />
+      <entry key="H1" value="627.0120196539407" />
+      <entry key="H2" value="794.0695360183992" />
+      <entry key="H4" value="904.9044386916613" />
+      <entry key="D1" value="1755.128135622933" />
+      <entry key="W1" value="5084.980994249024" />
     </decayedCancelled>
     <decayedSelected>
       <entry key="MS100" value="0.0" />
@@ -74,32 +73,32 @@
       <entry key="M2" value="0.0" />
       <entry key="M5" value="0.0" />
       <entry key="M10" value="0.0" />
-      <entry key="M15" value="2.0260363786095264E-228" />
-      <entry key="M30" value="1.4233890468209353E-114" />
-      <entry key="H1" value="1.1930586937870715E-57" />
-      <entry key="H2" value="3.454068172151474E-29" />
-      <entry key="H4" value="5.877132100055773E-15" />
-      <entry key="D1" value="0.004248095213038874" />
-      <entry key="W1" value="0.45832189617170566" />
+      <entry key="M15" value="2.021735862678808E-228" />
+      <entry key="M30" value="1.421877583577114E-114" />
+      <entry key="H1" value="1.1924250851005659E-57" />
+      <entry key="H2" value="3.4531508584197084E-29" />
+      <entry key="H4" value="5.8763516389157926E-15" />
+      <entry key="D1" value="0.004248001185979356" />
+      <entry key="W1" value="0.45832044694843704" />
     </decayedSelected>
     <decayedShown>
-      <entry key="MS100" value="0.9530935805593361" />
-      <entry key="MS500" value="1.2049847606356643" />
-      <entry key="S2" value="1.7533207766497194" />
-      <entry key="S5" value="3.302879138048276" />
-      <entry key="S10" value="6.277720001220372" />
-      <entry key="S30" value="11.463863587502225" />
-      <entry key="S60" value="16.15197085106418" />
-      <entry key="M2" value="30.973628361267654" />
-      <entry key="M5" value="65.73592159024915" />
-      <entry key="M10" value="121.96085101190614" />
-      <entry key="M15" value="196.98286584910602" />
-      <entry key="M30" value="401.2879420295389" />
-      <entry key="H1" value="622.3426631979562" />
-      <entry key="H2" value="789.2790408803135" />
-      <entry key="H4" value="900.0238468354145" />
-      <entry key="D1" value="1750.1710307826022" />
-      <entry key="W1" value="5080.455311333593" />
+      <entry key="MS100" value="0.9468425444490829" />
+      <entry key="MS500" value="1.4654365357934551" />
+      <entry key="S2" value="3.853399773638505" />
+      <entry key="S5" value="6.373415406103018" />
+      <entry key="S10" value="9.714526829917165" />
+      <entry key="S30" value="15.59166994472119" />
+      <entry key="S60" value="20.562199441063612" />
+      <entry key="M2" value="35.4421448487371" />
+      <entry key="M5" value="70.30143971680882" />
+      <entry key="M10" value="126.56434570557671" />
+      <entry key="M15" value="201.55914573640948" />
+      <entry key="M30" value="405.859023077147" />
+      <entry key="H1" value="627.0107492861962" />
+      <entry key="H2" value="794.068727800718" />
+      <entry key="H4" value="904.9039768234002" />
+      <entry key="D1" value="1755.1322342408334" />
+      <entry key="W1" value="5085.439238490493" />
     </decayedShown>
   </component>
   <component name="ProjectColorInfo">{
@@ -265,7 +264,15 @@
       <option name="project" value="LOCAL" />
       <updated>1787038502703</updated>
     </task>
-    <option name="localTasksCounter" value="9" />
+    <task id="LOCAL-00009" summary="latest version">
+      <option name="closed" value="true" />
+      <created>1788280159781</created>
+      <option name="number" value="00009" />
+      <option name="presentableId" value="LOCAL-00009" />
+      <option name="project" value="LOCAL" />
+      <updated>1788280159781</updated>
+    </task>
+    <option name="localTasksCounter" value="10" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -291,7 +298,8 @@
     <MESSAGE value="plot export" />
     <MESSAGE value="working variable diff" />
     <MESSAGE value="loop more precise steps" />
-    <option name="LAST_COMMIT_MESSAGE" value="loop more precise steps" />
+    <MESSAGE value="latest version" />
+    <option name="LAST_COMMIT_MESSAGE" value="latest version" />
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
     <SUITE FILE_PATH="coverage/EQuOS$Potentiostat.coverage" NAME="Potentiostat Coverage Results" MODIFIED="1782304189652" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />

@@ -48,6 +48,7 @@ class Potentiostat():
         self.avg_per_point= 0
         self.n_scans = 0
         self.max_points=0
+        self.no_applied_potential = False
         self.measurement_name = ""
         self.method=None
         self.t1_potential_step = 0.01
@@ -324,6 +325,18 @@ class Potentiostat():
         df.to_csv(os.path.join(self.folder_path, f"{file_name}.csv"), index=False)
     def load_measurement_from_file(self, file_name):
         csv_data = self.load_csv_file(file_name)
+        if "No_Applied_Potential" in csv_data and not csv_data.empty and csv_data["No_Applied_Potential"].eq(1).all():
+            run_time = float(csv_data["CA_Run_Time"].iloc[0])
+            self.ca_measurement(0.0, run_time)
+            self.no_applied_potential = True
+            self.measurement_name = "T1 without applied potential (simulated zero current)"
+            self.avg_per_point = int(csv_data["T1_Averages_Per_Datapoint"].iloc[0])
+            self.n_scans = 1
+            self.set_measurement_results([[{"current_integral": 0.0}], csv_data])
+            self.potentiostat_disconnected.set()
+            return
+        self.no_applied_potential = False
+        csv_data = self.load_csv_file(file_name)
         session_path = os.path.join(self.folder_path, f"{file_name}.pssession")
         measurements = []
         if os.path.isfile(session_path):
@@ -433,6 +446,7 @@ class Potentiostat():
         self.set_callback_data({"Potential": [], "Current": [], "Time": []})
         self.set_measurement_start_time([])
         self.method = None
+        self.no_applied_potential = False
         self.measurement_name = ""
         self.n_scans = 0
         self.max_points = 0

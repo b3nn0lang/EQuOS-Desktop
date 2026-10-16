@@ -1158,6 +1158,9 @@ def ca_t1_data_displayer(qs_data_reader, potentiostat, fitting_dic: dict, cache,
         "Interval time": method["interval_time"],
         "T1 averages/datapoint": avg_per_datapoint,
     }
+    if getattr(potentiostat, "no_applied_potential", False):
+        info_dic["Potential"] = "Not applied (potentiostat unused)"
+        info_dic["Current"] = "Simulated zero current"
     if time_bin_size > 0:
         info_dic["Time bin size"] = f"{time_bin_size} s"
     if floating_windows:
