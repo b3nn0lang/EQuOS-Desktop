@@ -4,11 +4,10 @@
     <option name="autoReloadType" value="ALL" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="7f911216-e681-405e-8252-ad6017b9785b" name="Changes" comment="Bug fixing session and T1 over time 2">
+    <list default="true" id="7f911216-e681-405e-8252-ad6017b9785b" name="Changes" comment="CA-T1 at OCP enabled">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Data_evaluator.py" beforeDir="false" afterPath="$PROJECT_DIR$/Data_evaluator.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Equos_gui.py" beforeDir="false" afterPath="$PROJECT_DIR$/Equos_gui.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Potentiostat.py" beforeDir="false" afterPath="$PROJECT_DIR$/Potentiostat.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -44,23 +43,23 @@
   </component>
   <component name="NextEditCompletionFeaturesState">
     <decayedCancelled>
-      <entry key="MS100" value="1.0" />
-      <entry key="MS500" value="1.0000000000007758" />
-      <entry key="S2" value="1.0053438688159801" />
-      <entry key="S5" value="1.6861801400606502" />
-      <entry key="S10" value="6.361436952399591" />
-      <entry key="S30" value="45.41656942610737" />
-      <entry key="S60" value="90.47150996576704" />
-      <entry key="M2" value="131.5803326687079" />
-      <entry key="M5" value="166.24515982394087" />
-      <entry key="M10" value="179.98513065017934" />
-      <entry key="M15" value="184.8424376533761" />
-      <entry key="M30" value="189.84583336166662" />
-      <entry key="H1" value="192.40588492961666" />
-      <entry key="H2" value="195.30112901543245" />
-      <entry key="H4" value="243.23785124381675" />
-      <entry key="D1" value="1189.2322527089423" />
-      <entry key="W1" value="5012.456970387982" />
+      <entry key="MS100" value="1.0088522398013198" />
+      <entry key="MS500" value="1.6228575138338848" />
+      <entry key="S2" value="3.6957964718660246" />
+      <entry key="S5" value="5.6316409021591145" />
+      <entry key="S10" value="10.053576189075123" />
+      <entry key="S30" value="47.033188261159744" />
+      <entry key="S60" value="92.13429016147035" />
+      <entry key="M2" value="134.41936740184127" />
+      <entry key="M5" value="170.64337352220443" />
+      <entry key="M10" value="185.1170984224677" />
+      <entry key="M15" value="190.2479042728868" />
+      <entry key="M30" value="195.5404000174492" />
+      <entry key="H1" value="198.25107791619442" />
+      <entry key="H2" value="201.2225620916656" />
+      <entry key="H4" value="249.1890581716728" />
+      <entry key="D1" value="1195.1928525644028" />
+      <entry key="W1" value="5018.433289118921" />
     </decayedCancelled>
     <decayedSelected>
       <entry key="MS100" value="0.0" />
@@ -74,31 +73,31 @@
       <entry key="M5" value="0.0" />
       <entry key="M10" value="0.0" />
       <entry key="M15" value="0.0" />
-      <entry key="M30" value="3.781537093436473E-247" />
-      <entry key="H1" value="6.1494203738535535E-124" />
-      <entry key="H2" value="2.479802486863185E-62" />
-      <entry key="H4" value="1.574738863069761E-31" />
-      <entry key="D1" value="7.348546121398114E-6" />
-      <entry key="W1" value="0.18475670293501062" />
+      <entry key="M30" value="3.7755423021110635E-247" />
+      <entry key="H1" value="6.144544167073021E-124" />
+      <entry key="H2" value="2.4788191073719564E-62" />
+      <entry key="H4" value="1.57442659637438E-31" />
+      <entry key="D1" value="7.348303235007272E-6" />
+      <entry key="W1" value="0.18475583054622793" />
     </decayedSelected>
     <decayedShown>
-      <entry key="MS100" value="0.9592641193252643" />
-      <entry key="MS500" value="0.9917167307390622" />
-      <entry key="S2" value="1.0032546496594281" />
-      <entry key="S5" value="1.6847288444559185" />
-      <entry key="S10" value="6.358607276822778" />
-      <entry key="S30" value="45.409710054335896" />
-      <entry key="S60" value="90.46459879488478" />
-      <entry key="M2" value="131.57526960691382" />
-      <entry key="M5" value="166.24258838764584" />
-      <entry key="M10" value="179.98373626646304" />
-      <entry key="M15" value="184.84148242022263" />
-      <entry key="M30" value="189.845342528554" />
-      <entry key="H1" value="192.4056361298838" />
-      <entry key="H2" value="195.30100257080485" />
-      <entry key="H4" value="243.23776941655316" />
-      <entry key="D1" value="1189.2321813311646" />
-      <entry key="W1" value="5012.641671115722" />
+      <entry key="MS100" value="0.8849812593239073" />
+      <entry key="MS500" value="1.5901905705679018" />
+      <entry key="S2" value="3.6812819166479467" />
+      <entry key="S5" value="5.623380841133458" />
+      <entry key="S10" value="10.047259669144045" />
+      <entry key="S30" value="47.02542862480746" />
+      <entry key="S60" value="92.12692124546471" />
+      <entry key="M2" value="134.41402942770912" />
+      <entry key="M5" value="170.64066776095262" />
+      <entry key="M10" value="185.1156311323866" />
+      <entry key="M15" value="190.24689900677262" />
+      <entry key="M30" value="195.53988341234108" />
+      <entry key="H1" value="198.25081603356375" />
+      <entry key="H2" value="201.22242905580416" />
+      <entry key="H4" value="249.18897303962626" />
+      <entry key="D1" value="1195.1927806354379" />
+      <entry key="W1" value="5018.617988895455" />
     </decayedShown>
   </component>
   <component name="ProjectColorInfo">{
@@ -231,7 +230,23 @@
       <option name="project" value="LOCAL" />
       <updated>1785762389016</updated>
     </task>
-    <option name="localTasksCounter" value="10" />
+    <task id="LOCAL-00010" summary="CA-T1 at OCP enabled">
+      <option name="closed" value="true" />
+      <created>1792144159506</created>
+      <option name="number" value="00010" />
+      <option name="presentableId" value="LOCAL-00010" />
+      <option name="project" value="LOCAL" />
+      <updated>1792144159506</updated>
+    </task>
+    <task id="LOCAL-00011" summary="CA-T1 at OCP enabled">
+      <option name="closed" value="true" />
+      <created>1792144179832</created>
+      <option name="number" value="00011" />
+      <option name="presentableId" value="LOCAL-00011" />
+      <option name="project" value="LOCAL" />
+      <updated>1792144179832</updated>
+    </task>
+    <option name="localTasksCounter" value="12" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -257,7 +272,8 @@
     <MESSAGE value="Post modifyable CV-T1 points" />
     <MESSAGE value="stable ecqs readout" />
     <MESSAGE value="mean first and performance better" />
-    <option name="LAST_COMMIT_MESSAGE" value="mean first and performance better" />
+    <MESSAGE value="CA-T1 at OCP enabled" />
+    <option name="LAST_COMMIT_MESSAGE" value="CA-T1 at OCP enabled" />
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
     <SUITE FILE_PATH="coverage/EQuOS$Potentiostat.coverage" NAME="Potentiostat Coverage Results" MODIFIED="1782304189652" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
