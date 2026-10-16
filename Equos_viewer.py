@@ -134,8 +134,17 @@ class App(tk.Tk):
                 "biexp. fit - Max. tries:",
                 "biexp.fit - use Bounds:",
                 "Show biexp. fit:",
+                'Use scaled stretched exponential fit:',
+                'Scaled str. exp. - Max. tries:',
+                'Scaled str. exp. - use Bounds:',
+                'Show scaled str. exp. fit:',
+                'Use shifted stretched exponential fit (first x = 0):',
+                'Shifted str. exp. - Max. tries:',
+                'Shifted str. exp. - use Bounds:',
+                'Show shifted str. exp. fit:',
             ],
-            [True, True, 20000, True, True, False, 20000, True, True],
+            [True, True, 20000, True, True, False, 20000, True, True,
+             False, 20000, True, True, False, 20000, True, True],
         )
         tk.Button(t1_frame, text="Fit Data", command=self.t1_fitting).pack()
 
@@ -543,6 +552,14 @@ class App(tk.Tk):
                 "t1_max_bi_tries": values[6],
                 "t1_use_bi_bounds": values[7],
                 "t1_show_bi_fit": values[8],
+                "t1_scaled_stretched_exp_fit": values[9],
+                "t1_max_scaled_stretch_tries": values[10],
+                "t1_use_scaled_stretch_bounds": values[11],
+                "t1_show_scaled_stretch_fit": values[12],
+                "t1_shifted_stretched_exp_fit": values[13],
+                "t1_max_shifted_stretch_tries": values[14],
+                "t1_use_shifted_stretch_bounds": values[15],
+                "t1_show_shifted_stretch_fit": values[16],
             }
         )
 

@@ -146,6 +146,43 @@ def qs_data_displayer(qs_data_reader: object, fitting_parameters: dict, fig: Fig
                     except  RuntimeError as e:
                          info_dic["Stretched exp fit"] = "Fit did not work"
                          print(e)
+                for variant, color in (("scaled", "tab:purple"), ("shifted", "tab:red")):
+                    if not fitting_parameters.get(f"t1_{variant}_stretched_exp_fit", False):
+                        continue
+                    title = f"{variant.capitalize()} Stretched Exp Fit"
+                    # The fixed origin is the first point remaining after normalization cutoff.
+                    origin = float(x_data[0]) if variant == "shifted" else 0.0
+                    fit_x = x_data - origin
+                    model = scaled_stretched_exp if variant == "scaled" else stretched_exp
+                    span = float(np.max(fit_x))
+                    min_tau = positive_tau_lower_bound(fit_x)
+                    p0 = [max(span / 3, min_tau), 1.0]
+                    lower, upper = [min_tau, 0.1], [max(span * 10, min_tau * 10), 3.0]
+                    if variant == "scaled":
+                        p0.append(max(float(contrast_mean[0]), 1e-12))
+                        lower.append(0.0)
+                        upper.append(np.inf)
+                    bounds = (lower, upper) if fitting_parameters.get(
+                        f"t1_use_{variant}_stretch_bounds", True
+                    ) else (-np.inf, np.inf)
+                    try:
+                        popt, _ = curve_fit(
+                            model, fit_x, contrast_mean, p0=p0, bounds=bounds,
+                            maxfev=int(fitting_parameters.get(f"t1_max_{variant}_stretch_tries", 20000)),
+                        )
+                        y_fit = model(fit_x, *popt)
+                        score = r_squared(contrast_mean, y_fit)
+                        if variant == "scaled":
+                            formula = f"{popt[2]:.3f}*e^(-(x/{popt[0]:.3f})^{popt[1]:.3f})"
+                        else:
+                            formula = f"e^(-((x-{origin:.3f})/{popt[0]:.3f})^{popt[1]:.3f})"
+                            info_dic["Shifted fit origin"] = f"{origin:.6g} {data['x_unit']}"
+                        info_dic[title] = f"{formula} - R^2 = {score:.3f}"
+                        axes[0].plot([], [], color=color, label=f"tau ({variant} str.exp.): {popt[0]:.4f} ms")
+                        if fitting_parameters.get(f"t1_show_{variant}_stretch_fit", True):
+                            axes[0].plot(x_data, y_fit, linestyle="--", color=color, label=formula)
+                    except (RuntimeError, ValueError, TypeError) as exc:
+                        info_dic[title] = f"Fit did not work: {exc}"
             if measurement_type == "Rabi" or measurement_type == "Rabi_ECQS":
                 if ("rabi_sin_fit" in fitting_parameters.keys() and fitting_parameters["rabi_sin_fit"] == True) or "rabi_sin_fit" not in fitting_parameters.keys():
                     rabi_fit_skip_points = 5
@@ -639,6 +676,11 @@ def positive_tau_lower_bound(x_data):
 def stretched_exp(x,tau, beta):
     with np.errstate(divide="ignore", invalid="ignore", over="ignore"):
         return np.exp(-((x / tau) ** beta))
+
+def scaled_stretched_exp(x, tau, beta, amplitude):
+    """Stretched exponential with a fitted overall amplitude."""
+    return amplitude * stretched_exp(x, tau, beta)
+
 
 def bi_exp(x,tau1, tau2, a):
     return a * np.exp(-x / tau1) + (1 - a) * np.exp(-x / tau2)
